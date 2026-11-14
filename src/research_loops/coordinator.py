@@ -35,15 +35,23 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
     contract = load_contract(example)
     repo = Repository(example / ".rloop")
     try:
-        data = datasets(contract)
-        inputs = {name: digest(value) for name, value in data.items()}
         current = repo.db.execute("SELECT current_registration FROM project").fetchone()[0]
         if current:
-            anchor = repo.db.execute("SELECT evaluator_hash FROM registrations WHERE hash=?", (current,)).fetchone()[0]
-            if anchor != evaluator_hash():
+            previous = repo.db.execute("SELECT * FROM registrations WHERE hash=?", (current,)).fetchone()
+            if previous["evaluator_hash"] != evaluator_hash():
                 raise IntegrityError("protected evaluator changed; a trusted human evaluator decision is required")
-        key = repo.register(contract.model_dump(mode="json"), evaluator_hash(), inputs,
-            supersedes=current if amendment_reason else None, reason=amendment_reason)
+            if previous["payload"] == canonical(contract):
+                # Ordinary run/resume does not even open or regenerate the final labels.
+                private(repo, current, "training")
+                private(repo, current, "development")
+                return repo, contract, current
+            if not amendment_reason:
+                raise IntegrityError("registration changed; explicitly plan an amendment with a reason")
+            if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
+                raise IntegrityError("sealed campaign cannot amend registration")
+        data = datasets(contract)
+        inputs = {name: digest(value) for name, value in data.items()}
+        key = repo.register(contract.model_dump(mode="json"), evaluator_hash(), inputs, supersedes=current, reason=amendment_reason)
         for name, value in data.items():
             path = repo.root / "private" / key / f"{name}.json"
             if not path.exists():
@@ -79,6 +87,15 @@ def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, se
 def reconcile(repo: Repository, contract: Contract, key: str) -> None:
     # The project lock proves the previous in-process fake workers are gone.
     # An evaluator can outlive its parent on Linux; check creation identity first.
+    ticket_text = repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]
+    final_receipt = repo.root / "private" / "final-receipt.json"
+    if ticket_text and final_receipt.exists():
+        ticket = json.loads(ticket_text)
+        if ticket["state"] == "started":
+            saved = json.loads(final_receipt.read_bytes())
+            if saved["ticket"] != ticket:
+                raise IntegrityError("final recovery receipt differs from consumed ticket")
+            repo.final_result(ticket, Verdict.model_validate(saved["verdict"]))
     for row in repo.runs():
         if row["execution_status"] != "running":
             continue
@@ -179,4 +196,5 @@ def final_evaluation(repo: Repository, contract: Contract, key: str) -> None:
     deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
     seconds = min(contract.limits.evaluator_seconds, max(0.001, deadline - time.time()))
     verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds)
+    atomic_write(repo.root / "private" / "final-receipt.json", canonical({"ticket": ticket, "verdict": verdict.model_dump(mode="json")}).encode(), exclusive=True)
     repo.final_result(ticket, verdict)

@@ -6,6 +6,7 @@ import json
 import sqlite3
 import time
 import sys
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,7 +24,18 @@ class Repository:
         self.lock = ProjectLock(root)
         self.lock.__enter__()
         try:
-            self._open(root)
+            for attempt in range(3):
+                try:
+                    self._open(root)
+                    break
+                except sqlite3.OperationalError as exc:
+                    if hasattr(self, "db"):
+                        self.db.close()
+                    # Windows can finish closing killed-process file handles after wait().
+                    # Retry startup only, never replay a research action or delete WAL files.
+                    if os.name != "nt" or getattr(exc, "sqlite_errorcode", 0) & 255 != sqlite3.SQLITE_IOERR or attempt == 2:
+                        raise
+                    time.sleep(0.05 * (attempt + 1))
         except BaseException:
             if hasattr(self, "db"):
                 self.db.close()

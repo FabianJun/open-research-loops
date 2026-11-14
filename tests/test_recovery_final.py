@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from pathlib import Path
 
 import pytest
 
@@ -43,6 +44,33 @@ def test_crashed_final_does_not_reset_ticket(example):
     asyncio.run(run(example, resume_only=True))
     with pytest.raises(IntegrityError, match="already consumed"):
         asyncio.run(run(example, final=True))
+
+
+def test_final_labels_are_not_reopened_before_ticket(example, monkeypatch):
+    import sqlite3
+    small(example)
+    repo, _, _ = prepare(example)
+    repo.close()
+    original = Path.read_bytes
+    seen = []
+    def guarded(path):
+        if path.name == "final.json" and "private" in path.parts:
+            db = sqlite3.connect(f"file:{example / '.rloop' / 'state.sqlite'}?mode=ro", uri=True)
+            try:
+                ticket = db.execute("SELECT final_ticket FROM project").fetchone()[0]
+            finally:
+                db.close()
+            assert ticket is not None, "final data opened before durable ticket"
+            seen.append(ticket)
+        return original(path)
+    monkeypatch.setattr(Path, "read_bytes", guarded)
+    asyncio.run(run(example))
+    assert seen == []
+    asyncio.run(run(example, final=True))
+    assert len(seen) == 1
+    with pytest.raises(IntegrityError):
+        asyncio.run(run(example, final=True))
+    assert len(seen) == 1
 
 
 def test_resume_dead_worker_counts_partial_outbox(example):

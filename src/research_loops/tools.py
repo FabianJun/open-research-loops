@@ -62,3 +62,6 @@ class ToolService:
                 raise IntegrityError("artifact hash/size mismatch")
         atomic_write(self.root / "report.json", canonical(report).encode(), exclusive=True)
         return report
+
+    def execute_candidate(self, *_args, **_kwargs):
+        raise IntegrityError("candidate code execution is disabled; Phase 3b Sandbox isolation is required")
