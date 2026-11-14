@@ -11,6 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v7
         with:
           version: '0.11.19'
@@ -20,3 +22,15 @@ jobs:
       - run: uv run --locked rloop report examples/planted-signal --check
       - run: uv run --locked rloop export examples/planted-signal
       - run: uv run --locked python scripts/check_example_report.py
+      - name: Check protected evaluator against trusted base
+        if: github.event_name == 'pull_request'
+        env:
+          PROTECTED_BASE: ${{ github.event.pull_request.base.sha }}
+        run: uv run --locked python scripts/check_protected.py --base "$env:PROTECTED_BASE"
+        shell: pwsh
+      - name: Check protected evaluator on push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          PROTECTED_BASE: ${{ github.event.before }}
+        run: uv run --locked python scripts/check_protected.py --base "$env:PROTECTED_BASE"
+        shell: pwsh

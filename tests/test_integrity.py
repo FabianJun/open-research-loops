@@ -32,6 +32,10 @@ def test_registration_is_immutable_and_required(example):
         with pytest.raises(IntegrityError, match="registration"):
             repo.dispatch(assignment(repo, "unregistered"))
         assert repo.db.execute("SELECT count(*) FROM runs").fetchone()[0] == 0
+        repo.dispatch(assignment(repo, key))
+        with pytest.raises(sqlite3.IntegrityError, match="prediction"):
+            repo.db.execute("UPDATE runs SET prediction='rewritten after execution'")
+        repo.db.rollback()
     finally:
         repo.close()
 

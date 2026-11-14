@@ -19,7 +19,11 @@ class FakeBackend:
         await asyncio.sleep(0)  # Cooperatively bounded by the coordinator.
         if contract.arm == "random":
             rng = random.Random(contract.seed * 100 + contract.variant)
-            tree = {"op": "mul", "left": {"constant": rng.randint(-3, 3)}, "right": {"feature": rng.randrange(4)}}
+            def expression(depth=0):
+                if depth == 4 or rng.random() < 0.4:
+                    return {"feature": rng.randrange(4)} if rng.random() < 0.7 else {"constant": rng.randint(-3, 3)}
+                return {"op": rng.choice(("add", "sub", "mul")), "left": expression(depth + 1), "right": expression(depth + 1)}
+            tree = expression()
         else:
             tree = oracle() if contract.variant == 1 else {"constant": contract.variant - 1}
         candidate = tools.write_artifact("candidate.json", canonical(tree).encode())

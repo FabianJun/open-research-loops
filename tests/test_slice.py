@@ -7,6 +7,7 @@ from pathlib import Path
 from research_loops.coordinator import run
 from research_loops.reporting import export, report
 from research_loops.storage import Repository
+from research_loops.domain import WorkerReport, Workspace
 
 
 def test_offline_vertical_slice(tmp_path):
@@ -25,6 +26,11 @@ def test_offline_vertical_slice(tmp_path):
         report(repo, check=True)
         export(repo)
         assert saved == (repo.root / "events.jsonl").read_bytes()
+        assert repo.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+        assert len({r["id"] for r in rows}) == 48
+        assert repo.db.execute("SELECT count(*) FROM artifacts").fetchone()[0] == 48 * 3
+        assert repo.db.execute("SELECT count(*) FROM claims").fetchone()[0] == 48
+        assert repo.db.execute("SELECT spent_micro_usd,reserved_micro_usd FROM project").fetchone()[:] == (0, 0)
     finally:
         repo.close()
     asyncio.run(run(example))

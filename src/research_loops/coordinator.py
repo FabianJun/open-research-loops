@@ -35,12 +35,14 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
     contract = load_contract(example)
     repo = Repository(example / ".rloop")
     try:
+        method_hash = digest(Path(__file__).with_name("fake.py").read_bytes())
         current = repo.db.execute("SELECT current_registration FROM project").fetchone()[0]
         if current:
             previous = repo.db.execute("SELECT * FROM registrations WHERE hash=?", (current,)).fetchone()
             if previous["evaluator_hash"] != evaluator_hash():
                 raise IntegrityError("protected evaluator changed; a trusted human evaluator decision is required")
-            if previous["payload"] == canonical(contract):
+            same_method = json.loads(previous["inputs"]).get("proposal_method") == method_hash
+            if previous["payload"] == canonical(contract) and same_method:
                 # Ordinary run/resume does not even open or regenerate the final labels.
                 private(repo, current, "training")
                 private(repo, current, "development")
@@ -51,6 +53,7 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
                 raise IntegrityError("sealed campaign cannot amend registration")
         data = datasets(contract)
         inputs = {name: digest(value) for name, value in data.items()}
+        inputs["proposal_method"] = method_hash
         key = repo.register(contract.model_dump(mode="json"), evaluator_hash(), inputs, supersedes=current, reason=amendment_reason)
         for name, value in data.items():
             path = repo.root / "private" / key / f"{name}.json"
