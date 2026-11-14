@@ -2,7 +2,8 @@
 
 from typing import Protocol
 
-from research_loops.domain import Limits, Verdict, WorkerContract, WorkerReport, Workspace
+from research_loops.domain import Limits, Verdict, WorkerContract, Workspace
+from research_loops.reports import WorkerReport
 
 
 class AgentBackend(Protocol):

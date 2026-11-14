@@ -5,7 +5,8 @@ import threading
 
 from pydantic import BaseModel
 
-from research_loops.domain import IntegrityError, WorkerReport
+from research_loops.domain import IntegrityError
+from research_loops.reports import WorkerReport
 from research_loops.tools import ToolService
 
 TOOL_NAMES = ("read_contract", "read_findings", "read_artifact", "register_variant", "write_artifact", "submit_result")

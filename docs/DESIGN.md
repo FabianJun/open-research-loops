@@ -370,10 +370,18 @@ No section-4 constraint is waived. Checkpoint A is approved in [DECISIONS.md](DE
 1. Phase 1: scaffold, lockfile, licenses, agent instructions and Windows/Linux CI.
 2. Phase 2a: thin offline slice (`uv run rloop run examples/planted-signal`): registration, fake direct tools, outbox/import, protected evaluator subprocess, verdict, report/export. Use only required tables.
 3. Phase 2b: integrity mechanisms individually, each with a test; migrations grow with working features. No speculative tables.
-4. Stop this session before Phase 3. Phase 3 later adds MCP transport and required SDK adapters, followed by Phase 3b OCI isolation. Optional CLI adapters remain deferred.
+4. The current delivery is authorized through Phase 3 (MCP and both SDK adapters) and Phase 3b (OCI isolation). Stop before Phase 4 and checkpoint-B provider calls. Optional CLI adapters remain deferred.
 5. Phase 4 skills use source `rloop-` names; Phase 5 extends proof across funded providers.
 
-B remains pending: provider, model, USD cap, price/charge envelope and headroom. C remains pending: owner/name, license confirmation and public files. No remote creation, push or provider spending is authorized.
+B remains pending: provider, model, USD cap, price/charge envelope and headroom. C remains pending: public files and publication. The owner authorized ordinary pushes to the existing private origin/main; no provider spending, force pushes, releases or public publication are authorized.
+
+## Phase 3 transport and execution evidence
+
+Six run-scoped service functions are available directly and over MCP stdio. Tool replies include explicit success/refusal envelopes; traversal, evaluator/final-data access and sealed writes are parity-tested. The host launches the tool server with allowlisted environment variables, without API keys. SDK imports exist only in optional adapters. Installed-source API checks and exact pins are in PRIOR-ART.
+
+OpenAI has no built-in tools or handoffs. Claude uses empty built-in tools, empty settings/skills/plugins, strict MCP configuration and a deny-by-default permission callback; its reported effective tool list must equal the six rloop MCP tools. Offline seams pass through each SDK's own orchestration, without a model provider. Every nonfake live start requires matching `project.json` checkpoint_b approval by the project owner, provider, model and positive usd_cap. This session creates no such approval.
+
+Migration 006 adds one execution_metadata JSON field to runs, with a working dispatch/import/report consumer. It records provider, model, installed SDK version, cost, usage and sandbox image even before completion. Unknown USD remains null and keeps the dispatch reservation. The OpenAI SDK does not report USD; the first live authorization must resolve pricing/headroom before a full campaign. The pinned numerical evaluator and its message schema remain unchanged. A separate execution report envelope adds nullable cost, usage and SDK trace. SDK workers seal submission.json; only the host adds SDK usage/trace and seals report.json for import. This is not a claim that a worker's text is authoritative metadata.
 
 Phase-0 provenance and review limits remain in PRIOR-ART and phase0-sources.json. Current delivered behavior and exact verification belong in the session status record; this inventory does not claim every future feature exists.
 

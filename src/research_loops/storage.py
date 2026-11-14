@@ -10,7 +10,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from research_loops.domain import IntegrityError, Verdict, WorkerContract, WorkerReport, Workspace, canonical, content_hash, digest, validate_candidate
+from research_loops.domain import IntegrityError, Verdict, WorkerContract, Workspace, canonical, content_hash, digest, validate_candidate
+from research_loops.reports import WorkerReport
 from research_loops.paths import atomic_write, confined
 from research_loops.locking import ProjectLock
 
@@ -87,7 +88,7 @@ class Repository:
                     self.event("amendment", key, {"supersedes": supersedes, "reason": reason, "comparisons_flagged": True})
         return key
 
-    def dispatch(self, assignment: WorkerContract, reserve_micro_usd: int = 0) -> None:
+    def dispatch(self, assignment: WorkerContract, reserve_micro_usd: int = 0, *, execution_metadata: dict | None = None) -> None:
         with self.db:
             state = self.db.execute("SELECT * FROM project").fetchone()
             if assignment.registration_hash != state["current_registration"]:
@@ -104,12 +105,15 @@ class Repository:
                 raise IntegrityError("project deadline reached")
             self.db.execute("UPDATE project SET deadline=?,reserved_micro_usd=reserved_micro_usd+?", (deadline, reserve_micro_usd))
             self.db.execute("INSERT INTO runs(id,registration_hash,assignment,execution_status,prediction,created,reserved_micro_usd) VALUES(?,?,?,'running',?,?,?)", (assignment.run_id, assignment.registration_hash, canonical(assignment), assignment.prediction, now(), reserve_micro_usd))
+            if execution_metadata:
+                self.db.execute("UPDATE runs SET execution_metadata=? WHERE id=?", (canonical(execution_metadata), assignment.run_id))
             self.event("dispatch", assignment.run_id, assignment.model_dump(mode="json"))
             folder = Path(__file__).parent
             self.event("runtime", assignment.run_id, {"framework": "0.1.0", "python": sys.version.split()[0],
                 "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
 
     def import_report(self, report: WorkerReport, outbox: Workspace) -> bool:
+        report = WorkerReport.model_validate(report.model_dump(mode="json"))
         row = self.db.execute("SELECT * FROM runs WHERE id=?", (report.run_id,)).fetchone()
         if not row or row["registration_hash"] != report.contract_hash or report.report_id != report.run_id:
             raise IntegrityError("unknown report scope")
@@ -119,8 +123,13 @@ class Repository:
             if row["report_hash"] != checksum:
                 raise IntegrityError("conflicting duplicate report")
             return False
-        if report.backend != "fake" or report.provider != "offline" or report.cost_micro_usd != 0:
-            raise IntegrityError("only zero-cost offline fake reports are authorized in Phase 2")
+        expected = json.loads(row["execution_metadata"])
+        if (report.backend != expected["backend"] or report.provider != expected["provider"] or report.model != expected["model"]
+            or (report.backend == "fake" and report.cost_micro_usd != 0)):
+            raise IntegrityError("report backend/provider/model/cost is not authorized for this dispatch")
+        if report.backend != "fake" and (not report.sdk_trace or report.sdk_version != expected.get("sdk_version")
+                or report.sandbox_image != expected.get("sandbox_image")):
+            raise IntegrityError("SDK report lacks trusted dispatch metadata/trace")
         assignment = json.loads(row["assignment"])
         if report.seed != assignment["seed"]:
             raise IntegrityError("report seed differs from registration")
@@ -128,7 +137,9 @@ class Repository:
             raise IntegrityError("run is not importing")
         staged = []
         candidate_value = None
-        for kind, artifact in (("candidate", report.candidate), ("transcript", report.transcript)):
+        for kind, artifact in (("candidate", report.candidate), ("transcript", report.transcript), ("sdk_trace", report.sdk_trace)):
+            if artifact is None:
+                continue
             path = confined(outbox.root, artifact.path)
             if not path.is_file() or path.stat().st_size > 1_000_000:
                 raise IntegrityError("missing/oversized artifact")
@@ -153,6 +164,9 @@ class Repository:
         with self.db:
             self.db.executemany("INSERT INTO artifacts VALUES(?,?,?,?,?)", staged)
             self.db.execute("UPDATE runs SET report_hash=?,report=? WHERE id=?", (checksum, payload, report.run_id))
+            metadata = {**expected, "sdk_version": report.sdk_version, "cost_micro_usd": report.cost_micro_usd,
+                "usage": report.usage, "sandbox_image": report.sandbox_image}
+            self.db.execute("UPDATE runs SET execution_metadata=? WHERE id=?", (canonical(metadata), report.run_id))
             self.event("import", report.run_id, {"report": report.model_dump(mode="json"), "artifacts": staged})
         return True
 
@@ -186,6 +200,8 @@ class Repository:
         row = self.db.execute("SELECT reserved_micro_usd,settled,report FROM runs WHERE id=?", (run_id,)).fetchone()
         if row and not row[1] and row[2]:
             cost = WorkerReport.model_validate_json(row[2]).cost_micro_usd
+            if cost is None:
+                return  # Unknown SDK cost keeps its reservation; never silently charge zero.
             if cost > row[0]:
                 raise IntegrityError("cost exceeds reservation")
             self.db.execute("UPDATE project SET reserved_micro_usd=reserved_micro_usd-?,spent_micro_usd=spent_micro_usd+?", (row[0], cost))

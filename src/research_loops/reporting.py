@@ -26,9 +26,14 @@ def render(repo: Repository) -> str:
         evidence = f"[evidence](objects/{content_hash(verdict)})" if verdict else "none"
         lines.append(f"| {row['id']} | {row['execution_status']} | {row['scientific_outcome'] or 'unevaluated'} | {row['verification_status']} | {score} ({evidence}) |")
     state = repo.db.execute("SELECT * FROM project").fetchone()
+    metadata = [json.loads(row["execution_metadata"]) for row in repo.runs()]
+    unknown = sum(item["cost_micro_usd"] is None for item in metadata)
+    cost_text = (f"[measured] External model cost: unknown for {unknown} run(s); known settled USD {state['spent_micro_usd'] / 1_000_000:.6f}."
+        if unknown else f"[measured] External model cost: USD {state['spent_micro_usd'] / 1_000_000:.6f}"
+        + (" (offline fake only)." if all(item["backend"] == "fake" for item in metadata) else " (SDK reported)."))
     lines += ["", f"[simulated] Attempted variants: {len(repo.runs())}.",
         f"[measured] Control/final evaluation starts: {state['control_attempts']}.",
-        f"[measured] External model cost: USD {state['spent_micro_usd'] / 1_000_000:.6f} (offline fake only).",
+        cost_text,
         f"[measured] Reserved micro-USD: {state['reserved_micro_usd']}.", "[cited] Synthetic dataset license: CC0-1.0."]
     selection = json.loads(state["selection"]) if state["selection"] else None
     if selection:

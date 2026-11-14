@@ -128,7 +128,11 @@ def test_public_projection_has_no_private_fields(example):
         result = asyncio.run(FakeBackend().run(assignment(repo, key), work, Limits()))
         transcript = (work.root / "transcript.json").read_bytes()
         assert b"PRIVATE-CANARY" not in transcript
-        assert not any(name in sys.modules for name in ("agents", "claude_agent_sdk", "openai"))
+        # SDK tests may import their seams during collection; inspect core imports
+        # in a fresh process instead of relying on pytest collection order.
+        import subprocess
+        result = subprocess.run([sys.executable, "-I", "-c", "import research_loops.coordinator,sys; assert not any(n in sys.modules for n in ('agents','claude_agent_sdk','openai'))"], capture_output=True)
+        assert result.returncode == 0, result.stderr
     finally:
         repo.close()
 

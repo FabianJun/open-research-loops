@@ -85,3 +85,13 @@ Current MCP documentation says Python 3.11+, while release metadata says 3.10+; 
 Recheck pinned SDK documentation before Phase 3 implementation and record any version change explicitly.
 
 No paid calls were made, no credentials were inspected, and no remote repository was created or pushed.
+
+## Phase 3 installed-source API audit (2026-11-15)
+
+Locked versions remain OpenAI Agents 0.24.0 (OpenAI 3.51.0), Claude Agent SDK 0.2.182 and MCP 2.3.0. APIs were checked in the installed packages, then exercised offline:
+
+- `agents/agent.py`, `run.py`, `models/interface.py`, `mcp/server.py`, `mcp/util.py`, `usage.py`: Agent tools/handoffs, Runner/RunConfig, Model.get_response seam, MCPServerStdio filtering and structured results. Usage exposes token/request counts, no USD field. USD stays unknown; tracing is disabled.
+- `claude_agent_sdk/types.py`, `client.py`, `_internal/query.py`, `_internal/transport/subprocess_cli.py`: custom Transport handshake, ClaudeSDKClient, permission callback, ResultMessage.total_cost_usd. `tools=[]` generates `--tools ""`; `setting_sources=[]` generates `--setting-sources=`; strict MCP configuration suppresses ambient servers. Allowed-tools alone is not the boundary. The adapter verifies the init message's effective six-tool list and rejects additions. Offline tests inspect the SDK-built CLI command and run the real MCP server through a stub CLI transport.
+- `mcp/server/mcpserver/server.py`, `client/stdio/__init__.py`, `client/session.py`, `types.py`: MCPServer decorators/stdio run, ClientSession and StdioServerParameters. MCP 2 fields are snake_case; the pinned Agents SDK includes MCP 2 compatibility.
+
+No SDK monkeypatch bypasses either runner. OpenAI's injected Model emits actual Responses tool calls; Claude's injected Transport exchanges the SDK control protocol. Both drive actual stdio MCP servers with present dummy keys and the suite's socket guard enabled. The server launches with an environment allowlist and audits names only. Real provider access remains checkpoint-B gated.

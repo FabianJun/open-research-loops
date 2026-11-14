@@ -8,7 +8,8 @@ import time
 from pathlib import Path
 
 from research_loops.data import datasets
-from research_loops.domain import Contract, IntegrityError, Verdict, WorkerContract, WorkerReport, Workspace, canonical, digest
+from research_loops.domain import Contract, IntegrityError, Verdict, WorkerContract, Workspace, canonical, digest
+from research_loops.reports import WorkerReport
 from research_loops.evaluation import SubprocessEvaluator, evaluator_hash
 from research_loops.fake import FakeBackend, oracle
 from research_loops.grounding import public_context
@@ -132,6 +133,8 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
 
 
 async def run(example: Path, *, final: bool = False, resume_only: bool = False, pilot_only: bool = False, backend=None) -> None:
+    if backend is not None and hasattr(backend, "check_authorization"):
+        backend.check_authorization()
     repo, contract, key = prepare(example)
     try:
         reconcile(repo, contract, key)
@@ -171,7 +174,9 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
 
     async def execute(assignment):
         public_context(assignment.model_dump(mode="json"))
-        repo.dispatch(assignment)
+        from research_loops.execution import backend_record
+        metadata, reserve = backend_record(backend)
+        repo.dispatch(assignment, reserve, execution_metadata=metadata)
         root = repo.root / "runs" / assignment.run_id / "outbox"
         try:
             deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
