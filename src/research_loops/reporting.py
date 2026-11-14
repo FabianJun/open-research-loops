@@ -15,6 +15,11 @@ def render(repo: Repository) -> str:
         "| Run | Execution | Scientific outcome | Verification | Development MSE |", "|---|---|---|---|---|"]
     for row in repo.runs():
         verdict = json.loads(row["verdict"]) if row["verdict"] else None
+        if verdict:
+            if repo.artifact(row["id"], "evaluation") != canonical(verdict).encode():
+                raise IntegrityError("database verdict differs from sealed raw evaluation")
+            repo.artifact(row["id"], "candidate")
+            repo.artifact(row["id"], "transcript")
         score = format(verdict["mse"], ".12g") if verdict else "unavailable"
         if verdict:
             number(verdict["mse"], score)

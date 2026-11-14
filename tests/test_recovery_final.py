@@ -46,6 +46,28 @@ def test_crashed_final_does_not_reset_ticket(example):
         asyncio.run(run(example, final=True))
 
 
+def test_final_receipt_recovery_never_reopens_holdout(example, monkeypatch):
+    from research_loops.coordinator import private
+    from research_loops.evaluation import SubprocessEvaluator
+    small(example)
+    asyncio.run(run(example))
+    repo, contract, key = prepare(example)
+    selection = json.loads(repo.db.execute("SELECT selection FROM project").fetchone()[0])
+    ticket = repo.consume_final(selection["winner"])
+    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), 10)
+    atomic_write(repo.root / "private" / "final-receipt.json", canonical({"ticket": ticket, "verdict": verdict.model_dump(mode="json")}).encode())
+    repo.close()  # Crash boundary: evaluator receipt durable, DB verdict not imported.
+    original = Path.read_bytes
+    def guard(path):
+        assert path.name != "final.json", "recovery reopened final data"
+        return original(path)
+    monkeypatch.setattr(Path, "read_bytes", guard)
+    asyncio.run(run(example, resume_only=True))
+    repo = Repository(example / ".rloop")
+    assert json.loads(repo.db.execute("SELECT final_ticket FROM project").fetchone()[0])["state"] == "completed"
+    repo.close()
+
+
 def test_final_labels_are_not_reopened_before_ticket(example, monkeypatch):
     import sqlite3
     small(example)
