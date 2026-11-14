@@ -1,6 +1,6 @@
-# Design proposal — checkpoint A
+# Internal design — checkpoint A approved
 
-Status: **Checkpoint A approved; Phase 1?2 authorized.** See [DECISIONS.md](DECISIONS.md) for the binding decisions and delivery scope.
+Status: **Checkpoint A approved; Phase 1-2 authorized.** See [DECISIONS.md](DECISIONS.md) for the binding decisions and delivery scope.
 The start prompt is the mandate; [LESSONS.md](LESSONS.md) records evidence and [REQUIREMENTS.md](REQUIREMENTS.md) traces implementation obligations.
 This document describes the complete intended design; delivery status and verification are recorded separately. Unimplemented mechanisms are not claimed as working.
 Repository title `open-research-loops`, distribution `research-loops`, import `research_loops`, and CLI `rloop` are approved. Never depend on the unrelated PyPI `rloop` package.

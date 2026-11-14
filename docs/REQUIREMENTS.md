@@ -12,7 +12,7 @@ Source keys:
 - **P**: primary documents, repository licenses and exact version evidence in [PRIOR-ART.md](PRIOR-ART.md).
 
 Each requirement has an implementation location in [DESIGN.md](DESIGN.md) and an observable acceptance check.
-Phase 1?2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
+Phase 1-2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
 
 | ID | Requirement | Source | Design location | Acceptance / phase |
 |---|---|---|---|---|
@@ -58,7 +58,7 @@ Phase 1?2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema in
 | R40 | CLI init/plan/run/status/resume/report/export plus self-assess workflow. | M §5 phases 2, 4 | Skills, guide and command surface | CLI smoke paths exercised offline; invalid final/recovery states fail visibly; 2, 4–5. |
 | R41 | Apache-2.0 code, CC BY 4.0 docs, factual AGENTS/CLAUDE pointer and CI scaffold. | M §5 phase 1; event `CLAUDE.md` | Architecture decisions; Skills | Root license files and split agree with docs; instructions avoid duplicating source; CI exists for both OSes; 1. |
 | R42 | Short docs/instructions, no personal toolkit clone or paper/hosted platform expansion. | M §1, §6; T `references/sources.md`; event `CLAUDE.md` | Architecture; Skills; L simplification | Review scope and agent instructions at handoff; disclose optional/unimplemented features; all phases. |
-| R43 | Stop after Phase 0, gather all A questions with recommendations; no assumed headless approval. | User's headless instruction; M §5, §7 | Checkpoint A | Documentation-only deliverables, source checks, final decision list; **Phase 0**. |
+| R43 | Record A; finish Phase 1-2 only, vertical slice then individual integrity checks; stop before Phase 3. | A1-A6; session scope | Approved delivery order and scope | Full local Windows and disposable Linux suite; Linux environment outside mount; exact results and next three steps. No WSL change, provider calls or remote. |
 
 ## Phase-5 test coverage index
 
