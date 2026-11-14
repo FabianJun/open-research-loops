@@ -1,12 +1,11 @@
 """Coordinator-only subprocess evaluator and independent arithmetic check."""
 
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, Verdict, canonical, digest
+from research_loops.processes import supervised
 
 
 def evaluator_hash() -> str:
@@ -16,19 +15,12 @@ def evaluator_hash() -> str:
 
 
 class SubprocessEvaluator:
-    def evaluate(self, candidate: bytes, dataset: bytes, seconds: float) -> Verdict:
+    def evaluate(self, candidate: bytes, dataset: bytes, seconds: float, *, started=None) -> Verdict:
         request = json.loads(dataset)
         request["candidate"] = json.loads(candidate)
-        env = {k: v for k, v in os.environ.items() if k.upper() in {"SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP", "LANG"}}
-        try:
-            result = subprocess.run([sys.executable, "-I", "-m", "research_loops.evaluator_worker"],
-                input=canonical(request).encode(), capture_output=True, timeout=seconds, env=env,
-                cwd=Path(sys.executable).parent)
-        except subprocess.TimeoutExpired as exc:
-            raise IntegrityError("evaluator timed out") from exc
-        if result.returncode or not result.stdout or len(result.stdout) > 1_000_000:
-            raise IntegrityError("evaluator failed or returned empty/oversized output")
-        verdict = Verdict.model_validate_json(result.stdout)
+        output = supervised([sys.executable, "-I", "-m", "research_loops.evaluator_worker"],
+            canonical(request).encode(), seconds, cwd=Path(sys.executable).parent, started=started)
+        verdict = Verdict.model_validate_json(output)
         if len(verdict.predictions) != len(request["rows"]) or len(verdict.squared_errors) != len(request["rows"]):
             raise IntegrityError("incomplete per-example outputs")
         # Independent metric path over sealed outputs; does not rerun the final split.
