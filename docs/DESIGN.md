@@ -1,0 +1,378 @@
+# Design proposal — checkpoint A
+
+Status: **Phase 0 complete; decisions pending. No framework code exists.**
+The start prompt is the mandate; [LESSONS.md](LESSONS.md) records evidence and [REQUIREMENTS.md](REQUIREMENTS.md) traces implementation obligations.
+This document describes intended behavior, including tests that do not exist yet.
+Repository title `open-research-loops`, distribution `research-loops`, import `research_loops`, and CLI `rloop` remain provisional.
+
+## Architecture
+
+A Python 3.12+ library owns research state and integrity; SDKs only execute bounded assignments.
+Use `uv`, Pydantic, Typer, stdlib SQLite, and pytest, with the candidate versions in [PRIOR-ART.md](PRIOR-ART.md).
+The core imports no vendor SDK or MCP transport.
+No ORM, application web server, external queue, Postgres implementation, or hosted control plane is planned.
+
+```mermaid
+flowchart LR
+    CLI[CLI and portable skills] --> C[Coordinator and bounded asyncio scheduler]
+    C --> DB[(SQLite: sole writer)]
+    C --> P[AgentBackend port]
+    P --> F[Deterministic fake]
+    P --> O[OpenAI Agents adapter]
+    P --> A[Claude Agent adapter]
+    O --> M[Run-scoped MCP tools]
+    A --> M
+    F --> S[Shared tool service functions]
+    M --> S
+    S --> W[Private worker workspace and outbox]
+    W --> I[Coordinator: validate, copy, hash, import]
+    I --> E[Protected evaluator subprocess]
+    E --> G[Evidence and independent verification gates]
+    G --> DB
+    DB --> R[Static report and append-only JSONL export]
+    R --> C
+```
+
+Suggested package boundaries are `domain`, `ports`, `coordinator`, `scheduler`, `storage/sqlite`, `evaluation`, `tools`, `adapters`, and `cli`.
+The CLI uses application operations; adapters do not own research policy, database sessions, or claim promotion.
+One project has one local database and one coordinator lock across CLI processes.
+Reports can use read-only snapshot connections.
+Remote workers, distributed scheduling, paper writing, and arbitrary external literature connectors are outside v0.
+
+## Domain and contracts
+
+Pydantic objects reject unknown fields, non-finite numbers, mismatched IDs and invalid state transitions.
+Immutable objects serialize as canonical UTF-8 JSON with sorted keys, fixed separators and no NaN; binary artifacts hash their exact bytes with SHA-256.
+An ID names a particular record; a hash identifies its contents. Neither replaces the other.
+
+| Object | Required content / invariant |
+|---|---|
+| Project | Question, scope, phase, repository revision, approved execution policy, current contract version and overall limits. Unknown scientific assumptions remain explicit. |
+| ContractVersion / PreRegistration | Task, goal, falsifier, metric definitions and units, thresholds, keep margin, interval/selection rule, baseline/control IDs, data/split references, evaluator ID/version/code hash, allowed edits, output schema, stop rules, license references, reason and superseded version. Immutable before dispatch. |
+| Prediction | Run/variant ID, contract hash, predicted outcome and disproof condition, timestamp and content hash. Stored before execution, including a declared uncertain prediction. |
+| WorkerContract | An explicit public projection of the registration: allowed inputs, relevant findings/challenges, candidate schema, allowed paths/tools, limits and skill hashes. Never contains private evaluator configuration, final labels, final seed or final scores. |
+| Limits | Shared absolute deadline, worker wall-time/turn/output/token bounds, maximum attempts, concurrency and reserved cost ceiling. No worker can increase them. |
+| WorkerReport | Schema/report/run/task/attempt IDs, contract and prompt hashes, artifact descriptors, candidate/code reference, seed, input hashes, backend/provider/model/SDK/runtime versions, transcript reference, usage and cost provenance, errors and proposed statements. Worker metrics are non-authoritative. |
+| EvaluationRequest / Verdict | Exact imported artifact IDs/hashes, registration/evaluator/input versions, evaluation mode and limits; verdict includes raw-output and metric references, control results, interval method and validity limits. Empty/malformed/non-finite/timeout output is an evaluation error. |
+| Claim / Challenge | Claim text, one of `measured`, `simulated`, `cited`, `assumed`, `interpretation`, `hypothesis`, scope/units and evidence IDs; challenge names its target, grounds, evidence and next check. Corrections and resolutions append new records. |
+
+Execution statuses are `planned`, `running`, `completed`, `technical_error`, `timed_out`, `cancelled`, `interrupted`.
+Scientific outcomes are nullable until evaluated, then `supported`, `negative`, or `inconclusive`.
+Verification is independently `unverified`, `checked`, or `failed`; promotion also requires the separate independent-check record.
+A completed negative experiment can be checked evidence; an interrupted worker cannot become a positive finding.
+An unresolved challenge makes a claim contested in the current projection without changing its original statement or measurements.
+Citation-only and assumption statements have typed provenance but cannot masquerade as experimentally evaluated findings.
+
+Each generated variant, including an internal rejected proposal, gets a durable attempt ID through the tool service before evaluation.
+A code-capable worker must declare each candidate mutation; its isolated runner records candidate snapshots at execution boundaries.
+Counting unobservable private model deliberation is impossible; the contract counts observable proposals, tool executions, retries and dispatched variants, and documents that boundary.
+
+## Ports
+
+These are proposed domain interfaces, not vendor SDK signatures:
+
+```python
+class AgentBackend(Protocol):
+    async def run(
+        self, contract: WorkerContract, workspace: WorkerWorkspace, limits: Limits
+    ) -> WorkerReport: ...
+
+class Evaluator(Protocol):
+    def evaluate(self, request: EvaluationRequest) -> EvaluationVerdict: ...
+
+class ResearchRepository(Protocol):
+    def reserve_and_dispatch(self, assignment: Assignment) -> DispatchRecord: ...
+    def import_report(self, report: WorkerReport) -> ImportReceipt: ...
+    def append_verdict(self, verdict: EvaluationVerdict) -> None: ...
+    def promote_claim(self, evidence: PromotionEvidence) -> Claim: ...
+    def reconcile(self, observations: RecoveryObservations) -> RecoveryPlan: ...
+```
+
+The evaluator interface executes in a coordinator-launched subprocess using an explicit JSON request/response protocol.
+It cannot be called as a worker tool; the coordinator selects evaluator identity from the registration, never from report text.
+The coordinator validates request and response schemas, process return status, output limits and hashes.
+Backend exceptions become technical outcomes with saved diagnostic artifacts; no exception path invents a successful report.
+
+## Worker tools and backend equivalence
+
+One MCP server implementation exposes the same run-scoped Python service functions to every backend.
+With stdio there is a separate instance per worker connection; this is not a shared database-writing server or a web service.
+It receives a frozen context bundle and capability scope, not a database connection or evaluator-side paths.
+The fake backend invokes those same functions directly; transport parity is tested separately from model behavior.
+
+| Tool | Behavior |
+|---|---|
+| `read_contract()` | Return the assigned public contract and versions. Assignment is bound at startup, not selected by caller-supplied project ID. |
+| `read_findings(ids)` | Read allowlisted, visibility-filtered claims/challenges from the frozen bundle. Final-evaluation artifacts are never included. |
+| `read_artifact(id)` | Read an allowed input or own artifact by ID, with bounded bytes and provenance. No arbitrary filesystem or URL access. |
+| `register_variant(proposal)` | Append an outbox proposal with ID, parent, prediction, rationale and attempt accounting. Refuse local scope exhaustion. |
+| `write_artifact(relative_path, content)` | Atomically save bounded content under this run's outbox; return ID/hash. Reject overwrites and traversal. |
+| `submit_result(report)` | Validate and seal one structured report in the outbox. It proposes evidence; it does not modify the database or promote claims. |
+
+All tool outputs and source passages are untrusted data for instruction purposes.
+No generic shell, evaluator execution, SQL, uncontrolled retrieval, subprocess launch or new-agent tool is exposed in the default worker profile.
+The tool service rejects absolute/drive/UNC paths, `..`, symlinks, Windows junctions/reparse points and cross-run references.
+Use a newly created, exclusive workspace; OS isolation is still required if another actor can mutate paths during access.
+
+`fake`, `openai_agents`, and `claude_agent` implement the port; project config selects the default, with optional per-task overrides.
+Required SDKs are optional `[openai]` / `[claude]` extras; loading `fake` must not require either.
+Use explicit SDK instructions, schemas and local MCP configuration, with telemetry export disabled by default.
+The [primary SDK references](PRIOR-ART.md#primary-sdk-and-tool-documentation) govern implementation.
+In Claude, disabling builtin tools and rejecting unknown calls is essential: `allowed_tools` alone is insufficient.
+No SDK-native subagent scheduling is enabled behind the coordinator's budget ledger.
+Different providers may share a project; every run records the exact model and access route, without storing credentials.
+
+## Evaluator protection and information flow
+
+The threat model includes mistaken or adversarial **worker actions**, not a malicious project owner or compromised SDK/runtime.
+The coordinator, tool implementation, evaluator and launch policy form the trusted computing base.
+A worker with arbitrary host execution can defeat same-user filesystem separation; a separate subprocess, worktree, read-only Git file or virtual environment is not a sandbox.
+
+Default v0 workers manipulate **declarative candidates** through the restricted tool interface.
+The evaluator interprets a bounded validated data format; it never `eval`s, imports, unpickles or executes candidate code in its protected process.
+The worker cannot address evaluator storage through any exposed capability.
+Evaluator source/tests, trusted manifest, final dataset and final receipts reside outside worker workspaces and worker Git history.
+The coordinator verifies their hashes at preflight and immediately before use.
+
+For code-changing tasks, create a distinct Git branch/worktree **and** require a configured OS-enforced execution boundary.
+Candidate subprocesses get only their worktree and necessary public inputs; evaluator and database paths, host credentials and other workspaces are inaccessible.
+An evaluator that needs generated code runs that code in this separate restricted candidate process and measures its bounded output; it never loads the code into its own process.
+Preflight must actually probe forbidden reads/writes and process containment on Windows and Linux.
+Missing or unverified protection blocks that task; it must not silently fall back to a same-user shell.
+Use existing OS/container facilities with a small launcher policy, not a new general sandbox product.
+This required deployment prerequisite is checkpoint question A4.
+
+Pre-registration pins verdict **code**, not merely a prose goal or mutable configuration.
+Changing criteria, protecting tests or evaluator code requires a human decision record naming old/new hashes and reason; it creates a new registration/evaluator version and flags affected comparisons.
+CI compares protected manifests against its trusted base revision and decision history; changing a spec and hash together is rejected without the authorizing record.
+This protects against worker edits, not an owner rewriting Git/decision history.
+
+Information flows are typed: `worker_public`, `coordinator_only`, `evaluator_only`, `final_revealed`.
+Public context is constructed by allowlist, never by deleting a few sensitive keys from a full database dump.
+Log the exact application-supplied prompt, selected skills, tool outputs, SDK messages available to us, and hashes.
+Provider-internal prompts are not observable and must not be claimed as captured.
+Leak tests use private canary values and field provenance across recorded prompts, tool results, errors, summaries, and resumed history; a numeric substring scan alone is not proof of non-leakage.
+
+Development metrics may guide selection.
+Before `run --final`, freeze the chosen candidate and close that project campaign to new worker dispatch.
+Commit a one-use final attempt against the **project plus held-out dataset/split identity**, independent of candidate or evaluator version, before opening the split.
+A crash consumes the ticket; recovery can import the durable receipt, never open the split again automatically.
+Changed criteria do not reset the ticket.
+Independent final verification uses a second metric code path over the same sealed raw predictions **inside that one final attempt**; it does not request another final evaluation.
+The report can reveal final results after sealing; resume cannot feed them back into workers.
+A genuinely new research campaign must use a fresh held-out split and disclose the prior exposure.
+
+## Database schema and persistence
+
+SQLite uses `sqlite3`, WAL, foreign keys on every connection, a bounded busy timeout, parameterized statements and short explicit transactions.
+One coordinator writer holds an OS-backed project lock for its lifetime.
+Numbered SQL migrations have stored checksums; no destructive automatic migration of an existing toolkit database is proposed.
+The schema starts from its eight tables but uses integer USD micro-units instead of floating-point money.
+The following is the proposed schema inventory, not executable migrations.
+
+```mermaid
+erDiagram
+    PROJECT ||--o{ TASK : scopes
+    TASK ||--o{ CONTRACT_VERSION : versions
+    CONTRACT_VERSION ||--o{ RUN : preregisters
+    AGENT ||--o{ RUN : executes
+    RUN ||--o{ ATTEMPT : counts
+    RUN ||--o{ ARTIFACT : produces
+    RUN ||--o{ EVALUATION : checked_by
+    EVALUATION ||--o{ CLAIM_EVIDENCE : supports
+    CLAIM ||--|{ CLAIM_EVIDENCE : cites
+    CLAIM ||--o{ CHALLENGE : contested_by
+    CLAIM ||--o{ VERIFICATION : rechecked_by
+    BUDGET ||--o{ RESERVATION : allocates
+    RUN ||--o{ RESERVATION : consumes
+    CONTRACT_VERSION ||--o{ FINAL_ATTEMPT : authorizes
+    PROJECT ||--o{ DECISION : records
+    PROJECT ||--o{ EVENT : journals
+```
+
+| Table | Principal keys / columns / constraints |
+|---|---|
+| `project` | Singleton ID, public UUID, title, question, phase, revision, config hash, creation/update timestamps. |
+| `budgets` | Bucket PK, currency, cap/verified availability, spent/reserved integer micro-USD, overall deadline and attempt cap. Unknown pricing/availability prohibits paid dispatch. |
+| `tasks`, `task_dependencies` | Task PK, hypothesis, priority, state, fan-out group, current contract FK; dependency pair PK/FKs, cycle rejected in planning. |
+| `agents` | Agent PK, task, backend/provider/model, SDK/runtime versions, workspace/branch, session reference, heartbeat. No tokens or secrets. |
+| `contract_versions`, `predictions` | Registration PK, task FK, monotonic version, canonical JSON/hash, evaluator FK, creation event sequence, supersedes/reason/decision FK; unique task/version. Prediction PK, run FK, contract hash and committed-before-start event. Reject updates/deletes. |
+| `runs` | Run PK, task/agent/registration FKs, three separate status fields, deadline, process identity/launch nonce/host/start time, candidate and input references, code commit/dirty patch hash, seed, prompt/transcript refs, import/evaluation progress, timestamps/errors. |
+| `attempts` | Attempt PK, run/group, parent variant, type (`proposal`, `execution`, `retry`), sequence, seed, candidate hash, outcome and reason. Unique execution identity prevents recounting imports. |
+| `artifacts`, `sources` | Artifact PK, optional run FK, kind, relative object URI, SHA-256/size, visibility, provenance, source/license FK. Source PK, URL/version, license expression or explicit unknown, attribution and redistribution status. |
+| `evaluators`, `evaluations` | Evaluator PK/version/hash/protected-manifest FK; evaluation PK, run FK, input/candidate hashes, mode, raw artifact FK, metrics/units/interval JSON, control results and verdict/error. Unique evaluation request identity. Append-only. |
+| `claims`, `claim_evidence` | Claim PK, statement/tag/scope, supersedes FK, creation sequence; join PK, claim/evaluation/artifact FKs and metric pointer. A promoted experimental claim needs at least one checked evaluation. |
+| `challenges`, `challenge_resolutions`, `verifications` | Challenge PK and target claim FK, grounds/evidence; append-only resolution with decision/evaluation FKs; verification PK, claim FK, method/code path/context/input hashes and verdict. Current contested/verified state is derived. |
+| `reservations`, `cost_entries` | Reservation PK with unique run/bucket, conservative allowance and settlement state; append-only usage/cost entries with unique source-request key, measured/estimated/unknown basis, pricing version. No duplicate charges on report retry. |
+| `report_imports` | Report PK, run FK, payload hash and completion event. Same ID/hash is no-op; same ID/different hash is a conflict. One sealed report per run. |
+| `fanout_groups`, `pilot_gates`, `final_attempts` | Fan-out pattern/selection rule; pilot FK and checked evidence; final attempt PK with unique project/split identity and started/receipt state. No final ticket reset by config edits. |
+| `decisions`, `events`, `schema_migrations` | Retain versioned decisions and evidence; append-only events with monotonic sequence, UTC time, unique external key and payload hash; migration number/checksum. Events carry canonical changed records needed for JSONL review. |
+
+Immutable evidence, registrations, predictions, events and costs reject UPDATE/DELETE at repository and SQL-trigger boundaries.
+Mutable run/task projections change only through validated state transitions accompanied by append-only events.
+Repository methods, foreign keys and promotion transactions enforce cross-table rules that ordinary CHECK constraints cannot express.
+No worker or MCP server receives a SQLite write handle.
+
+### Import and artifact durability
+
+The worker seals `runs/<run_id>/outbox/report.json` atomically after its artifacts.
+The coordinator validates IDs, scope, quotas and contract hashes, then copies regular files into a coordinator-owned content-addressed store.
+Hash the copied bytes, read/validate their contents and make the sealed copies the evidence; never evaluate a worker-mutable path.
+Conflicting hashes, incomplete files and cross-workspace paths quarantine the report with a visible failure event.
+
+After file staging, one transaction inserts the import receipt, artifacts, attempts, usage and run transition.
+An exact duplicate changes neither rows, revision, timestamps, events nor cost.
+Evaluation and verification are durable later stages with their own unique request IDs; a receipt does not imply scientific acceptance.
+A crash after copying can leave unreferenced objects; a crash after import resumes evaluation rather than importing twice.
+Cleanup is explicit and only after active work is reconciled.
+
+## Scheduler, limits and recovery
+
+One asyncio scheduler owns a bounded worker pool; default maximum four, configurable downward by available budget.
+Use a stable priority/dependency queue and a bounded evaluator pool as well; no unlimited subprocess fan-out.
+Each worker is a supervised adapter child process with its own workspace/outbox and an explicit working directory.
+The parent owns deadlines, process identity, durable dispatch and budget accounting.
+
+Dispatch sequence: validate registration/prediction and policy → check pilot/dependencies → reserve budget and attempt → persist launch intent → create workspace/process → persist identity → collect outbox → import → evaluate → independently check promoted evidence → settle cost → choose next bounded unit.
+A launch nonce written durably before spawn reconciles a crash between process creation and recording its PID.
+No new batch begins while unresolved dispatch identities or costs could violate limits.
+
+| Pattern | Policy and retained evidence |
+|---|---|
+| Ideation | Propose independently, rank with a fixed rubric, record reasons for killing ideas before compute. Ranking may use LLM advice, explicitly non-authoritative for scientific validity. |
+| Independent hypotheses | Separate contracts, predictions and workspaces; common baselines and dependency constraints. |
+| Best-of-N | Same locked contract, different variant IDs/seeds; record all N, rejected variants, keep margin and selection-adjusted uncertainty. Winner chosen on development data. |
+| Independent re-check | Fresh context and a recorded separate code path, implementation or fresh permitted data. Supply claim/evidence and check criterion without the original worker's persuasive narrative. A second model alone is insufficient. |
+
+A pilot gate requires a complete small run, known good/bad control behavior, baseline, non-degenerate target, artifact integrity and measured or conservatively bounded cost.
+Only the coordinator can open the corresponding fan-out gate; failed or missing checks block it.
+Negative findings with a working evaluator do not trigger repair loops.
+The same technical failure gets at most two targeted repair attempts before the project records a diagnosis and waits for a scope/environment decision.
+
+Reservations are atomic across all workers, retries, evaluator/candidate compute and independent checks.
+Use `spent + reserved + new upper bound <= cap`, plus project time and attempt limits, before dispatch and before each paid request.
+Adapters reserve bounded input/output/tool charges against a versioned price sheet; unknown or unbounded paid services are refused.
+Use SDK token/turn/budget controls as secondary checks, not the shared ledger.
+An interrupted call with unknown usage keeps its worst-case reservation; do not refund it as zero.
+Reconcile provider-reported cost or explicit estimates later, retaining the basis and discrepancies.
+Local admission limits cannot promise that delayed third-party invoices never exceed an estimate; checkpoint B must choose a priceable model, headroom and an enforceable call envelope.
+No API key means no live test; a key alone never authorizes spending.
+
+Timeout/cancellation first requests graceful shutdown, then terminates the entire registered process tree after a fixed grace period.
+On Linux use a process group; on Windows use a kill-on-close Job Object, with a containment test before allowing generated subprocesses.
+An asyncio timeout alone is not process termination.
+Never release a reservation merely because cancellation was requested.
+
+`resume` obtains the project lock and reconciles every nonterminal run before dispatch:
+match host, PID **and creation identity/nonce**, consult durable supervisor/outbox receipts, import completed reports idempotently, and mark proven-dead workers interrupted.
+Unknown liveness retains reservation and blocks replacement; do not kill an unrelated reused PID.
+Completed runs never restart automatically; retry is a new run/attempt with an explicit link.
+A final ticket remains consumed after interruption.
+
+## Reports, grounding and export
+
+`report` renders Markdown and static HTML from one database revision, ordered by stable IDs/sequence.
+Each statement carries its provenance tag; experimental numbers use `(evaluation_id, metric_pointer, unit, format)` bindings and evidence links.
+Quote checks compare exact substrings of the hashed source, with source offsets; schema failures and retries remain in denominators.
+Free-form LLM prose is supplementary, validated or rejected; it cannot supply an unbound headline number.
+The report displays baselines, all attempt counts, intervals, selection protocol, limits and unresolved challenges.
+CI regenerates the committed example report from its saved evidence and fails on a diff; deterministic formatting is not a new scientific rerun.
+
+`export` appends canonical event envelopes to JSONL using the database's monotonic sequence as its cursor.
+Each envelope contains schema version, event ID, record type/ID, canonical record payload, artifact references and a chained hash.
+Verify the existing export prefix against the database before appending; no new events means no byte changes.
+An interrupted final line is a diagnosed incomplete export, repaired only from its verified prefix.
+Mutable projections export as new transition events, never overwritten lines.
+Export preserves complete approved evidence manifests and portable relative paths; artifact bytes remain separate committed files or durable hash-addressed references.
+The JSONL is a reviewable derivative; it is not a second writable source of truth.
+Evaluator-only content is excluded from public export until final release policy allows it; withheld items retain an explicit manifest and reason.
+
+## Skills, guide and command surface
+
+| Portable skill | Small responsibility |
+|---|---|
+| `research-loop` | Scientist/engineer intake → available material → scoped first contract. No personal profile or event logistics. |
+| `bounded-iteration` | Prediction, falsifier, cheapest informative action, execution and next step. |
+| `evidence-gate` | Inspect artifact, hash, evaluator verdict, provenance and promotion readiness. |
+| `challenge` | Record contradictory evidence and a linked resolution without rewriting history. |
+| `parallel-fanout` | Choose a pattern, dependencies, isolation, pilot and shared budget. |
+| `handoff-report` | Generate evidence-linked findings, limits, reproducible commands and next steps. |
+| `self-assess` | Adapt the credited event rubric; check claims against this repository and actual licenses. |
+
+Use standard `skills/<name>/SKILL.md`, short bodies and references to domain docs.
+The installer links into `~/.agents/skills` and `~/.claude/skills`, using directory junctions when appropriate on Windows.
+It must detect existing different targets and refuse to overwrite them; explicit text injection is a usable alternative.
+Hash the injected skill bundle and references in each run.
+The existing personal `research-loop` name is a known collision; A6 proposes a namespaced install alias without renaming the source skill.
+
+Planned CLI: `init`, `plan`, `run`, `status`, `resume`, `report`, `export`, plus `self-assess` as the runtime entry point for its skill.
+`run --final` owns the one-use hold-out gate; protected-spec authorization is an explicit human decision import, never a worker action.
+`docs/GUIDE.md` will show a scientist/engineer path from question to contract, one complete pilot, bounded investigation, independent check, report and publication.
+Target first setup within an hour with the example; measure that claim only after a fresh-clone exercise.
+Offline default has a zero external-spend policy.
+Linux and Windows CI will cover ordinary directories, paths with spaces/non-ASCII, traversal/junction rejection, worktrees, subprocess cleanup and restart.
+
+## Recommended first example
+
+Use `examples/planted-signal`: recover a small nonlinear signal from synthetic integer-valued features, using a bounded expression-tree candidate format.
+It has a known oracle, no external data license or GPU prerequisite, and no need to execute worker-supplied code.
+This is a **simulated engineering demonstration**, not discovery of an open scientific result.
+
+Proposal: four features sampled independently from integers -2 through 2; hidden response `2*x0 - 3*x2 + x1*x3`.
+Use 64 training cases, 64 development cases and 128 sealed final cases, generated from separate recorded seeds; only evaluator-side storage contains the final seed/labels.
+Candidate JSON allows constants, feature references and bounded add/subtract/multiply nodes (maximum depth 4, 31 nodes); no executable strings.
+Pre-register MSE, exact per-example agreement, a minimum 99% MSE reduction against the training-mean baseline, and a final MSE tolerance of `1e-12`.
+An all-zero candidate is a negative control; the oracle is a protected evaluator self-test positive control.
+The pilot must verify nonconstant targets and a nonzero baseline error.
+
+Compare agent proposals with an equally bounded seeded random-expression search, logging every sampled variant.
+Allow at most 32 executed variants per search arm, across a fixed list of three search seeds; select on development data and report per-seed results and paired bootstrap intervals over development examples.
+Intervals describe this simulated comparison, not a guarantee of adaptive-search generalization.
+Final selection is one frozen candidate from the predeclared development rule; final per-example outputs and a separate exact-arithmetic checker run within the single final attempt.
+The fake adapter has a deterministic proposal sequence containing a wrong candidate and the oracle, so the offline path exercises negative and positive outcomes.
+Real adapters receive exactly the same public contract/tool schema; their results need not be scientifically positive to satisfy runner correctness.
+
+Alternative: reproduce an analytic quadrature result with rational candidates; simpler, but a weak demonstration of data separation and selection.
+A noisy regression example would require more statistical choices and dependencies before it could be a useful first proof.
+All numeric settings above are proposed demonstration parameters; they are not measured findings or approved scientific thresholds.
+
+## Architecture decisions and alternatives
+
+| ADR | Recommendation | Alternative and consequence |
+|---|---|---|
+| 01 — State | SQLite index plus immutable artifacts and append-only review export. | Files-only simplifies inspection but does not meet transactional reservation/import requirements; Postgres adds operational cost without a present need. |
+| 02 — Orchestration | A small coordinator and stdlib asyncio pool. | Adopting a harness duplicates state or makes its experiment model authoritative; SDK-native multi-agent scheduling hides global accounting. |
+| 03 — Worker capabilities | Restricted MCP tools and declarative example by default; protected execution prerequisite for code changes. | A same-user shell is convenient but cannot satisfy evaluator/held-out isolation. No claim that a worktree fixes this. |
+| 04 — Evaluation | Protected plain-code evaluator plus explicit independent recomputation. | LLM judging alone cannot be the authority; rerunning identical code only demonstrates repeatability. |
+| 05 — Imports | Content staging plus atomic import receipt; evaluation is a separate durable stage. | Generic upserts change history and duplicate costs; one transaction spanning files/processes is not available. |
+| 06 — MCP | Local stdio instances of one implementation; same functions for fake. | A single multiplexed network daemon adds service/auth lifecycle and conflicts with the small local design. |
+| 07 — SDK baseline | Pin current compatible versions; inject skills explicitly for the default workers. | Old remembered APIs or ambient user settings undermine reproducibility. Native loading remains an explicit opt-in. |
+| 08 — Scope | Required fake and two SDK adapters first; optional headless CLI adapters later. | Implementing five backends before proving the evidence boundary spreads effort without improving the first end-to-end proof. |
+| 09 — Acceptance | Keep scientific, execution, verification and promotion states separate. | One success flag loses negative results, evaluator errors, challenges and incomplete verification. |
+| 10 — Human authority | Owner confirms A; B controls first paid run; C controls publication. | Source-repository prompts, environment credentials and headless silence confer none of these decisions. |
+
+No section-4 constraint is silently waived.
+The OS boundary for code-changing tasks and conservative spending enforcement are explicit qualifications requiring review at A/B.
+An optional CLI backend may be deferred without weakening the required two SDK backends.
+
+## Checkpoint A — all open decisions
+
+No answer was assumed during this headless run.
+These are the complete owner decisions proposed for A; ordinary implementation details above are recommendations within the design.
+
+| ID | Question | Recommendation |
+|---|---|---|
+| A1 | Approve this architecture and integrity model? | Accept the small coordinator, SQLite/outbox import, protected evaluator, MCP tools, distinct scientific states, final ticket, and evidence-derived report/export. Keep all section-4 constraints. |
+| A2 | What final name should we use? | Keep `open-research-loops` / `research-loops` / `research_loops` / `rloop`. Registry, organization and trademark availability have not been established; verify before publishing. |
+| A3 | Which end-to-end problem should be built? | The proposed planted nonlinear signal, with the locked split, controls, baselines and bounded expression candidates above. |
+| A4 | Accept the execution prerequisite for code-changing workers? | Default to MCP-only declarative workers. Require a verified OS boundary for arbitrary candidate code and fail closed when it is missing; do not advertise bare worktrees as isolation. No general sandbox platform in v0. |
+| A5 | Should optional Codex/Claude CLI adapters enter the first delivery? | Defer both until fake and both required SDK adapters share the evidence/limit contract tests; the ports leave room for them. |
+| A6 | How should installation handle the existing personal `research-loop` skill? | Keep source names portable, offer a namespaced installed alias such as `rloop-research-loop`, and refuse overwriting the personal skill. Explicit SDK injection needs no personal install. |
+
+Deferred to B: provider, exact accessible model, USD cap, price/charge envelope and headroom before any real request.
+Deferred to C: owner/name availability, license confirmation, and the exact public evidence/artifact set.
+They are unresolved by design and do not authorize action now.
+
+Phase 0 verification covers source inventory, all thirteen assessment mappings, primary SDK/registry review, dependency metadata resolution, and documentation consistency.
+No runtime tests, real provider calls, isolation probes or scientific experiments have been performed.
+After A approval, the next three steps are Phase 1 scaffolding/lock/CI, Phase 2 offline core and integrity tests, then Phase 3 MCP and the two SDK adapters before checkpoint B.
