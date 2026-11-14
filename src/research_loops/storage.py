@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -92,6 +93,9 @@ class Repository:
             self.db.execute("UPDATE project SET deadline=?,reserved_micro_usd=reserved_micro_usd+?", (deadline, reserve_micro_usd))
             self.db.execute("INSERT INTO runs(id,registration_hash,assignment,execution_status,prediction,created,reserved_micro_usd) VALUES(?,?,?,'running',?,?,?)", (assignment.run_id, assignment.registration_hash, canonical(assignment), assignment.prediction, now(), reserve_micro_usd))
             self.event("dispatch", assignment.run_id, assignment.model_dump(mode="json"))
+            folder = Path(__file__).parent
+            self.event("runtime", assignment.run_id, {"framework": "0.1.0", "python": sys.version.split()[0],
+                "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
 
     def import_report(self, report: WorkerReport, outbox: Workspace) -> bool:
         row = self.db.execute("SELECT * FROM runs WHERE id=?", (report.run_id,)).fetchone()
@@ -103,9 +107,13 @@ class Repository:
             if row["report_hash"] != checksum:
                 raise IntegrityError("conflicting duplicate report")
             return False
+        assignment = json.loads(row["assignment"])
+        if report.seed != assignment["seed"]:
+            raise IntegrityError("report seed differs from registration")
         if row["execution_status"] != "running":
             raise IntegrityError("run is not importing")
         staged = []
+        candidate_value = None
         for kind, artifact in (("candidate", report.candidate), ("transcript", report.transcript)):
             path = confined(outbox.root, artifact.path)
             if not path.is_file() or path.stat().st_size > 1_000_000:
@@ -114,9 +122,14 @@ class Repository:
             if digest(data) != artifact.sha256 or len(data) != artifact.size:
                 raise IntegrityError("evidence hash mismatch")
             if kind == "candidate":
-                validate_candidate(json.loads(data))
-            if kind == "transcript" and digest(json.loads(data)["prompt"].encode()) != report.prompt_hash:
-                raise IntegrityError("prompt hash mismatch")
+                candidate_value = json.loads(data)
+                validate_candidate(candidate_value)
+            if kind == "transcript":
+                transcript = json.loads(data)
+                if (digest(transcript["prompt"].encode()) != report.prompt_hash
+                    or json.loads(transcript["prompt"]) != assignment
+                    or transcript["response"] != candidate_value):
+                    raise IntegrityError("prompt/transcript differs from assigned public context or candidate")
             target = self.root / "objects" / artifact.sha256
             if not target.exists():
                 atomic_write(target, data, exclusive=True)
@@ -139,11 +152,19 @@ class Repository:
         return data
 
     def verdict(self, run_id: str, value: Verdict) -> None:
+        raw = canonical(value).encode()
+        checksum = digest(raw)
+        target = self.root / "objects" / checksum
+        if not target.exists():
+            atomic_write(target, raw, exclusive=True)
+        elif digest(target.read_bytes()) != checksum:
+            raise IntegrityError("raw evaluation object corrupt")
         with self.db:
             row = self.db.execute("SELECT report_hash,verdict FROM runs WHERE id=?", (run_id,)).fetchone()
             if not row or not row[0] or row[1]:
                 raise IntegrityError("verdict requires imported, unevaluated run")
             self.db.execute("UPDATE runs SET execution_status='completed',scientific_outcome=?,verification_status='checked',verdict=? WHERE id=?", ("supported" if value.supported else "negative", canonical(value), run_id))
+            self.db.execute("INSERT INTO artifacts VALUES(?,?,?,?,?)", (f"{run_id}:evaluation", run_id, "evaluation", checksum, len(raw)))
             self.event("verdict", run_id, value.model_dump(mode="json"))
             self._settle(run_id)
 

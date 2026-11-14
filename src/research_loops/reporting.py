@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, canonical, content_hash
+from research_loops.grounding import number
 from research_loops.paths import atomic_write
 from research_loops.storage import Repository
 
@@ -15,8 +16,30 @@ def render(repo: Repository) -> str:
     for row in repo.runs():
         verdict = json.loads(row["verdict"]) if row["verdict"] else None
         score = format(verdict["mse"], ".12g") if verdict else "unavailable"
-        lines.append(f"| {row['id']} | {row['execution_status']} | {row['scientific_outcome'] or 'unevaluated'} | {row['verification_status']} | {score} |")
-    lines += ["", f"[simulated] Attempted variants: {len(repo.runs())}.", "[measured] External model cost: USD 0 (offline fake only).", ""]
+        if verdict:
+            number(verdict["mse"], score)
+        evidence = f"[evidence](objects/{content_hash(verdict)})" if verdict else "none"
+        lines.append(f"| {row['id']} | {row['execution_status']} | {row['scientific_outcome'] or 'unevaluated'} | {row['verification_status']} | {score} ({evidence}) |")
+    state = repo.db.execute("SELECT * FROM project").fetchone()
+    lines += ["", f"[simulated] Attempted variants: {len(repo.runs())}.",
+        f"[measured] Control/final evaluation starts: {state['control_attempts']}.",
+        f"[measured] External model cost: USD {state['spent_micro_usd'] / 1_000_000:.6f} (offline fake only).",
+        f"[measured] Reserved micro-USD: {state['reserved_micro_usd']}.", "[cited] Synthetic dataset license: CC0-1.0."]
+    selection = json.loads(state["selection"]) if state["selection"] else None
+    if selection:
+        lines += ["", "[simulated] Selection: " + selection["winner"] + ".",
+            "[assumed] Registered seeds: " + canonical(selection["seeds"]) + "; keep margin: " + format(selection["keep_margin"], ".12g") + ".",
+            "[simulated] Paired bootstrap development MSE improvement interval: " + canonical(selection["paired_improvement_interval"]) + ".",
+            "[interpretation] " + selection["limitation"]]
+    ticket = json.loads(state["final_ticket"]) if state["final_ticket"] else None
+    if ticket:
+        lines += ["", "[measured] Final ticket: " + ticket["state"] + "; campaign sealed."]
+        if "verdict" in ticket:
+            lines += ["[simulated] Final MSE: " + format(ticket["verdict"]["mse"], ".12g") + "."]
+    for row in repo.db.execute("SELECT * FROM challenges ORDER BY id"):
+        resolved = repo.db.execute("SELECT 1 FROM events WHERE kind='challenge_resolution' AND record_id=?", (row["id"],)).fetchone()
+        lines.append(f"[interpretation] Challenge {row['id']} to {row['claim_id']}: {'resolved' if resolved else 'contested'}; {row['grounds']}")
+    lines.append("")
     return "\n".join(lines)
 
 
