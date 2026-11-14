@@ -108,6 +108,7 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
                 continue
         verdict = evaluate_saved(repo.root, row["id"], repo.artifact(row["id"], "candidate"), private(repo, key, "development"), contract.limits.evaluator_seconds)
         repo.verdict(row["id"], verdict)
+        repo.promote_claim(row["id"])
 
 
 async def run(example: Path, *, final: bool = False, resume_only: bool = False, backend=None) -> None:
@@ -120,10 +121,12 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
             if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
                 raise IntegrityError("campaign sealed; no more worker dispatch")
             await campaign(repo, contract, key, backend or FakeBackend())
-        report(repo)
-        export(repo)
     finally:
-        repo.close()
+        try:
+            report(repo)
+            export(repo)
+        finally:
+            repo.close()
 
 
 async def campaign(repo: Repository, contract: Contract, key: str, backend) -> None:
@@ -157,6 +160,7 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend) -> N
             candidate, dataset = repo.artifact(assignment.run_id, "candidate"), private(repo, key, "development")
             verdict = await asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds))
             repo.verdict(assignment.run_id, verdict)
+            repo.promote_claim(assignment.run_id)
         except (asyncio.TimeoutError, asyncio.CancelledError):
             repo.fail(assignment.run_id, "timed_out", "worker deadline or batch cancellation")
             raise
@@ -172,5 +176,7 @@ def final_evaluation(repo: Repository, contract: Contract, key: str) -> None:
     from research_loops.selection import select
     selection = select(repo, contract, key)
     ticket = repo.consume_final(selection["winner"])
-    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), contract.limits.evaluator_seconds)
+    deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
+    seconds = min(contract.limits.evaluator_seconds, max(0.001, deadline - time.time()))
+    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds)
     repo.final_result(ticket, verdict)

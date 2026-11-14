@@ -175,9 +175,11 @@ class Repository:
         with self.db:
             state = self.db.execute("SELECT * FROM project").fetchone()
             count = self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"]
-            if count >= state["max_attempts"] or (state["deadline"] and time.time() >= state["deadline"]):
+            registration = json.loads(self.db.execute("SELECT payload FROM registrations WHERE hash=?", (state["current_registration"],)).fetchone()[0])
+            deadline = state["deadline"] or time.time() + registration["limits"]["project_seconds"]
+            if count >= state["max_attempts"] or time.time() >= deadline:
                 raise IntegrityError("control attempt/time allowance exhausted")
-            self.db.execute("UPDATE project SET control_attempts=control_attempts+1")
+            self.db.execute("UPDATE project SET control_attempts=control_attempts+1,deadline=?", (deadline,))
             self.event("control_start", str(count + 1), {"counted": True})
 
     def require_pilot(self) -> None:
@@ -189,6 +191,9 @@ class Repository:
             state = self.db.execute("SELECT * FROM project").fetchone()
             if state["final_ticket"]:
                 raise IntegrityError("final split already consumed (including interrupted attempts)")
+            count = self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"]
+            if count >= state["max_attempts"] or (state["deadline"] and time.time() >= state["deadline"]):
+                raise IntegrityError("final attempt/time allowance exhausted")
             if self.db.execute("SELECT 1 FROM runs WHERE execution_status='running'").fetchone():
                 raise IntegrityError("reconcile running workers before final")
             row = self.db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
@@ -196,7 +201,7 @@ class Repository:
                 raise IntegrityError("final candidate must be a checked current result")
             inputs = json.loads(self.db.execute("SELECT inputs FROM registrations WHERE hash=?", (state["current_registration"],)).fetchone()[0])
             ticket = {"run_id": run_id, "split_hash": inputs["final"], "state": "started"}
-            self.db.execute("UPDATE project SET final_ticket=?", (canonical(ticket),))
+            self.db.execute("UPDATE project SET final_ticket=?,control_attempts=control_attempts+1", (canonical(ticket),))
             self.event("final_started", run_id, ticket)
         return ticket
 
@@ -211,3 +216,32 @@ class Repository:
 
     def runs(self) -> list[dict]:
         return [dict(row) for row in self.db.execute("SELECT * FROM runs ORDER BY id")]
+
+    def promote_claim(self, run_id: str) -> str:
+        row = self.db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
+        if not row or row["execution_status"] != "completed" or row["verification_status"] != "checked" or not row["verdict"]:
+            raise IntegrityError("claim promotion requires checked evaluator evidence")
+        self.artifact(run_id, "candidate")
+        key = f"claim:{run_id}"
+        if not self.db.execute("SELECT 1 FROM claims WHERE id=?", (key,)).fetchone():
+            payload = {"id": key, "run_id": run_id, "statement": "Candidate development error on synthetic data.", "tag": "simulated", "metric": "mse"}
+            with self.db:
+                self.db.execute("INSERT INTO claims(id,run_id,statement,tag,metric) VALUES(?,?,?,?,?)", tuple(payload.values()))
+                self.event("claim", key, payload)
+        return key
+
+    def challenge(self, challenge_id: str, claim_id: str, evidence_run: str, grounds: str) -> None:
+        if not grounds.strip():
+            raise IntegrityError("challenge grounds required")
+        row = self.db.execute("SELECT verdict FROM runs WHERE id=?", (evidence_run,)).fetchone()
+        if not row or not row[0]:
+            raise IntegrityError("challenge evidence must exist")
+        with self.db:
+            self.db.execute("INSERT INTO challenges VALUES(?,?,?,?)", (challenge_id, claim_id, evidence_run, grounds))
+            self.event("challenge", challenge_id, {"claim_id": claim_id, "evidence_run": evidence_run, "grounds": grounds})
+
+    def resolve_challenge(self, challenge_id: str, decision: str) -> None:
+        if not self.db.execute("SELECT 1 FROM challenges WHERE id=?", (challenge_id,)).fetchone() or not decision.strip():
+            raise IntegrityError("existing challenge and decision required")
+        with self.db:
+            self.event("challenge_resolution", challenge_id, {"decision": decision})
