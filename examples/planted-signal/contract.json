@@ -1,0 +1,6 @@
+{
+  "name": "planted-signal",
+  "goal": "Recover a nonlinear signal with a bounded expression tree; simulated engineering demonstration.",
+  "falsifier": "Final MSE exceeds 1e-12, improvement is below 99%, or a control fails.",
+  "prediction": "The deterministic oracle proposal matches the signal; the wrong candidate fails."
+}
