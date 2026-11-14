@@ -15,7 +15,7 @@ from research_loops.grounding import public_context
 from research_loops.paths import atomic_write
 from research_loops.processes import process_identity
 from research_loops.reporting import export, report
-from research_loops.scheduler import bounded
+from research_loops.scheduler import fanout
 from research_loops.storage import Repository
 
 
@@ -187,7 +187,9 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend) -> N
         except Exception as exc:
             repo.fail(assignment.run_id, "technical_error", f"{type(exc).__name__}: {exc}")
             raise
-    await bounded([item for item in assignments if item.run_id not in existing], execute, contract.limits.concurrency)
+    pending = [item for item in assignments if item.run_id not in existing]
+    if pending:
+        await fanout("best_of_n", pending, execute, contract.limits.concurrency, pilot_ready=True)
     from research_loops.selection import select
     select(repo, contract, key)
 
