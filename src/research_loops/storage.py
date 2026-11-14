@@ -119,6 +119,8 @@ class Repository:
             if row["report_hash"] != checksum:
                 raise IntegrityError("conflicting duplicate report")
             return False
+        if report.backend != "fake" or report.provider != "offline" or report.cost_micro_usd != 0:
+            raise IntegrityError("only zero-cost offline fake reports are authorized in Phase 2")
         assignment = json.loads(row["assignment"])
         if report.seed != assignment["seed"]:
             raise IntegrityError("report seed differs from registration")

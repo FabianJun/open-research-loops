@@ -79,10 +79,11 @@ class WorkerReport(Message):
     prompt_hash: str
     transcript: Artifact
     seed: int
-    backend: Literal["fake"] = "fake"
-    provider: Literal["offline"] = "offline"
-    model: Literal["deterministic-v1"] = "deterministic-v1"
-    cost_micro_usd: Literal[0] = 0
+    backend: str = Field(default="fake", min_length=1)
+    provider: str = Field(default="offline", min_length=1)
+    model: str = Field(default="deterministic-v1", min_length=1)
+    sdk_version: str | None = None
+    cost_micro_usd: int = Field(default=0, ge=0)
 
 
 class Verdict(Message):

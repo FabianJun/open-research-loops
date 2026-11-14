@@ -47,6 +47,8 @@ def test_import_is_true_noop_and_seals_evidence(example):
         task = assignment(repo, key)
         repo.dispatch(task)
         result = asyncio.run(FakeBackend().run(task, work, Limits()))
+        with pytest.raises(IntegrityError, match="authorized"):
+            repo.import_report(result.model_copy(update={"backend": "other", "provider": "unfunded", "cost_micro_usd": 1}), work)
         repo.import_report(result, work)
         before = list(repo.db.iterdump())
         os.utime(work.root / "candidate.json", (1, 1))
