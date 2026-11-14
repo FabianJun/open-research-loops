@@ -1,0 +1,277 @@
+{
+  "review_date": "2026-11-14",
+  "scope": "Phase 0 only; no source repository code executed",
+  "toolkit": [
+    {
+      "path": "docs/WORKFLOW.md",
+      "sha256": "79da30a0df437de57d3ae1783f4b1c9f5ee805ca7c8ce29e0b22b0edad981e27"
+    },
+    {
+      "path": "skills/research-loop/SKILL.md",
+      "sha256": "31f203e20647c980a99e2e8647f93a87addb678f9fd8f09a99306537b74495ca"
+    },
+    {
+      "path": "skills/research-loop/assets/schema.sql",
+      "sha256": "5c9006200eaa86b90604e5b7e9cd8c36ca0b7163b1846c3fb9a03aaf412a86f5"
+    },
+    {
+      "path": "skills/research-loop/scripts/workspace.py",
+      "sha256": "169ab3cee6cb0f147973d4b7c2ac689dff5343b4cad46957a0188affbda96de4"
+    },
+    {
+      "path": "skills/research-loop/references/iteration.md",
+      "sha256": "9d32128d7354d1c4b8cc15938813235e3295f4d8c4665f1dc3e8f4feae64bc27"
+    },
+    {
+      "path": "skills/research-loop/references/evidence.md",
+      "sha256": "fc2d6d89f4888de3a405137f990ee0ba6347398cdc07bf0571b576fc86ab35c4"
+    },
+    {
+      "path": "skills/research-loop/references/execution.md",
+      "sha256": "13c660d31c67b95a82a434a9610a76f76e3819af4aed229e027300f0c9635d64"
+    },
+    {
+      "path": "skills/research-loop/references/state.md",
+      "sha256": "9df64e2b88bff9aff9656e4ee9142cbe844ceac20eca434567c596238a7aee17"
+    },
+    {
+      "path": "skills/research-loop/references/validation.md",
+      "sha256": "514f8cac3831122e02079efabce57beb6349aecb42d49d8537fc1dd3846ea70d"
+    },
+    {
+      "path": "skills/research-loop/references/harnesses.md",
+      "sha256": "5ab4c7319fa6ebb6180c4a12ec1e841f570598edeb5f6967550b85c25a31769e"
+    },
+    {
+      "path": "skills/research-loop/references/models.md",
+      "sha256": "92b76c3094107e7862f48803b59fe21969a4c4ce2889404f871dd6fe1c94dc5b"
+    },
+    {
+      "path": "skills/research-loop/references/interview.md",
+      "sha256": "5b04be7a0448fa2dc7faaf348c6a8c6f320f6b8d220d83a3c40876868f3a3b6d"
+    },
+    {
+      "path": "skills/research-loop/references/runtime.md",
+      "sha256": "02ef82f1dcdb9444ea9ec1fc1a31c97cf0027174ca5973c3849ea256ce52eccb"
+    },
+    {
+      "path": "skills/research-loop/references/handoff.md",
+      "sha256": "1e18a29b7b03d2cdee44443a0ca5a816b18f6b10ef521c3882a57bc1b7d345a7"
+    },
+    {
+      "path": "skills/research-loop/references/external-repositories.md",
+      "sha256": "a974c3e8863982ebb36d7414075c12207a7bfbf40a450dfb2c7db31604e4f228"
+    },
+    {
+      "path": "skills/research-loop/references/sources.md",
+      "sha256": "80bf668299329a1f9215c9fe7769d01db6779b35c877a21c6607ed147e588ec7"
+    },
+    {
+      "path": "skills/research-loop/references/cockpit.md",
+      "sha256": "122f045450ffdf53d71cd79f886f90779605e3eb8324d66c3274447dd927f657"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "claude-impact-lab-2026",
+      "url": "https://github.com/xemantic/claude-impact-lab-2026",
+      "commit": "8d8a24a3215c8900906dd5d665f04d8abde6377e"
+    },
+    {
+      "name": "plenty-of-room",
+      "url": "https://github.com/xemantic/plenty-of-room",
+      "commit": "2fbb80f36c17cf39cfcc933b182861f219076b17"
+    },
+    {
+      "name": "cheiron",
+      "url": "https://github.com/xemantic/cheiron",
+      "commit": "c46238f8ed762a2977bb9bb0d38520dd91497901"
+    },
+    {
+      "name": "claude-plugins",
+      "url": "https://github.com/xemantic/claude-plugins",
+      "commit": "6c893dc492742b91d95315ae47fd5b9f85d8ee4b"
+    }
+  ],
+  "packages": [
+    {
+      "package": "openai-agents",
+      "version": "0.24.0",
+      "source": "https://pypi.org/pypi/openai-agents/0.24.0/json",
+      "project_urls": {
+        "Homepage": "https://openai.github.io/openai-agents-python/",
+        "Repository": "https://github.com/openai/openai-agents-python"
+      },
+      "license": null,
+      "license_expression": "MIT",
+      "mcp_constraints": [
+        "mcp<3,>=1.19.0; python_version >= \"3.10\""
+      ]
+    },
+    {
+      "package": "claude-agent-sdk",
+      "version": "0.2.182",
+      "source": "https://pypi.org/pypi/claude-agent-sdk/0.2.182/json",
+      "project_urls": {
+        "Documentation": "https://docs.anthropic.com/en/docs/claude-code/sdk",
+        "Homepage": "https://github.com/anthropics/claude-agent-sdk-python",
+        "Issues": "https://github.com/anthropics/claude-agent-sdk-python/issues"
+      },
+      "license": "MIT",
+      "license_expression": null,
+      "mcp_constraints": [
+        "mcp<3.0.0,>=1.23.0"
+      ]
+    },
+    {
+      "package": "mcp",
+      "version": "2.3.0",
+      "source": "https://pypi.org/pypi/mcp/2.3.0/json",
+      "project_urls": {
+        "Documentation": "https://py.sdk.modelcontextprotocol.io/",
+        "Homepage": "https://modelcontextprotocol.io",
+        "Issues": "https://github.com/modelcontextprotocol/python-sdk/issues",
+        "Repository": "https://github.com/modelcontextprotocol/python-sdk"
+      },
+      "license": "MIT",
+      "license_expression": null,
+      "mcp_constraints": [
+        "mcp-types==2.3.0"
+      ]
+    },
+    {
+      "package": "pydantic",
+      "version": "2.14.3",
+      "source": "https://pypi.org/pypi/pydantic/2.14.3/json",
+      "project_urls": {
+        "Changelog": "https://pydantic.dev/docs/validation/latest/get-started/changelog/",
+        "Documentation": "https://pydantic.dev/docs/validation/latest/get-started/",
+        "Funding": "https://github.com/sponsors/samuelcolvin",
+        "Homepage": "https://github.com/pydantic/pydantic",
+        "Source": "https://github.com/pydantic/pydantic"
+      },
+      "license": null,
+      "license_expression": "MIT",
+      "mcp_constraints": []
+    },
+    {
+      "package": "typer",
+      "version": "0.29.1",
+      "source": "https://pypi.org/pypi/typer/0.29.1/json",
+      "project_urls": {
+        "Changelog": "https://typer.tiangolo.com/release-notes/",
+        "Documentation": "https://typer.tiangolo.com",
+        "Homepage": "https://github.com/fastapi/typer",
+        "Issues": "https://github.com/fastapi/typer/issues",
+        "Repository": "https://github.com/fastapi/typer"
+      },
+      "license": null,
+      "license_expression": "MIT",
+      "mcp_constraints": []
+    },
+    {
+      "package": "pytest",
+      "version": "9.2.0",
+      "source": "https://pypi.org/pypi/pytest/9.2.0/json",
+      "project_urls": {
+        "Changelog": "https://docs.pytest.org/en/stable/changelog.html",
+        "Contact": "https://docs.pytest.org/en/stable/contact.html",
+        "Funding": "https://docs.pytest.org/en/stable/sponsor.html",
+        "Homepage": "https://docs.pytest.org/en/latest/",
+        "Source": "https://github.com/pytest-dev/pytest",
+        "Tracker": "https://github.com/pytest-dev/pytest/issues"
+      },
+      "license": null,
+      "license_expression": "MIT",
+      "mcp_constraints": []
+    },
+    {
+      "package": "openai-codex",
+      "version": "0.169.0",
+      "source": "https://pypi.org/pypi/openai-codex/0.169.0/json",
+      "project_urls": {
+        "Documentation": "https://github.com/openai/codex/tree/main/sdk/python/docs",
+        "Homepage": "https://github.com/openai/codex",
+        "Issues": "https://github.com/openai/codex/issues",
+        "Repository": "https://github.com/openai/codex"
+      },
+      "license": null,
+      "license_expression": "Apache-2.0",
+      "mcp_constraints": []
+    },
+    {
+      "package": "@openai/codex",
+      "version": "0.169.0",
+      "license": "Apache-2.0",
+      "source": "https://registry.npmjs.org/@openai/codex/latest"
+    },
+    {
+      "package": "@anthropic-ai/claude-code",
+      "version": "2.1.325",
+      "license": "SEE LICENSE IN README.md",
+      "source": "https://registry.npmjs.org/@anthropic-ai/claude-code/latest"
+    }
+  ],
+  "assessments": [
+    {
+      "path": "assessments/10-kaanom.md",
+      "sha256": "2ffa9a8a2b614481da6536d8af6b3e7128591b225e11c7f8725f0942bb6466a2"
+    },
+    {
+      "path": "assessments/11-metabolite-sensor-finder.md",
+      "sha256": "2375b42a8f11be76924913c3a9dfc2e6dfb6cbf276ec20685043e2d639390d1d"
+    },
+    {
+      "path": "assessments/12-science-resocialized.md",
+      "sha256": "25810d1e9459a5e58bf3a1aa2add0acde426261a95899a06b10d2ab106099fe1"
+    },
+    {
+      "path": "assessments/13-do-llms-argue-like-humans.md",
+      "sha256": "f392784e5b11b856ef5ee386eb1109621ded240945813c66476e25c3a58c18af"
+    },
+    {
+      "path": "assessments/15-llm-lying-detection.md",
+      "sha256": "eae8f1a13f6dcaed1856c08be6a3a76fbceb87ee973c1dbe727278b876ef361a"
+    },
+    {
+      "path": "assessments/16-predictive-lens.md",
+      "sha256": "b74c76f450e2428a04634816e3a52ad7b94827f47c8da890edc965ce1f077961"
+    },
+    {
+      "path": "assessments/3-chainsentinel.md",
+      "sha256": "67a1b80a4b714b47495d903d31a6189c49cbb64511c86896742e07760e31b57c"
+    },
+    {
+      "path": "assessments/4-plov.md",
+      "sha256": "ccc3a9ea3bf6e438ce45252467926add8d54e9df8b96036ec3634b6a514ba418"
+    },
+    {
+      "path": "assessments/5-micrograph.md",
+      "sha256": "2edcd8e35539fcc4d7318b2b11228fbdfa23b99c2398c73edef10028c0421df1"
+    },
+    {
+      "path": "assessments/6-meowlignment.md",
+      "sha256": "a47ee65fe0eb31ac5c85ae3763e1b9e23480ee533ccaf70e4cce29cc79659b3f"
+    },
+    {
+      "path": "assessments/7-baucode.md",
+      "sha256": "a6109731e017c58a0d9909caffa89e04f202b1838ec56a4c1b4232f02ce408ec"
+    },
+    {
+      "path": "assessments/8-shift-happens.md",
+      "sha256": "934fb8c270b7265feace427ce0ff55f198c0d1b300716b3233ed51861facf0a6"
+    },
+    {
+      "path": "assessments/9-dr-drerio.md",
+      "sha256": "b0213ba75768d966ac9c388b9e38e75f64d935fd3c8082997cf34239a2406916"
+    }
+  ],
+  "resolution": {
+    "tool": "uv 0.11.19",
+    "python_version": "3.12",
+    "universal": true,
+    "result": "success; metadata resolution only; no installation",
+    "input_sha256": "0dc77c1f082cf2ddaf76bcfefed86ec200c96c4f875a98d30ac74d07d6771f07",
+    "output_sha256": "8435501db428c3960b1addea6f481f82b6b452811590ed86fe449510164cc1dc"
+  }
+}
