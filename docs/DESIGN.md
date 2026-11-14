@@ -1,6 +1,6 @@
 # Internal design — checkpoint A approved
 
-Status: **Checkpoint A approved; Phase 1-2 authorized.** See [DECISIONS.md](DECISIONS.md) for the binding decisions and delivery scope.
+Status: **Checkpoint A approved; Phase 1-2 delivered. Phase 3 not started.** See [DECISIONS.md](DECISIONS.md) for the binding decisions and [PHASE-2-STATUS.md](PHASE-2-STATUS.md) for proof and limits.
 The start prompt is the mandate; [LESSONS.md](LESSONS.md) records evidence and [REQUIREMENTS.md](REQUIREMENTS.md) traces implementation obligations.
 This document describes the complete intended design; delivery status and verification are recorded separately. Unimplemented mechanisms are not claimed as working.
 Repository title `open-research-loops`, distribution `research-loops`, import `research_loops`, and CLI `rloop` are approved. Never depend on the unrelated PyPI `rloop` package.
@@ -71,7 +71,7 @@ Counting unobservable private model deliberation is impossible; the contract cou
 
 ## Ports
 
-These are proposed domain interfaces, not vendor SDK signatures:
+These are domain interfaces, not vendor SDK signatures. Phase 2 uses immutable JSON bytes at the single evaluator boundary; a richer request object can be introduced when multiple evaluator implementations need it.
 
 ```python
 class AgentBackend(Protocol):
@@ -80,17 +80,15 @@ class AgentBackend(Protocol):
     ) -> WorkerReport: ...
 
 class Evaluator(Protocol):
-    def evaluate(self, request: EvaluationRequest) -> EvaluationVerdict: ...
+    def evaluate(self, candidate: bytes, dataset: bytes, seconds: float) -> Verdict: ...
 
 class ResearchRepository(Protocol):
-    def reserve_and_dispatch(self, assignment: Assignment) -> DispatchRecord: ...
-    def import_report(self, report: WorkerReport) -> ImportReceipt: ...
-    def append_verdict(self, verdict: EvaluationVerdict) -> None: ...
-    def promote_claim(self, evidence: PromotionEvidence) -> Claim: ...
-    def reconcile(self, observations: RecoveryObservations) -> RecoveryPlan: ...
+    def register(self, contract: dict, evaluator_hash: str, inputs: dict) -> str: ...
+    def import_report(self, report: WorkerReport, outbox: Workspace) -> bool: ...
 ```
 
 The evaluator interface executes in a coordinator-launched subprocess using an explicit JSON request/response protocol.
+The concrete repository also owns dispatch/reservation, verdicts, claims/challenges and final tickets; recovery is coordinated above it.
 It cannot be called as a worker tool; the coordinator selects evaluator identity from the registration, never from report text.
 The coordinator validates request and response schemas, process return status, output limits and hashes.
 Backend exceptions become technical outcomes with saved diagnostic artifacts; no exception path invents a successful report.
@@ -337,6 +335,7 @@ The pilot must verify nonconstant targets and a nonzero baseline error.
 Compare agent proposals with an equally bounded seeded random-expression search, logging every sampled variant.
 Allow eight executed variants per search seed for seeds `[7, 13, 29]`, hence 24 per arm, including failed and abandoned executions.
 Log evaluator self-tests, pilot executions and retries separately and include them in the overall project allowance; a pilot that executes an arm's candidate also consumes that arm's allowance.
+The implemented default permits 51 execution starts: 48 proposals, two protected control evaluations and one final evaluation. The proposal-method source hash is pinned in the registration alongside the input hashes.
 Use a development-MSE keep margin of `1e-9`, stable candidate-hash tie breaking, and 1,000 paired bootstrap resamples with seed 42 for the development comparison.
 Report requested seeds and any provider inability to honor them; recording a seed is not proof of deterministic model sampling.
 These settings and the project deadline are locked in the example's registration before execution.
@@ -377,3 +376,19 @@ No section-4 constraint is waived. Checkpoint A is approved in [DECISIONS.md](DE
 B remains pending: provider, model, USD cap, price/charge envelope and headroom. C remains pending: owner/name, license confirmation and public files. No remote creation, push or provider spending is authorized.
 
 Phase-0 provenance and review limits remain in PRIOR-ART and phase0-sources.json. Current delivered behavior and exact verification belong in the session status record; this inventory does not claim every future feature exists.
+
+## Phase-2 implementation boundary
+
+Five incremental migrations create seven domain tables: project, registrations, runs, artifacts, events, claims and challenges. Migration bookkeeping adds the eighth table; SQLite also maintains its internal sequence table. Limits, pilot, selection and final ticket are fields on the singleton project; assignment/prediction/report/verdict live on runs. There are no speculative task/agent/source/reservation tables. Challenge resolutions and method records are append-only events.
+
+The fake backend calls the six tool services directly. Code execution is explicitly refused. MCP transport and both SDK adapters remain Phase 3; Sandbox none/container remains Phase 3b. The host-based evaluator is protected by capabilities and the absence of worker host execution; it is not an OS sandbox. Linux process groups and Windows kill-on-close Job Objects contain evaluator descendants.
+
+The scheduler exposes all four pattern policies with pre-dispatch checks: ideation, distinct independent hypotheses, best-of-N under one registration, and independent recheck requiring an explicit verification method. Evidence checks remain mandatory in the operation; a method name alone cannot mark a claim checked. The offline campaign composes these primitives with ideation/literature event helpers, best-of-N selection and an independent stack/rational checker. General multi-problem planning, mixed real backends, a generic dependency graph and interactive idea selection are not exposed by this CLI. The first executable contract is planted-signal only.
+
+All saved raw evaluator outputs are hash-addressed artifacts, re-read by the report gate. Markdown/HTML derive from the database; JSONL verifies its existing prefix and appends transitions. A committed simulated report fixture is regenerated in CI from a fresh deterministic offline database. Its evidence links resolve in the generated `.rloop/` report; the fixture is not a separately published evidence bundle.
+
+Registration amendments require `plan --reason`; prior versions and comparison flags remain. Evaluator upgrades are deliberately blocked in existing campaigns: the CI anchor policy needs a prior human authorization in the trusted base. The first anchor requires owner review. There is no CLI for importing evaluator upgrade authorization yet.
+
+Resume reconciles fake work in the dead coordinator and separately checks evaluator PID plus creation identity. An unresolved launch intent or unknown/live process blocks replay. A dead incomplete run remains interrupted; an already sealed evaluator/final receipt is imported without repeating evaluation. Failed variants are retained, not automatically retried. A started final ticket without a durable result stays consumed.
+
+Durable outputs are local and ignored under `.rloop/`; publication remains checkpoint C. Export is an event/audit derivative, not yet an automatic database restore command. The runtime license helper and literature/ideation APIs have offline tests; the user-facing seven skills, installer, GUIDE and full self-assessment remain Phase 4-5.

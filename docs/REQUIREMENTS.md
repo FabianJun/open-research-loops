@@ -2,6 +2,7 @@
 
 Checkpoint A approved 2026-11-14; [DECISIONS.md](DECISIONS.md) governs build order and scope.
 This is the full acceptance inventory, not a claim that every feature is implemented. Phase 2 starts with the thin offline slice; tables are added only with consumers. See the session status record for executed checks.
+Phase 1-2 are now delivered; see [PHASE-2-STATUS.md](PHASE-2-STATUS.md) for exact verification and the remaining scope.
 
 Source keys:
 
@@ -50,7 +51,7 @@ Phase 1-2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema in
 | R32 / I11 | Per-source/dataset license metadata and repository-license self-assessment. | M integrity 11; L11; assessment index | Domain; Skills; P reuse boundary | Unknown/restricted redistribution visibly blocks public-ready verdict; mismatched/missing root license is reported; 4–5. |
 | R33 | One cheap known-answer example, offline and both real providers, fixed splits/control/baseline. | M §5 phase 5; L04 | Recommended first example | Fresh-clone fake command exercises failures and a supported simulated result; each required live backend runs same schema when explicitly funded; 5. |
 | R34 | Scientist/engineer guide and seven short skills; honest final self-assessment. | M §1, §5 phases 4–5; event judge skill | Skills, guide and command surface | Follow guide from empty project; inspect evidence-backed rubric and unresolved gaps without assuming positive science; 4–5. |
-| R35 | Local Git from start, one commit per finished step; no remote creation/push before C. | M §6–7 | Architecture decisions; Checkpoint A | Local history shows Phase 0 steps; `git remote -v` empty; future destination decision required; all phases. |
+| R35 | Local Git from start, one commit per finished step; no remote creation/push before C. | M §6–7 | Architecture decisions; Checkpoint A | Session uses local commits only; inspect and report external remote/history changes without treating them as publication authorization; all phases. |
 | R36 | No spending until B; real-provider tests require explicit model/cap instruction. | M §6–7 | Limits; Checkpoint A | Live-test opt-in and project authorization both required; environment key alone does not enable a call; 1–5. |
 | R37 | Secrets only from environment; `.env.example`; no personal toolkit material. | M §2, §6 | Architecture; Worker capabilities; P scope | Ignore credential files; sanitized environment/transcripts/exports; tracked-file review for personal paths and assets; 1–5. |
 | R38 | Compatible code reuse with notices; AGPL ideas only. | M §2–6; P license review | Architecture decisions; P reuse table | Source inventory and notices identify actual copied files; no AGPL-derived code/skill text; all phases. |
@@ -80,5 +81,23 @@ The eleven explicit test bullets in M §5 map as follows, in their original orde
 
 Phase 0 checks are documented in the final handoff; they do not satisfy these runtime tests.
 No design decision at checkpoint A substitutes for proof in phases 2–5.
+
+## Implemented offline integrity evidence
+
+| Mechanism | Executable evidence |
+|---|---|
+| I01 registration/prediction | `test_registration_is_immutable_and_required`, `test_amendment_is_explicit_and_retains_history`; DB triggers and explicit amendments. |
+| I02 information barrier/final | `test_final_labels_are_not_reopened_before_ticket`, `test_public_projection_has_no_private_fields`, final/crash/receipt/reused-PID tests. Host capability boundary only; OCI/SDK isolation tests are Phase 3/3b. |
+| I03 complete records | `test_import_is_true_noop_and_seals_evidence`, `test_tampered_artifact_never_imports`, full slice artifact/claim counts; raw outputs, transcripts, source hash, inputs, cost and seeds saved. |
+| I04 controls/baselines | `test_wrong_and_known_correct_candidates`, `test_failed_control_blocks_all_worker_dispatch`, `test_splits_are_disjoint_tuples_and_not_constant`; random-expression arm uses the same candidate grammar. |
+| I05 selection | Full 48-run slice, attempt/budget gates, frozen seeds/margin, deterministic descriptive bootstrap and method fingerprint. Fake oracle comparison is simulated, not scientific efficacy evidence. |
+| I06 independent check/report gate | `test_independent_verifier_catches_plausible_but_wrong_outputs`; separate stack/rational implementation; committed report comparison script in both CI jobs. |
+| I07 grounding/schema | `test_grounding_and_tags`, nonfinite/process-output rejection, strict unknown-field models, report numeric bindings and raw artifact checks. No LLM retry policy is implemented before SDK adapters. |
+| I08 ideation/literature | `test_ideas_rank_and_die_on_paper_and_retrieval_fails_loudly`; logged API helpers, no network retriever or interactive planner. |
+| I09 protected evaluator | Anchor verification, `test_anchor_and_spec_cannot_change_together_without_prior_decision`, trusted-base CI script. Initial anchor and future human decisions need owner review. |
+| I10 pilot | `test_deadline_and_pilot_gate`, `test_failed_control_blocks_all_worker_dispatch`. |
+| I11 licenses | `test_license_metadata_and_repository_check`; synthetic contract CC0, code/docs root license checks. Full self-assess skill remains Phase 4. |
+
+R02-R05 live adapter/MCP/skill acceptance remains pending; R11 is Phase 3b. R13 has four tested pattern policies; generic multi-contract/dependency planning and R21/R34's full guide/cockpit experience remain later work. R18 recovery is implemented for in-process fake workers and supervised evaluators; future SDK session recovery needs its own contract tests. R36 is enforced by a fake-only CLI/import gate and no provider imports, with external network blocked in tests even when dummy API keys are present. The full Windows/Linux command evidence is in the status record.
 
 A2: install `research-loops`; never depend on PyPI `rloop`; mention the unrelated package once in README. A5 defers optional CLI adapters. A4 container implementation is Phase 3b, not Phase 2.
