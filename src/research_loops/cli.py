@@ -16,13 +16,39 @@ def main() -> None:
 
 
 @app.command()
-def run(example: Path, backend: str = "fake") -> None:
+def run(example: Path, backend: str = "fake", final: bool = False) -> None:
     """Run the offline planted-signal example."""
     if backend != "fake":
         raise typer.BadParameter("only offline fake is implemented; provider calls are not authorized")
     from research_loops.coordinator import run as execute
-    asyncio.run(execute(example))
+    asyncio.run(execute(example, final=final))
     typer.echo(str(example / ".rloop" / "report.md"))
+
+
+@app.command()
+def init(example: Path) -> None:
+    """Store the example's registration and coordinator-only inputs."""
+    from research_loops.coordinator import prepare
+    repo, _, key = prepare(example)
+    repo.close()
+    typer.echo(key)
+
+
+@app.command()
+def plan(example: Path, reason: str | None = None) -> None:
+    """Register a plan; amendments require an explicit reason."""
+    from research_loops.coordinator import prepare
+    repo, _, key = prepare(example, amendment_reason=reason)
+    repo.close()
+    typer.echo(key)
+
+
+@app.command()
+def resume(example: Path) -> None:
+    """Reconcile saved processes/outboxes without dispatching new work."""
+    from research_loops.coordinator import run as execute
+    asyncio.run(execute(example, resume_only=True))
+    typer.echo("Reconciled; completed work was not rerun.")
 
 
 @app.command()

@@ -33,7 +33,7 @@ class Message(BaseModel):
 
 
 class Limits(Message):
-    max_attempts: int = Field(default=48, ge=1, le=256)
+    max_attempts: int = Field(default=50, ge=1, le=256)
     concurrency: int = Field(default=4, ge=1, le=4)
     worker_seconds: float = Field(default=10, gt=0, le=300)
     evaluator_seconds: float = Field(default=10, gt=0, le=300)

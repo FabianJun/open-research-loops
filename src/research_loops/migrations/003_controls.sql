@@ -1,0 +1,1 @@
+ALTER TABLE project ADD COLUMN control_attempts INTEGER NOT NULL DEFAULT 0;

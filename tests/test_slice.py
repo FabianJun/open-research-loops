@@ -17,7 +17,8 @@ def test_offline_vertical_slice(tmp_path):
     repo = Repository(example / ".rloop")
     try:
         rows = repo.runs()
-        assert [r["scientific_outcome"] for r in rows] == ["negative", "supported"]
+        assert len(rows) == 48
+        assert {r["scientific_outcome"] for r in rows} == {"negative", "supported"}
         assert all(r["execution_status"] == "completed" and r["verification_status"] == "checked" for r in rows)
         assert len(json.loads(rows[1]["verdict"])["predictions"]) == 64
         saved = (repo.root / "events.jsonl").read_bytes()

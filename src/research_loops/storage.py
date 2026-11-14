@@ -10,6 +10,7 @@ from pathlib import Path
 
 from research_loops.domain import IntegrityError, Verdict, WorkerContract, WorkerReport, Workspace, canonical, content_hash, digest, validate_candidate
 from research_loops.paths import atomic_write, confined
+from research_loops.locking import ProjectLock
 
 
 def now() -> str:
@@ -18,6 +19,17 @@ def now() -> str:
 
 class Repository:
     def __init__(self, root: Path):
+        self.lock = ProjectLock(root)
+        self.lock.__enter__()
+        try:
+            self._open(root)
+        except BaseException:
+            if hasattr(self, "db"):
+                self.db.close()
+            self.lock.__exit__()
+            raise
+
+    def _open(self, root: Path) -> None:
         self.root = root
         root.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(root / "state.sqlite")
@@ -38,6 +50,7 @@ class Repository:
 
     def close(self) -> None:
         self.db.close()
+        self.lock.__exit__()
 
     def event(self, kind: str, record_id: str, payload: dict) -> None:
         self.db.execute("INSERT INTO events(kind,record_id,payload,created) VALUES(?,?,?,?)", (kind, record_id, canonical(payload), now()))
@@ -68,7 +81,7 @@ class Repository:
                 raise IntegrityError("assignment does not use current registration")
             if state["final_ticket"]:
                 raise IntegrityError("campaign sealed; no worker may see final results")
-            if self.db.execute("SELECT count(*) FROM runs").fetchone()[0] >= state["max_attempts"]:
+            if self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"] >= state["max_attempts"]:
                 raise IntegrityError("attempt allowance exhausted")
             if reserve_micro_usd < 0 or state["spent_micro_usd"] + state["reserved_micro_usd"] + reserve_micro_usd > state["cap_micro_usd"]:
                 raise IntegrityError("shared budget exceeded")
@@ -157,6 +170,15 @@ class Repository:
         with self.db:
             self.db.execute("UPDATE project SET pilot=?", (canonical(evidence),))
             self.event("pilot", "project", evidence)
+
+    def reserve_control(self) -> None:
+        with self.db:
+            state = self.db.execute("SELECT * FROM project").fetchone()
+            count = self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"]
+            if count >= state["max_attempts"] or (state["deadline"] and time.time() >= state["deadline"]):
+                raise IntegrityError("control attempt/time allowance exhausted")
+            self.db.execute("UPDATE project SET control_attempts=control_attempts+1")
+            self.event("control_start", str(count + 1), {"counted": True})
 
     def require_pilot(self) -> None:
         if not self.db.execute("SELECT pilot FROM project").fetchone()[0]:
