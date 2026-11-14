@@ -1,18 +1,18 @@
 # Requirements and acceptance trace
 
-Checkpoint-A proposal, 2026-11-14.
-**All runtime acceptance checks below are planned, not executed.**
-Only Phase 0 documentation and research verification are complete.
+Checkpoint A approved 2026-11-14; [DECISIONS.md](DECISIONS.md) governs build order and scope.
+This is the full acceptance inventory, not a claim that every feature is implemented. Phase 2 starts with the thin offline slice; tables are added only with consumers. See the session status record for executed checks.
 
 Source keys:
 
 - **M**: the user-supplied `START-PROMPT-open-research-loops.md`, prompt below its first horizontal rule; sections 1–8 and integrity items 1–11.
 - **T**: user-owned toolkit paths under `skills/research-loop/` unless prefixed `docs/`; hashes are in [phase0-sources.json](phase0-sources.json).
 - **L01–L11 / E03–E16**: mechanism and pinned assessment-file references in [LESSONS.md](LESSONS.md#patterns-and-failure-modes).
+- **A**: the project owner's approved checkpoint-A decisions in [DECISIONS.md](DECISIONS.md).
 - **P**: primary documents, repository licenses and exact version evidence in [PRIOR-ART.md](PRIOR-ART.md).
 
 Each requirement has an implementation location in [DESIGN.md](DESIGN.md) and an observable acceptance check.
-Runtime phase numbers refer to the original delivery phases, not permission to start them before A.
+Phase 1?2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
 
 | ID | Requirement | Source | Design location | Acceptance / phase |
 |---|---|---|---|---|
@@ -20,13 +20,13 @@ Runtime phase numbers refer to the original delivery phases, not permission to s
 | R02 | One `AgentBackend.run(contract, workspace, limits)` port, fake and two required real adapters. | M §4; T `references/models.md`; P SDK docs | Ports; Worker tools and backend equivalence | Identical port contract cases across fake/OpenAI/Claude; live cases explicitly opt-in and skipped without keys; 2–3, 5. |
 | R03 | Optional SDK extras and per-task backend selection, including mixed-backend projects. | M §4 | Worker tools and backend equivalence | Resolve/install base, each extra and both; mixed fake/stub runs share one state; 1, 3. |
 | R04 | One MCP tool implementation; direct wrappers only where MCP is unavailable. | M §4; P MCP/SDK docs | Worker tools and backend equivalence | Same service/schema/errors via direct fake and stdio; run scope cannot be changed by caller; 3. |
-| R05 | Portable short `SKILL.md` files and link installer for both clients; explicit SDK text injection. | M §4, §5 phase 4; P Skills | Skills, guide and command surface | Validate frontmatter, relative references and injected hashes; test symlink/junction collision without overwriting existing skills; 4. |
+| R05 | Seven source skill folders/frontmatter use `rloop-` prefixes; no aliases/wrappers. Link installer refuses collisions; explicit SDK text injection. | M §4, §5 phase 4; P Skills | Skills, guide and command surface | Validate frontmatter, relative references and injected hashes; test symlink/junction collision without overwriting existing skills; 4. |
 | R06 | Coordinator alone writes DB; workers use private outboxes and structured reports. | M §4; T `assets/schema.sql`, `references/state.md`, `references/execution.md` | Database schema; Import and artifact durability | Two coordinators cannot acquire project lock; worker tool service has no DB handle; 2–3. |
 | R07 | WAL SQLite, per-connection foreign keys, numbered/checksummed migrations behind repository interface. | M §4; T `assets/schema.sql`, `references/state.md` | Database schema and persistence | Migration/reopen round trip; dangling FK and changed migration checksum rejected; 2. |
-| R08 | Retain project/budgets/tasks/agents/runs/artifacts/decisions/events; claims/challenges first-class. | M §4; T `assets/schema.sql`, `references/evidence.md` | Domain and contracts; Database schema | Import linked run/evidence/claim/challenge/resolution and query intact history; 2. |
+| R08 | Model project/budget/task/agent/run/artifact/decision/event semantics; add only tables used by implemented features. Claims/challenges first-class when implemented. | M §4; T `assets/schema.sql`, `references/evidence.md` | Domain and contracts; Database schema | Import linked run/evidence/claim/challenge/resolution and query intact history; 2. |
 | R09 | Separate execution, scientific outcome and verification statuses. | M §4; T `references/state.md`; L03, E11 | Domain and contracts | A completed negative result is checked; timeout is never supported; illegal transitions refused; 2. |
 | R10 | Evaluator is deterministic plain code, versioned/hashed, coordinator-run in protected separate process. LLM judgment is supplementary only. | M §4; T `references/validation.md`; L09, E04 | Evaluator protection; Ports | Known wrong/empty/nonfinite/timed-out evaluation is rejected; worker cannot select or edit evaluator; 2, 5. |
-| R11 | Worktrees are used for code edits; OS protection is required beyond worktrees/venvs. | M §4; T `references/execution.md`; L02, E12 | Evaluator protection and information flow | Actual forbidden read/write/process probes on each supported execution profile; missing protection blocks code task; 2, 5. |
+| R11 | Sandbox port: none refuses candidate code; container uses configurable Docker/Podman CLI, OCI Containerfile/digest, host agent/keys and stdio MCP-only tools. Enforce mounts, offline/nonroot/read-only/capability/resource policy; separate candidate evaluation container; shared-kernel threat model. | M §4; T `references/execution.md`; L02, E12 | Evaluator protection and information flow | Probe forbidden read/write, network and cleanup; missing runtime/failure blocks. All backends share isolation tests; Linux CI/local container tests, explicit Windows CI skip. Phase 3b after shared SDK contract tests; code example deferred. A4. |
 | R12 | Bounded asyncio worker pool, isolated workspace per worker and bounded evaluator capacity. | M §4; T `references/execution.md` | Scheduler, limits and recovery | Four workers overlap without collisions, lost reports or corrupt records; no fifth beyond capacity; 2, 5. |
 | R13 | Ideation, independent hypotheses, best-of-N and independent re-check fan-out patterns. | M §4; L08; T `references/iteration.md` | Scheduler pattern table | Exercise four patterns with deterministic workers, dependencies and retained kill/selection reasons; 2, 5. |
 | R14 | Reserve shared cost/time/attempt allowance before work; reconcile afterward. | M §4, §6; T `references/state.md`, `references/execution.md` | Scheduler, limits and recovery | Racing dispatch cannot oversubscribe; duplicate imports do not charge twice; unknown interrupted costs keep reservations; 2, 5. |
@@ -80,3 +80,5 @@ The eleven explicit test bullets in M §5 map as follows, in their original orde
 
 Phase 0 checks are documented in the final handoff; they do not satisfy these runtime tests.
 No design decision at checkpoint A substitutes for proof in phases 2–5.
+
+A2: install `research-loops`; never depend on PyPI `rloop`; mention the unrelated package once in README. A5 defers optional CLI adapters. A4 container implementation is Phase 3b, not Phase 2.

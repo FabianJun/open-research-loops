@@ -1,0 +1,34 @@
+# Decisions
+
+## Checkpoint A — approved 2026-11-14
+
+Authority: the project owner's checkpoint-A decisions.
+This record supersedes the Phase-0 recommendations where they differ.
+
+| ID | Decision |
+|---|---|
+| A1 | Architecture approved. First build the smallest offline vertical slice: registration → fake worker using tool functions → outbox/import → protected evaluator subprocess → verdict → report/export. Add integrity mechanisms individually with tests. Migrations add tables only alongside code using them. Prefer repository code and tests over extra tables; the design inventory is a ceiling. |
+| A2 | Repository `open-research-loops`, distribution `research-loops`, import `research_loops`, console script `rloop`. The project owner reports the three distribution spellings available on PyPI on 2026-11-14. The unrelated PyPI `rloop` Rust asyncio package must never be a dependency; install instructions use `research-loops`, with one README notice. |
+| A3 | Build `examples/planted-signal` as proposed. |
+| A4 | Declarative MCP-only default; fail closed for code execution without isolation. Add a vendor-neutral `Sandbox` port in Phase 3b, after fake and both SDK adapters pass shared tests. `none` refuses candidate code execution; `container` uses configurable Docker/Podman CLI with common flags, OCI `Containerfile`, no docker-py. Agent/API keys remain on the host; only tools execute in containers through stdio MCP (`run -i` / `exec -i`). Built-in SDK tools are off. All backends pass the same isolation tests. |
+| A5 | Codex and Claude Code CLI adapters deferred. |
+| A6 | Prefix all seven source skill folders and frontmatter names with `rloop-`: research-loop, bounded-iteration, evidence-gate, challenge, parallel-fanout, handoff-report, self-assess. No wrapper/alias mechanism. Installer refuses differing existing targets. |
+
+### A4 container policy and limits
+
+Worker container: workspace read-write, public inputs read-only; no evaluator, holdout, database, or credentials. Use `--network none`, non-root user, `--read-only` root plus tmpfs, `--cap-drop ALL`, `--security-opt no-new-privileges`, pids/memory/CPU/wall-time limits. Pin the image by digest and record it per run. For code tasks, execute the candidate in a separate evaluator-side container with read-only holdout; the evaluator process never loads candidate code.
+
+Preflight probes must demonstrate inaccessible evaluator/holdout paths, no writes outside the workspace, no network, and process-tree cleanup. Failure or missing runtime blocks execution. Containers share the host kernel: protection covers mistakes and opportunistic actions, not determined kernel exploits. gVisor `runsc` and hosted sandbox providers may be optional future adapters, never prerequisites.
+
+Phase 3b container tests run on Linux CI and locally. Skip on GitHub Windows runners with an explicit reason (Linux containers unavailable). The project owner reports Docker Desktop 29.8.1 with WSL2 Linux engine locally; daemon availability must still be checked. A code-changing example is deferred.
+
+### Authorized scope of this session
+
+Phase 1: scaffold and `uv.lock`, Apache-2.0 code / CC BY 4.0 docs, factual AGENTS plus CLAUDE pointer, Linux/Windows CI.
+Phase 2: offline vertical slice followed by core integrity checks without real SDKs. Stop before Phase 3. DESIGN is internal; README/GUIDE stay short.
+
+Verify the full suite on Windows and in a disposable Linux container, using `UV_PROJECT_ENVIRONMENT` outside the mounted checkout. Do not change WSL. Record exact commands/results. No Git remote exists; GitHub CI cannot be run here.
+
+Local commits only; no paid calls, even with API keys present; no code executed from `refs/`; AGPL ideas only; no personal toolkit data. If a technical failure survives two targeted fixes, stop and report the diagnosis.
+
+Checkpoint B (provider/model/USD cap) and C (publication destination/licenses/files) remain pending.

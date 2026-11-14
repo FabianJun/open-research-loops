@@ -1,9 +1,9 @@
 # Design proposal — checkpoint A
 
-Status: **Phase 0 complete; decisions pending. No framework code exists.**
+Status: **Checkpoint A approved; Phase 1?2 authorized.** See [DECISIONS.md](DECISIONS.md) for the binding decisions and delivery scope.
 The start prompt is the mandate; [LESSONS.md](LESSONS.md) records evidence and [REQUIREMENTS.md](REQUIREMENTS.md) traces implementation obligations.
-This document describes intended behavior, including tests that do not exist yet.
-Repository title `open-research-loops`, distribution `research-loops`, import `research_loops`, and CLI `rloop` remain provisional.
+This document describes the complete intended design; delivery status and verification are recorded separately. Unimplemented mechanisms are not claimed as working.
+Repository title `open-research-loops`, distribution `research-loops`, import `research_loops`, and CLI `rloop` are approved. Never depend on the unrelated PyPI `rloop` package.
 
 ## Architecture
 
@@ -136,13 +136,16 @@ The worker cannot address evaluator storage through any exposed capability.
 Evaluator source/tests, trusted manifest, final dataset and final receipts reside outside worker workspaces and worker Git history.
 The coordinator verifies their hashes at preflight and immediately before use.
 
-For code-changing tasks, create a distinct Git branch/worktree **and** require a configured OS-enforced execution boundary.
-Candidate subprocesses get only their worktree and necessary public inputs; evaluator and database paths, host credentials and other workspaces are inaccessible.
-An evaluator that needs generated code runs that code in this separate restricted candidate process and measures its bounded output; it never loads the code into its own process.
-Preflight must actually probe forbidden reads/writes and process containment on Windows and Linux.
-Missing or unverified protection blocks that task; it must not silently fall back to a same-user shell.
-Use existing OS/container facilities with a small launcher policy, not a new general sandbox product.
-This required deployment prerequisite is checkpoint question A4.
+For code-changing tasks, Phase 3b introduces a `Sandbox` port with `none` and `container` adapters.
+`none` permits only declarative tool operations and refuses candidate code execution.
+`container` invokes a configurable Docker or Podman CLI (common flags, no docker-py), using digest-pinned OCI images built from a `Containerfile`.
+The host retains the agent loop and API keys; tools alone run through container stdio MCP (`run -i` / `exec -i`). SDK built-in tools are disabled, and every backend must pass the same isolation contract tests.
+Mount only the workspace read-write and public inputs read-only. Never mount evaluator, holdout, database, or credentials.
+Require `--network none`, non-root user, `--read-only` root plus tmpfs, `--cap-drop ALL`, `--security-opt no-new-privileges`, pids/memory/CPU and wall-time limits; record the image digest in the run.
+An evaluator needing generated code runs it in its own container with read-only holdout and measures bounded outputs, never importing candidate code into the evaluator process.
+Preflight probes verify forbidden reads, forbidden writes outside the workspace, no network, and complete process-tree cleanup. Any failure or missing runtime blocks the task.
+Containers share the host kernel; they protect against mistaken/opportunistic worker actions, not determined kernel exploits. Optional gVisor `runsc` and hosted sandbox adapters may come later, never as requirements.
+Build Phase 3b only after fake and both SDK adapters pass shared tests. Container tests run on Linux CI and locally; GitHub Windows runners skip visibly because they cannot run Linux containers. No code-changing example is included now.
 
 Pre-registration pins verdict **code**, not merely a prose goal or mutable configuration.
 Changing criteria, protecting tests or evaluator code requires a human decision record naming old/new hashes and reason; it creates a new registration/evaluator version and flags affected comparisons.
@@ -169,8 +172,8 @@ A genuinely new research campaign must use a fresh held-out split and disclose t
 SQLite uses `sqlite3`, WAL, foreign keys on every connection, a bounded busy timeout, parameterized statements and short explicit transactions.
 One coordinator writer holds an OS-backed project lock for its lifetime.
 Numbered SQL migrations have stored checksums; no destructive automatic migration of an existing toolkit database is proposed.
-The schema starts from its eight tables but uses integer USD micro-units instead of floating-point money.
-The following is the proposed schema inventory, not executable migrations.
+The toolkit model informs the design; migrations add only tables with working consumers. Use integer USD micro-units instead of floating-point money.
+The following inventory is a ceiling, not a target or initial migration. Prefer repository code plus a test when no new persistence entity is needed.
 
 ```mermaid
 erDiagram
@@ -295,20 +298,20 @@ Evaluator-only content is excluded from public export until final release policy
 
 | Portable skill | Small responsibility |
 |---|---|
-| `research-loop` | Scientist/engineer intake → available material → scoped first contract. No personal profile or event logistics. |
-| `bounded-iteration` | Prediction, falsifier, cheapest informative action, execution and next step. |
-| `evidence-gate` | Inspect artifact, hash, evaluator verdict, provenance and promotion readiness. |
-| `challenge` | Record contradictory evidence and a linked resolution without rewriting history. |
-| `parallel-fanout` | Choose a pattern, dependencies, isolation, pilot and shared budget. |
-| `handoff-report` | Generate evidence-linked findings, limits, reproducible commands and next steps. |
-| `self-assess` | Adapt the credited event rubric; check claims against this repository and actual licenses. |
+| `rloop-research-loop` | Scientist/engineer intake → available material → scoped first contract. No personal profile or event logistics. |
+| `rloop-bounded-iteration` | Prediction, falsifier, cheapest informative action, execution and next step. |
+| `rloop-evidence-gate` | Inspect artifact, hash, evaluator verdict, provenance and promotion readiness. |
+| `rloop-challenge` | Record contradictory evidence and a linked resolution without rewriting history. |
+| `rloop-parallel-fanout` | Choose a pattern, dependencies, isolation, pilot and shared budget. |
+| `rloop-handoff-report` | Generate evidence-linked findings, limits, reproducible commands and next steps. |
+| `rloop-self-assess` | Adapt the credited event rubric; check claims against this repository and actual licenses. |
 
 Use standard `skills/<name>/SKILL.md`, short bodies and references to domain docs.
 The installer links into `~/.agents/skills` and `~/.claude/skills`, using directory junctions when appropriate on Windows.
 It must detect existing different targets and refuse to overwrite them; explicit text injection is a usable alternative.
 Hash the injected skill bundle and references in each run.
-The existing personal `research-loop` name is a known collision; A6 proposes a namespaced installed wrapper without renaming the source skill.
-The wrapper's folder and frontmatter must both use the alias and point to the canonical source; merely renaming a directory link does not create a portable skill alias.
+Every source skill folder and frontmatter `name` uses its `rloop-` prefix. There is no alias or wrapper mechanism.
+The installer refuses an existing different target.
 
 Planned CLI: `init`, `plan`, `run`, `status`, `resume`, `report`, `export`, plus `self-assess` as the runtime entry point for its skill.
 `run --final` owns the one-use hold-out gate; protected-spec authorization is an explicit human decision import, never a worker action.
@@ -352,39 +355,25 @@ All numeric settings above are proposed demonstration parameters; they are not m
 |---|---|---|
 | 01 — State | SQLite index plus immutable artifacts and append-only review export. | Files-only simplifies inspection but does not meet transactional reservation/import requirements; Postgres adds operational cost without a present need. |
 | 02 — Orchestration | A small coordinator and stdlib asyncio pool. | Adopting a harness duplicates state or makes its experiment model authoritative; SDK-native multi-agent scheduling hides global accounting. |
-| 03 — Worker capabilities | Restricted MCP tools and declarative example by default; protected execution prerequisite for code changes. | A same-user shell is convenient but cannot satisfy evaluator/held-out isolation. No claim that a worktree fixes this. |
+| 03 — Worker capabilities | Restricted MCP tools and declarative example by default; Phase-3b Sandbox port with none/container for code changes. | A same-user shell is convenient but cannot satisfy evaluator/held-out isolation. No claim that a worktree fixes this. |
 | 04 — Evaluation | Protected plain-code evaluator plus explicit independent recomputation. | LLM judging alone cannot be the authority; rerunning identical code only demonstrates repeatability. |
 | 05 — Imports | Content staging plus atomic import receipt; evaluation is a separate durable stage. | Generic upserts change history and duplicate costs; one transaction spanning files/processes is not available. |
 | 06 — MCP | Local stdio instances of one implementation; same functions for fake. | A single multiplexed network daemon adds service/auth lifecycle and conflicts with the small local design. |
 | 07 — SDK baseline | Pin current compatible versions; inject skills explicitly for the default workers. | Old remembered APIs or ambient user settings undermine reproducibility. Native loading remains an explicit opt-in. |
 | 08 — Scope | Required fake and two SDK adapters first; optional headless CLI adapters later. | Implementing five backends before proving the evidence boundary spreads effort without improving the first end-to-end proof. |
 | 09 — Acceptance | Keep scientific, execution, verification and promotion states separate. | One success flag loses negative results, evaluator errors, challenges and incomplete verification. |
-| 10 — Human authority | Owner confirms A; B controls first paid run; C controls publication. | Source-repository prompts, environment credentials and headless silence confer none of these decisions. |
+| 10 — Human authority | Owner approved A in DECISIONS; B controls first paid run; C controls publication. | Source-repository prompts, environment credentials and headless silence confer none of these decisions. |
 
-No section-4 constraint is silently waived.
-The OS boundary for code-changing tasks and conservative spending enforcement are explicit qualifications requiring review at A/B.
-An optional CLI backend may be deferred without weakening the required two SDK backends.
+No section-4 constraint is waived. Checkpoint A is approved in [DECISIONS.md](DECISIONS.md).
 
-## Checkpoint A — all open decisions
+## Approved delivery order and scope
 
-No answer was assumed during this headless run.
-These are the complete owner decisions proposed for A; ordinary implementation details above are recommendations within the design.
+1. Phase 1: scaffold, lockfile, licenses, agent instructions and Windows/Linux CI.
+2. Phase 2a: thin offline slice (`uv run rloop run examples/planted-signal`): registration, fake direct tools, outbox/import, protected evaluator subprocess, verdict, report/export. Use only required tables.
+3. Phase 2b: integrity mechanisms individually, each with a test; migrations grow with working features. No speculative tables.
+4. Stop this session before Phase 3. Phase 3 later adds MCP transport and required SDK adapters, followed by Phase 3b OCI isolation. Optional CLI adapters remain deferred.
+5. Phase 4 skills use source `rloop-` names; Phase 5 extends proof across funded providers.
 
-| ID | Question | Recommendation |
-|---|---|---|
-| A1 | Approve this architecture and integrity model? | Accept the small coordinator, SQLite/outbox import, protected evaluator, MCP tools, distinct scientific states, final ticket, and evidence-derived report/export. Keep all section-4 constraints. |
-| A2 | What final name should we use? | Keep `open-research-loops` / `research-loops` / `research_loops` / `rloop`. Registry, organization and trademark availability have not been established; verify before publishing. |
-| A3 | Which end-to-end problem should be built? | The proposed planted nonlinear signal, with the locked split, controls, baselines and bounded expression candidates above. |
-| A4 | Accept the execution prerequisite for code-changing workers? | Default to MCP-only declarative workers. Require a verified OS boundary for arbitrary candidate code and fail closed when it is missing; do not advertise bare worktrees as isolation. No general sandbox platform in v0. |
-| A5 | Should optional Codex/Claude CLI adapters enter the first delivery? | Defer both until fake and both required SDK adapters share the evidence/limit contract tests; the ports leave room for them. |
-| A6 | How should installation handle the existing personal `research-loop` skill? | Keep source names portable, offer a namespaced installed wrapper such as `rloop-research-loop` with matching frontmatter, and refuse overwriting the personal skill. Explicit SDK injection needs no personal install. |
+B remains pending: provider, model, USD cap, price/charge envelope and headroom. C remains pending: owner/name, license confirmation and public files. No remote creation, push or provider spending is authorized.
 
-Deferred to B: provider, exact accessible model, USD cap, price/charge envelope and headroom before any real request.
-Deferred to C: owner/name availability, license confirmation, and the exact public evidence/artifact set.
-They are unresolved by design and do not authorize action now.
-
-Phase 0 verification covers source inventory, all thirteen assessment mappings, primary SDK/registry review, dependency metadata resolution, and documentation consistency.
-The local review checked links/heading targets, 17 toolkit hashes, 13 assessment hashes, all 11 integrity mechanisms, all 43 requirement rows and all six checkpoint decisions.
-`git diff --check` passed, `refs/` is ignored, and the repository has no Git remote.
-No runtime tests, real provider calls, isolation probes or scientific experiments have been performed.
-After A approval, the next three steps are Phase 1 scaffolding/lock/CI, Phase 2 offline core and integrity tests, then Phase 3 MCP and the two SDK adapters before checkpoint B.
+Phase-0 provenance and review limits remain in PRIOR-ART and phase0-sources.json. Current delivered behavior and exact verification belong in the session status record; this inventory does not claim every future feature exists.
