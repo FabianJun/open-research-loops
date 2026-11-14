@@ -1,4 +1,4 @@
-"""Run-scoped service functions, called directly by fake; MCP comes in Phase 3."""
+"""Run-scoped service functions shared by direct fake and MCP transports."""
 
 import json
 import os
@@ -9,11 +9,15 @@ from research_loops.paths import atomic_write, confined
 
 
 class ToolService:
-    def __init__(self, contract: WorkerContract, root: Path):
+    def __init__(self, contract: WorkerContract, root: Path, *, submission_name: str = "report.json"):
         self.contract = contract
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.registered = False
+        self.submission_name = submission_name
+
+    def sealed(self) -> bool:
+        return (self.root / self.submission_name).exists() or (self.root / "report.json").exists()
 
     def read_contract(self) -> dict:
         value = self.contract.model_dump(mode="json")
@@ -39,7 +43,7 @@ class ToolService:
             os.fsync(stream.fileno())
 
     def register_variant(self, prediction: str) -> None:
-        if self.registered or (self.root / "report.json").exists():
+        if self.registered or self.sealed():
             raise IntegrityError("one variant per assignment; no hidden retries")
         if not prediction.strip():
             raise IntegrityError("prediction required")
@@ -47,6 +51,10 @@ class ToolService:
         self.registered = True
 
     def write_artifact(self, relative: str, content: bytes) -> Artifact:
+        if self.sealed():
+            raise IntegrityError("outbox is sealed")
+        if relative in {"report.json", "submission.json", "journal.jsonl"}:
+            raise IntegrityError("reserved outbox path")
         if not self.registered or not 0 < len(content) <= 1_000_000:
             raise IntegrityError("register before writing; artifact size bounded")
         path = confined(self.root, relative)
@@ -54,13 +62,15 @@ class ToolService:
         return Artifact(path=relative, sha256=digest(content), size=len(content))
 
     def submit_result(self, report: WorkerReport) -> WorkerReport:
+        if self.sealed():
+            raise IntegrityError("outbox is sealed")
         if not self.registered or report.run_id != self.contract.run_id or report.contract_hash != self.contract.registration_hash:
             raise IntegrityError("report scope differs from assignment")
         for artifact in (report.candidate, report.transcript):
             data = self.read_artifact(artifact.path)
             if digest(data) != artifact.sha256 or len(data) != artifact.size:
                 raise IntegrityError("artifact hash/size mismatch")
-        atomic_write(self.root / "report.json", canonical(report).encode(), exclusive=True)
+        atomic_write(self.root / self.submission_name, canonical(report).encode(), exclusive=True)
         return report
 
     def execute_candidate(self, *_args, **_kwargs):

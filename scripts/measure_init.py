@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import closing
 from pathlib import Path
 
 
@@ -19,7 +20,7 @@ def measure(repetitions: int = 3) -> dict:
             subprocess.run([sys.executable, "-I", "-m", "research_loops.cli", "init", str(root),
                 "--question", "Can we recover a planted signal?"], check=True, capture_output=True)
             elapsed = time.perf_counter() - start
-            with sqlite3.connect(root / ".rloop" / "state.sqlite") as db:
+            with closing(sqlite3.connect(root / ".rloop" / "state.sqlite")) as db:
                 rows = db.execute("SELECT execution_status,scientific_outcome FROM runs").fetchall()
                 assert len(rows) == 2 and all(row[0] == "completed" for row in rows)
                 assert {row[1] for row in rows} == {"negative", "supported"}

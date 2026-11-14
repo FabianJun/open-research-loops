@@ -1,0 +1,64 @@
+"""The single MCP stdio tool implementation; no DB, evaluator or credentials."""
+
+import argparse
+import json
+import os
+from pathlib import Path
+
+from mcp.server import MCPServer
+
+from research_loops.domain import WorkerContract, canonical
+from research_loops.paths import atomic_write
+from research_loops.tools import ToolService
+from research_loops.transports.protocol import Dispatcher
+
+
+def create_server(dispatch: Dispatcher) -> MCPServer:
+    server = MCPServer("rloop", version="0.1.0")
+
+    @server.tool()
+    def read_contract() -> dict:
+        return dispatch.call("read_contract", {})
+
+    @server.tool()
+    def read_findings(ids: list[str]) -> dict:
+        return dispatch.call("read_findings", {"ids": ids})
+
+    @server.tool()
+    def read_artifact(relative: str) -> dict:
+        return dispatch.call("read_artifact", {"relative": relative})
+
+    @server.tool()
+    def register_variant(prediction: str) -> dict:
+        return dispatch.call("register_variant", {"prediction": prediction})
+
+    @server.tool()
+    def write_artifact(relative: str, content: str) -> dict:
+        """Write base64-encoded bytes under the assigned outbox."""
+        return dispatch.call("write_artifact", {"relative": relative, "content": content})
+
+    @server.tool()
+    def submit_result(report: dict) -> dict:
+        return dispatch.call("submit_result", {"report": report})
+
+    return server
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--context", type=Path, required=True)
+    parser.add_argument("--outbox", type=Path, required=True)
+    parser.add_argument("--audit", type=Path, required=True)
+    parser.add_argument("--adapter", action="store_true")
+    args = parser.parse_args()
+    # Store names only; never dump environment values.
+    atomic_write(args.audit, canonical({"environment_keys": sorted(os.environ)}).encode())
+    if any("API_KEY" in name.upper() or "TOKEN" in name.upper() or "SECRET" in name.upper() for name in os.environ):
+        raise RuntimeError("tool server received a credential environment variable")
+    contract = WorkerContract.model_validate_json(args.context.read_bytes())
+    service = ToolService(contract, args.outbox, submission_name="submission.json" if args.adapter else "report.json")
+    create_server(Dispatcher(service)).run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()

@@ -942,6 +942,9 @@ dependencies = [
 claude = [
     { name = "claude-agent-sdk" },
 ]
+mcp = [
+    { name = "mcp" },
+]
 openai = [
     { name = "openai-agents" },
 ]
@@ -954,11 +957,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "claude-agent-sdk", marker = "extra == 'claude'", specifier = "==0.2.182" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = "==2.3.0" },
     { name = "openai-agents", marker = "extra == 'openai'", specifier = "==0.24.0" },
     { name = "pydantic", specifier = "==2.14.3" },
     { name = "typer", specifier = "==0.29.1" },
 ]
-provides-extras = ["openai", "claude"]
+provides-extras = ["mcp", "openai", "claude"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = "==9.2.0" }]

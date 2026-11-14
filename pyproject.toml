@@ -12,6 +12,7 @@ license = "Apache-2.0"
 dependencies = ["pydantic==2.14.3", "typer==0.29.1"]
 
 [project.optional-dependencies]
+mcp = ["mcp==2.3.0"]
 openai = ["openai-agents==0.24.0"]
 claude = ["claude-agent-sdk==0.2.182"]
 

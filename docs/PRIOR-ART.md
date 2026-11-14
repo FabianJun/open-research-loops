@@ -1,5 +1,7 @@
 # Prior art and dependency review
 
+Phase-3 installed-source check (2026-11-15): MCP 2.3.0 exposes `MCPServer` from `mcp.server`, `ClientSession` from `mcp.client.session`, and stdio parameters from `mcp.client.stdio`. Python result fields use `is_error` and `structured_content` (wire JSON uses camel case). These names and the server decorators/run method were checked in the installed package, then exercised by a real stdio parity test. The optional `[mcp]` extra pins the tool runtime independently of either agent SDK.
+
 Reviewed 2026-11-14 for checkpoint A; this is a research record, not an implementation claim.
 The user authorized reading the named repositories and reusing their own toolkit.
 No third-party framework, skill, or source code has been incorporated or executed.
