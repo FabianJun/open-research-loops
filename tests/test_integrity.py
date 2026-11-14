@@ -29,7 +29,7 @@ def test_registration_is_immutable_and_required(example):
         with pytest.raises(sqlite3.IntegrityError):
             repo.db.execute("DELETE FROM registrations")
         repo.db.rollback()
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(IntegrityError, match="registration"):
             repo.dispatch(assignment(repo, "unregistered"))
         assert repo.db.execute("SELECT count(*) FROM runs").fetchone()[0] == 0
     finally:
