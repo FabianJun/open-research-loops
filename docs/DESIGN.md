@@ -64,6 +64,8 @@ An unresolved challenge makes a claim contested in the current projection withou
 Citation-only and assumption statements have typed provenance but cannot masquerade as experimentally evaluated findings.
 
 Each generated variant, including an internal rejected proposal, gets a durable attempt ID through the tool service before evaluation.
+A flushed append-only outbox journal records proposals, request/retry starts and usage as they happen, not just at final submission.
+The coordinator imports these journal entries by unique IDs even when the worker dies without a sealed report; a partial outbox never becomes a successful result.
 A code-capable worker must declare each candidate mutation; its isolated runner records candidate snapshots at execution boundaries.
 Counting unobservable private model deliberation is impossible; the contract counts observable proposals, tool executions, retries and dispatched variants, and documents that boundary.
 
@@ -236,6 +238,8 @@ The parent owns deadlines, process identity, durable dispatch and budget account
 Dispatch sequence: validate registration/prediction and policy → check pilot/dependencies → reserve budget and attempt → persist launch intent → create workspace/process → persist identity → collect outbox → import → evaluate → independently check promoted evidence → settle cost → choose next bounded unit.
 A launch nonce written durably before spawn reconciles a crash between process creation and recording its PID.
 No new batch begins while unresolved dispatch identities or costs could violate limits.
+Before launch, allocate each child its complete cost/attempt allowance; request-level checks consume that local allowance and journal their accounting without giving the child database access.
+Only the parent can increase an allocation, by reserving more from the shared ledger before use.
 
 | Pattern | Policy and retained evidence |
 |---|---|
@@ -303,7 +307,8 @@ Use standard `skills/<name>/SKILL.md`, short bodies and references to domain doc
 The installer links into `~/.agents/skills` and `~/.claude/skills`, using directory junctions when appropriate on Windows.
 It must detect existing different targets and refuse to overwrite them; explicit text injection is a usable alternative.
 Hash the injected skill bundle and references in each run.
-The existing personal `research-loop` name is a known collision; A6 proposes a namespaced install alias without renaming the source skill.
+The existing personal `research-loop` name is a known collision; A6 proposes a namespaced installed wrapper without renaming the source skill.
+The wrapper's folder and frontmatter must both use the alias and point to the canonical source; merely renaming a directory link does not create a portable skill alias.
 
 Planned CLI: `init`, `plan`, `run`, `status`, `resume`, `report`, `export`, plus `self-assess` as the runtime entry point for its skill.
 `run --final` owns the one-use hold-out gate; protected-spec authorization is an explicit human decision import, never a worker action.
@@ -318,15 +323,20 @@ Use `examples/planted-signal`: recover a small nonlinear signal from synthetic i
 It has a known oracle, no external data license or GPU prerequisite, and no need to execute worker-supplied code.
 This is a **simulated engineering demonstration**, not discovery of an open scientific result.
 
-Proposal: four features sampled independently from integers -2 through 2; hidden response `2*x0 - 3*x2 + x1*x3`.
-Use 64 training cases, 64 development cases and 128 sealed final cases, generated from separate recorded seeds; only evaluator-side storage contains the final seed/labels.
+Proposal: four integer features in -2 through 2; hidden response `2*x0 - 3*x2 + x1*x3`.
+Draw without replacement from the 625 distinct feature tuples, assigning 64 to training, 64 to development and 128 to the sealed final split.
+Check tuple disjointness, not just row IDs; commit input/split hashes before search, with the generating seed/labels for final cases only on the evaluator side.
 Candidate JSON allows constants, feature references and bounded add/subtract/multiply nodes (maximum depth 4, 31 nodes); no executable strings.
 Pre-register MSE, exact per-example agreement, a minimum 99% MSE reduction against the training-mean baseline, and a final MSE tolerance of `1e-12`.
 An all-zero candidate is a negative control; the oracle is a protected evaluator self-test positive control.
 The pilot must verify nonconstant targets and a nonzero baseline error.
 
 Compare agent proposals with an equally bounded seeded random-expression search, logging every sampled variant.
-Allow at most 32 executed variants per search arm, across a fixed list of three search seeds; select on development data and report per-seed results and paired bootstrap intervals over development examples.
+Allow eight executed variants per search seed for seeds `[7, 13, 29]`, hence 24 per arm, including failed and abandoned executions.
+Log evaluator self-tests, pilot executions and retries separately and include them in the overall project allowance; a pilot that executes an arm's candidate also consumes that arm's allowance.
+Use a development-MSE keep margin of `1e-9`, stable candidate-hash tie breaking, and 1,000 paired bootstrap resamples with seed 42 for the development comparison.
+Report requested seeds and any provider inability to honor them; recording a seed is not proof of deterministic model sampling.
+These settings and the project deadline are locked in the example's registration before execution.
 Intervals describe this simulated comparison, not a guarantee of adaptive-search generalization.
 Final selection is one frozen candidate from the predeclared development rule; final per-example outputs and a separate exact-arithmetic checker run within the single final attempt.
 The fake adapter has a deterministic proposal sequence containing a wrong candidate and the oracle, so the offline path exercises negative and positive outcomes.
@@ -367,12 +377,14 @@ These are the complete owner decisions proposed for A; ordinary implementation d
 | A3 | Which end-to-end problem should be built? | The proposed planted nonlinear signal, with the locked split, controls, baselines and bounded expression candidates above. |
 | A4 | Accept the execution prerequisite for code-changing workers? | Default to MCP-only declarative workers. Require a verified OS boundary for arbitrary candidate code and fail closed when it is missing; do not advertise bare worktrees as isolation. No general sandbox platform in v0. |
 | A5 | Should optional Codex/Claude CLI adapters enter the first delivery? | Defer both until fake and both required SDK adapters share the evidence/limit contract tests; the ports leave room for them. |
-| A6 | How should installation handle the existing personal `research-loop` skill? | Keep source names portable, offer a namespaced installed alias such as `rloop-research-loop`, and refuse overwriting the personal skill. Explicit SDK injection needs no personal install. |
+| A6 | How should installation handle the existing personal `research-loop` skill? | Keep source names portable, offer a namespaced installed wrapper such as `rloop-research-loop` with matching frontmatter, and refuse overwriting the personal skill. Explicit SDK injection needs no personal install. |
 
 Deferred to B: provider, exact accessible model, USD cap, price/charge envelope and headroom before any real request.
 Deferred to C: owner/name availability, license confirmation, and the exact public evidence/artifact set.
 They are unresolved by design and do not authorize action now.
 
 Phase 0 verification covers source inventory, all thirteen assessment mappings, primary SDK/registry review, dependency metadata resolution, and documentation consistency.
+The local review checked links/heading targets, 17 toolkit hashes, 13 assessment hashes, all 11 integrity mechanisms, all 43 requirement rows and all six checkpoint decisions.
+`git diff --check` passed, `refs/` is ignored, and the repository has no Git remote.
 No runtime tests, real provider calls, isolation probes or scientific experiments have been performed.
 After A approval, the next three steps are Phase 1 scaffolding/lock/CI, Phase 2 offline core and integrity tests, then Phase 3 MCP and the two SDK adapters before checkpoint B.
