@@ -1,5 +1,9 @@
 # Lessons from thirteen research-loop submissions
 
+## Lessons from preparation
+
+The hackathon toolkit supplied instructions, a method and a state helper; it never ran a real research problem. The missing piece was runtime, not method: no experiment runner, scheduler or provider adapters. These are facts from the supplied start prompt and toolkit, not claims of validated scientific performance.
+
 Phase 0 review, 2026-11-14.
 These are conclusions from the event's published assessments, not a fresh audit of the submission repositories or a reproduction of their science.
 All thirteen assessments were read at event commit `8d8a24a3215c8900906dd5d665f04d8abde6377e`.

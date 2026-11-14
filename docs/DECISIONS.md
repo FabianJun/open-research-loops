@@ -32,3 +32,11 @@ Verify the full suite on Windows and in a disposable Linux container, using `UV_
 Local commits only; no paid calls, even with API keys present; no code executed from `refs/`; AGPL ideas only; no personal toolkit data. If a technical failure survives two targeted fixes, stop and report the diagnosis.
 
 Checkpoint B (provider/model/USD cap) and C (publication destination/licenses/files) remain pending.
+
+## Phase 3 / 3b authorization — 2026-11-15
+
+The project owner authorized MCP stdio parity, both optional SDK adapters tested at their own offline seams, then the A4 none/container Sandbox port. Stop after Phase 3b. Do not create checkpoint-B authorization or make any provider call.
+
+The private `origin` repository and its noreply history rewrite are legitimate. Green local commits may be pushed with `git push origin main`; inspect CI with `gh`. No force-push, pushed-history rewrite, settings/visibility/secrets changes, releases, tags or other repositories. Public publication remains checkpoint C.
+
+Lead with time to the first running scientific experiment. Measure the offline init-to-pilot path; no invented time target. The first scaffold remains explicitly simulated planted-signal, not a substituted evaluator for the scientist's real problem. GUIDE and skills remain Phase 4.

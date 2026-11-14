@@ -26,12 +26,17 @@ def run(example: Path, backend: str = "fake", final: bool = False) -> None:
 
 
 @app.command()
-def init(example: Path) -> None:
-    """Store the example's registration and coordinator-only inputs."""
-    from research_loops.coordinator import prepare
-    repo, _, key = prepare(example)
-    repo.close()
-    typer.echo(key)
+def init(example: Path, question: str = "Can we recover a planted nonlinear signal?") -> None:
+    """Create a simulated scaffold and complete its first offline pilot."""
+    from research_loops.domain import Contract, canonical
+    from research_loops.paths import atomic_write
+    from research_loops.coordinator import run as execute
+    if not (example / "contract.json").exists():
+        contract = Contract(goal=question, falsifier="The candidate fails the locked planted-signal criteria.",
+            prediction="Uncertain; the negative control should fail and the planted oracle should pass.")
+        atomic_write(example / "contract.json", canonical(contract).encode(), exclusive=True)
+    asyncio.run(execute(example, pilot_only=True))
+    typer.echo(f"Simulated fake pilot complete: {example / '.rloop' / 'report.md'}")
 
 
 @app.command()
@@ -91,3 +96,7 @@ def export(example: Path) -> None:
 def version() -> None:
     """Print the installed framework version."""
     typer.echo(__version__)
+
+
+if __name__ == "__main__":
+    app()

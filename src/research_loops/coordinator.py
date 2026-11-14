@@ -131,7 +131,7 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
         repo.promote_claim(row["id"])
 
 
-async def run(example: Path, *, final: bool = False, resume_only: bool = False, backend=None) -> None:
+async def run(example: Path, *, final: bool = False, resume_only: bool = False, pilot_only: bool = False, backend=None) -> None:
     repo, contract, key = prepare(example)
     try:
         reconcile(repo, contract, key)
@@ -140,7 +140,7 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
         elif not resume_only:
             if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
                 raise IntegrityError("campaign sealed; no more worker dispatch")
-            await campaign(repo, contract, key, backend or FakeBackend())
+            await campaign(repo, contract, key, backend or FakeBackend(), pilot_only=pilot_only)
     finally:
         try:
             report(repo)
@@ -149,7 +149,7 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
             repo.close()
 
 
-async def campaign(repo: Repository, contract: Contract, key: str, backend) -> None:
+async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False) -> None:
     if not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         evaluator = SubprocessEvaluator()
         dev = private(repo, key, "development")
@@ -166,6 +166,8 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend) -> N
         input_hash=digest(private(repo, key, "training")))
         for arm in ("agent", "random") for seed in contract.seeds for variant in range(contract.variants_per_seed)]
     existing = {row["id"] for row in repo.runs()}
+    if pilot_only:
+        assignments = assignments[:2]
 
     async def execute(assignment):
         public_context(assignment.model_dump(mode="json"))
@@ -190,8 +192,9 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend) -> N
     pending = [item for item in assignments if item.run_id not in existing]
     if pending:
         await fanout("best_of_n", pending, execute, contract.limits.concurrency, pilot_ready=True)
-    from research_loops.selection import select
-    select(repo, contract, key)
+    if not pilot_only:
+        from research_loops.selection import select
+        select(repo, contract, key)
 
 
 def final_evaluation(repo: Repository, contract: Contract, key: str) -> None:
