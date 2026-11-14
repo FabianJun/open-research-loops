@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "research-loops"
+version = "0.1.0"
+description = "Bounded research work with saved evidence and protected evaluation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = ["pydantic==2.14.3", "typer==0.29.1"]
+
+[project.optional-dependencies]
+openai = ["openai-agents==0.24.0"]
+claude = ["claude-agent-sdk==0.2.182"]
+
+[dependency-groups]
+dev = ["pytest==9.2.0"]
+
+[project.scripts]
+rloop = "research_loops.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/research_loops"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.uv]
+default-groups = ["dev"]

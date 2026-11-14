@@ -1,0 +1,12 @@
+open-research-loops
+Copyright 2026 scaled-thinking (scaled-thinking.com)
+
+Method and model ideas draw on scaled-thinking's research-loop toolkit.
+The event assessment rubric and lessons are credited to xemantic's
+claude-impact-lab-2026 (Apache-2.0 code, CC BY 4.0 text).
+Other design ideas and source licenses are listed in docs/PRIOR-ART.md.
+No third-party framework or AGPL source code is incorporated.
+
+Source code is licensed under LICENSE (Apache-2.0).
+Documentation, including README.md and docs/, is licensed under
+LICENSE-CC-BY-4.0. License texts retain their original terms.
