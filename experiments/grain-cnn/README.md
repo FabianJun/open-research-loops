@@ -92,5 +92,23 @@ attribution is in the script docstring and repository NOTICE.
    must match. Crops and padded full-image inference already handled any
    size. No training, selection or val score happened, so the fixed
    configuration is unchanged.
+3. Full run, 2026-11-15, after the loader fix (commit 9ec364d): completed on
+   a Kaggle Tesla T4 in 571 s of training wall time. Best checkpoint epoch 49
+   of 60; chosen post-processing t=0.6, a=200 on the internal-check images.
 
-Result: **not run yet**.
+Result: **does not beat the team pipeline and does not meet the target.**
+
+| | val `max_rel_error` (40 images) |
+|---|---|
+| This U-Net, scored once | 0.1639 |
+| Team pipeline (Phase 4b control) | 0.1259 |
+| Phase 4b target | 0.10 |
+
+The median count error (0.164) sets the score; the median size error is
+0.144. Counts are biased low (median -9.8%), which points to touching grains
+merging into one component, and one image has no interior grain at all. The
+internal-check score was 0.2366 on 60 training images, so the selection set
+did not predict val well. Val was scored once with `score_local.py`; the
+configuration was not changed afterwards. A boundary-aware variant (for
+example an interior/boundary/background target or a distance transform with
+watershed) would need its own pre-registration and a new go.

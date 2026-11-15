@@ -96,4 +96,6 @@ After the Phase 4b record, the owner identified the limiting factor: no run coul
 - **Compute layer:** `rloop compute` with the `local`, `kaggle`, `manual` and `command` adapters ([COMPUTE](COMPUTE.md)). Only code leaves the machine, never data. Kaggle kernels are always private, and the owner's Kaggle handle never enters tracked files.
 - **One feasibility run:** a small U-Net on a private Kaggle kernel, after one smoke run ([experiments/grain-cnn](../experiments/grain-cnn/README.md)). The rule is pre-registered there and committed before the run. Val is scored once, locally, with the Phase 4b evaluator; the `test` split is never read.
 
+Result: the first full run stopped in the data loader (mixed image formats; fixed in 9ec364d, no training happened). The second completed on a Tesla T4. Val `max_rel_error` 0.1639, scored once: worse than the team's 0.1259 and short of the 0.10 target. The record is [experiments/grain-cnn](../experiments/grain-cnn/README.md#attempt-log).
+
 A worker loop around training, live use of other hosts, and any use of the holdout need a new go.
