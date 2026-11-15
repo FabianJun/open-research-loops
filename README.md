@@ -56,7 +56,7 @@ uv run rloop init my-pilot --question "Can we recover a planted nonlinear signal
 Simulated fake pilot complete: my-pilot/.rloop/report.md
 ```
 
-`init` registers a contract, runs the controls, dispatches two deterministic candidates, imports their outputs, evaluates them in a protected subprocess and writes the report. The measured median from command start to finished pilot is **1.05 s on Windows and 1.63 s on Linux**, excluding installation.
+`init` registers a contract, runs the controls, dispatches two deterministic candidates, imports their outputs, evaluates them in a protected subprocess and writes the report. The measured median from command start to finished pilot is **1.15 s on Windows and 1.41 s on Linux**, excluding installation.
 
 ```console
 $ uv run rloop status my-pilot
@@ -178,20 +178,29 @@ flowchart TB
 | Backend | Install | Signs in with | Status |
 |---|---|---|---|
 | `fake` | base package | nothing; deterministic and offline | Default. Drives the example and CI |
-| `claude_agent` | `uv sync --extra claude` (Claude Agent SDK) | your own Claude Code login | Offline contract tests pass. Live runs gated |
-| `openai_agents` | `uv sync --extra openai` (OpenAI Agents SDK) | Sign in with ChatGPT for open-source apps (preview) | Offline contract tests pass. Live runs gated |
+| `claude_agent` | `uv sync --extra claude` (Claude Agent SDK) | your own Claude Code login | Built and tested offline. Live runs gated |
+| `openai_agents` | `uv sync --extra openai` (OpenAI Agents SDK) | Sign in with ChatGPT for open-source apps (preview): `rloop auth login-openai` | Built and tested offline. Live runs gated |
 
-An API key in the environment **never** authorizes a call. A live run needs an explicit authorization in the project config that names the provider, the model and the run limits. The coordinator checks it before it imports any SDK or starts any tool. There is no silent fallback to another model or another auth mode. Token usage is recorded, and cost is recorded as an estimate; an unknown cost stays unknown and is never written as zero.
+Subscription sign-in is the default. An API key in the environment **never** authorizes a call; API-key mode has to be chosen explicitly. A live run needs an authorization in the project config that names the approving owner, the provider, the exact model, the auth mode, the effort and four run limits: worker runs, parallel workers, turns per worker and wall time per worker. The coordinator checks it before it imports any SDK or starts any tool. A rate or usage limit stops the pilot and cancels its siblings. There is no retry and no silent fallback to another model, account or auth mode. Token usage is recorded, and cost is recorded as an estimate; an unknown cost stays unknown and is never written as zero.
+
+```console
+$ uv run rloop auth preflight --backend claude_agent        # offline check, reads no credentials
+$ uv run rloop auth login-openai                            # browser sign-in, Sign in with ChatGPT
+$ uv run rloop auth models                                  # models your account lists; no automatic fallback
+$ uv run rloop pilot pilots/claude --backend claude_agent --workers 8
+```
+
+Without an authorization in `project.json`, `rloop pilot` refuses before any SDK or tool starts. The step-by-step handoff, with example configs, is in [docs/CHECKPOINT-B-PREP.md](docs/CHECKPOINT-B-PREP.md).
 
 ## Measured, not promised
 
 | What | Result |
 |---|---|
-| Command start to completed simulated pilot, three runs each | Windows median **1.054 s**; Linux median **1.627 s** |
-| Test suite | Windows and Linux, offline, network blocked in the test process. On Linux it includes real containers |
-| SDK adapters | Real SDK orchestration against offline seams and real MCP subprocesses, with no provider runner mocked out |
+| Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
+| Test suite | **123 passed** on Windows and in a Linux container, offline, network blocked in the test process; real worker and evaluator containers included. CI: 123 on Ubuntu, 117 plus 6 container skips on Windows |
+| SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
 
-Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md) and [Phase 3](docs/PHASE-3-STATUS.md). What has **not** happened yet: no live provider run, no real scientific problem run end to end, no PyPI release.
+Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). What has **not** happened yet: no live provider run, no real scientific problem run end to end, no PyPI release.
 
 ## Roadmap
 
@@ -200,7 +209,8 @@ Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md) and [Phase 3
 | Phase 0 | Lessons, prior art, design, requirements | ✅ done |
 | Phase 1–2 | Offline vertical slice and the integrity gates | ✅ done |
 | Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | ✅ done |
-| Checkpoint B | First live pilot on the planted-signal example, on both backends, under explicit run limits | 🔧 in preparation |
+| Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`: built and tested offline | ✅ built |
+| First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ⏳ waiting for the owner's go |
 | Phase 4 | Portable `rloop-*` agent skills, a short guide, one licensed real problem from question to pilot | ⏳ next |
 | Phase 5 | Provider comparison on real work | ⏳ later |
 
@@ -213,6 +223,7 @@ src/research_loops/
 ├── adapters/                                     fake, claude_agent, openai_agents
 ├── evaluation.py, evaluator_worker.py            protected evaluator subprocess
 ├── protection.py, authorization.py               hash anchors, run authorization
+├── openai_auth.py, auth_cli.py                   Sign in with ChatGPT, protected token store
 ├── sandbox.py, container_stdio.py                OCI isolation and preflight probes
 ├── verification.py, grounding.py, reporting.py   re-checks, provenance, reports
 └── migrations/                                   numbered SQLite migrations
@@ -229,6 +240,7 @@ tests/                                            offline tests, incl. container
 | [DESIGN](docs/DESIGN.md) | Architecture, contracts, information flow, database, threat model |
 | [REQUIREMENTS](docs/REQUIREMENTS.md) | Every requirement traced to a design section and an acceptance check |
 | [DECISIONS](docs/DECISIONS.md) | Owner decisions per checkpoint |
+| [CHECKPOINT-B-PREP](docs/CHECKPOINT-B-PREP.md) | Sign-in, authorization config and pilot commands for the first live run |
 | [PRIOR-ART](docs/PRIOR-ART.md) | Credited sources, SDK references, pinned versions |
 
 ## Names and licenses
