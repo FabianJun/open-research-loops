@@ -8,6 +8,8 @@ description: Scope a scientist or engineer's first research contract. Use this w
 Work with the scientist's or engineer's own coding agent operating rloop.
 These skills are not injected into pilot workers.
 
+For assessed work, check the person's academic rules first: autonomous mode may not be allowed; coached mode keeps their own contribution visible.
+
 Ask for the question, available data and rights, existing code, compute limits,
 a measurable outcome and a result that would disprove the hypothesis.
 Separate available material from assumptions so the first test can be checked.

@@ -57,7 +57,7 @@ running. Default autonomous init still completes its offline fake pilot.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/route-dark.svg">
-  <img alt="One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data and privacy first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card." src="docs/assets/route-light.svg" width="100%">
+  <img alt="One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data rights, privacy and your academic rules where applicable first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card." src="docs/assets/route-light.svg" width="100%">
 </picture>
 
 **One example from this repository.** A small U-Net was meant to beat a
@@ -74,7 +74,7 @@ prediction first. [What happened](experiments/grain-cnn/README.md#interpretation
 
 | Step | Agent's work | Your part / what you learn |
 |---|---|---|
-| 1. Question and rights 🗣️ | Check licences, data and privacy. | Your question and disproof; a testable claim. |
+| 1. Question and rights 🗣️ | Check licences, data rights, privacy and your academic rules where applicable. | Your question and disproof; a testable claim. |
 | 2. Metric, target, falsifier | Make the rule executable. | Decide what the score means. |
 | 3. Baselines and controls | Prepare defaults, team comparison, random or negative control; check each was tuned on the same data. | Recognise a fair test. |
 | 4. Approach 🗣️ | Offer safe, unusual and cheap no-GPU options; recommend one. | Your first idea, then your choice. |
@@ -88,7 +88,8 @@ Otherwise the agent gets on with the work and names the step. **Every method
 has a name**, a reason, instructions and limits in its [card](skills/rloop-coach/references/methods.md).
 You get a checked result, a project `BRIEF.md`, a personal method card and an
 optional **private competence profile**, kept outside the repository and adapted
-per area as you learn. Say “shorter”, “explain more” or “just do it” at any time.
+per area as you learn. Say “shorter”, “explain more” or “just do it” at any time;
+your academic rules still apply.
 
 **Say what you noticed; the agent finds the cause.**
 

@@ -267,3 +267,15 @@ def test_coach_references_links_and_wheel_packaging():
                 assert packaging[relative] == "research_loops/" + relative
     output = invoke("skills", "show", "rloop-coach")
     assert "name: rloop-coach" in output and "sha256:" in output
+
+
+def test_academic_rules_in_coach_docs_and_brief():
+    root = skills.resources()
+    coach = skills.skill_path("rloop-coach")
+    for document in (coach / "SKILL.md", root / "docs" / "COACHED.md"):
+        text = " ".join(document.read_text(encoding="utf-8").split())
+        assert "on top of the general rules; where they differ, the stricter rule wins" in text
+        assert "asks once" in text or "ask once" in text
+        assert "never override" in text
+    brief = (coach / "references" / "research-brief-template.md").read_text(encoding="utf-8")
+    assert "Academic rules, if applicable (source, date and key limits; the rules stay with you):" in brief

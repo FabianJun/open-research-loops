@@ -5,7 +5,7 @@ experiment done. Your own coding agent handles code, evaluators, compute,
 Kaggle and CI. On research method it explains and suggests; you decide. Your
 question, hypothesis and conclusions stay yours.
 
-Coaching pattern adapted from PresentTogether, MIT, same author.
+Coaching pattern adapted from PresentTogether.
 
 ## Start with your agent
 
@@ -61,7 +61,7 @@ step. If you already gave an answer, it confirms it and moves on.
 
 | Step | What the agent does | Your part | What you learn |
 |---|---|---|---|
-| 1. Question and rights 🗣️ | Checks licences, data use and what stays private. | Your question in one sentence, and what would disprove it. | A question you can test. |
+| 1. Question and rights 🗣️ | Checks licences, data rights and privacy; asks once whether this is assessed or academic work (course, assignment, exam, thesis or other graded or supervised work). | Your question in one sentence, and what would disprove it. | A question you can test. |
 | 2. Metric, target and falsifier | Makes the agreed rule executable. | Decide if it answers your question. | What a score can establish. |
 | 3. Baselines and controls | Prepares defaults, published/team comparison and random or negative control; checks each was tuned on the same data. | Judge a fair comparison. | Detecting an uninformative test. |
 | 4. Approach 🗣️ | After your idea, offers safe, unusual and cheap no-GPU options; recommends one. | Your first idea, then your choice. | Choosing an approach for a reason. |
@@ -78,6 +78,28 @@ always needs your explicit agreement and `rloop run --final`.
 it works, how to use it and when it does not fit, with a [method card](../skills/rloop-coach/references/methods.md).
 The agent keeps agreed research decisions in a short project `BRIEF.md`, so
 another agent can continue. Your private profile never goes into that brief.
+
+## Coursework and theses
+
+The step 1 check protects your own contribution and helps you declare AI use
+honestly. If this is assessed or academic work, bring your institution's current
+AI-use rules: its policy, module or course instructions, or guidance from your
+supervisor or lecturer. Apply them on top of the general rules; where they
+differ, the stricter rule wins. If something is unclear, the agent says so and
+suggests asking your supervisor or lecturer; it never guesses in your favour.
+
+Until you have the rules, keep the question, hypothesis, analysis choices,
+interpretation and written conclusions your own. The agent explains and
+suggests; it does not write text you will submit for assessment. Technical help
+(code, evaluator, compute, CI) is limited to what is allowed; when unsure, ask
+first. Get permission before sending institution-provided material, including
+assignment sheets, course data or unpublished supervisor data, to any external
+service or model.
+
+In your project's own `BRIEF.md`, record the rules' source, date and key limits,
+plus a short note of which AI tools helped with what, ready for your declaration.
+Keep the rules themselves with you, outside this repository. “Just do it” and
+“shorter” never override your academic rules.
 
 ## Your private competence profile
 
