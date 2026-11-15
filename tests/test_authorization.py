@@ -166,7 +166,8 @@ for line in sys.stdin:
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "offline-override-must-disappear")
     monkeypatch.setattr(SubprocessCLITransport, "_find_cli", lambda self: sys.executable)
     monkeypatch.setattr(SubprocessCLITransport, "_build_command", lambda self: [sys.executable, str(script), str(audit),
-        json.dumps(["mcp__rloop__" + name for name in TOOL_NAMES])])
+        json.dumps(["mcp__rloop__" + name for name in TOOL_NAMES]),
+        "--permission-prompt-tool", self._options.permission_prompt_tool_name])
     adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options: LoginTransport(options, "claude_code"))
     with pytest.raises(LimitReached):
         asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))

@@ -74,10 +74,10 @@ def openai_model():
     return Stub()
 
 
-def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None):
+def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None, denied_tool=None):
     from claude_agent_sdk._internal.transport import Transport
     from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
-    from claude_agent_sdk import PermissionResultDeny
+    from claude_agent_sdk import PermissionResultAllow, PermissionResultDeny
     from research_loops.transports.client import session, value
     from research_loops.transports.launch import Launch
 
@@ -97,7 +97,12 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
             assert "--strict-mcp-config" in command
             assert "--setting-sources=" in command
             assert not options.skills and not options.plugins and not options.agents
+            assert options.allowed_tools == [] and options.permission_mode == "default"
+            assert "permissions" not in json.loads(options.settings)
+            for name in TOOL_NAMES:
+                assert isinstance(await options.can_use_tool("mcp__rloop__" + name, {}, None), PermissionResultAllow)
             assert isinstance(await options.can_use_tool("Bash", {}, None), PermissionResultDeny)
+            assert isinstance(await options.can_use_tool("mcp__other__read_contract", {}, None), PermissionResultDeny)
 
         async def write(self, data):
             message = json.loads(data)
@@ -107,6 +112,12 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
             elif message["type"] == "user":
                 names = ["mcp__rloop__" + name for name in TOOL_NAMES]
                 await self.queue.put({"type": "system", "subtype": "init", "tools": names + (["Bash"] if extra_tool else [])})
+                if denied_tool:
+                    await self.queue.put({"type": "system", "subtype": "permission_denied", "tool_name": denied_tool,
+                        "tool_input": {"private": "tool input must not be recorded"},
+                        "message": "private CLI message must not be recorded"})
+                    if denied_tool in names:
+                        return
                 if assistant_error:
                     await self.queue.put({"type": "assistant", "error": assistant_error,
                         "message": {"model": "<synthetic>", "content": [

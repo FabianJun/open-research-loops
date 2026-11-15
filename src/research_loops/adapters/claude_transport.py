@@ -8,6 +8,7 @@ import subprocess
 
 from claude_agent_sdk import Transport
 from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
+from claude_agent_sdk.types import _configure_can_use_tool
 
 from research_loops.domain import IntegrityError
 from research_loops.processes import WindowsJob
@@ -39,9 +40,11 @@ class LoginTransport(Transport):
         self.lock = asyncio.Lock()
 
     async def connect(self):
-        builder = SubprocessCLITransport(prompt="", options=self.options)
+        builder = SubprocessCLITransport(prompt="", options=_configure_can_use_tool(self.options))
         builder._cli_path = builder._find_cli()
         command = builder._build_command()
+        if self.options.can_use_tool is not None and ("--permission-prompt-tool", "stdio") not in zip(command, command[1:]):
+            raise IntegrityError("Claude CLI command is missing the can_use_tool stdio permission route")
         # --bare disables subscription credentials, so it is deliberately absent.
         # Explicit settings restrict auth and hooks while settings discovery is off.
         command += ["--no-session-persistence"]

@@ -50,6 +50,9 @@ class ClaudeBackend(SDKBackend):
         async with ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query("Execute the assigned public contract.")
             async for message in client.receive_response():
+                if (isinstance(message, SystemMessage) and message.subtype == "permission_denied"
+                        and message.data.get("tool_name") in allowed):
+                    raise IntegrityError("Claude CLI denied an authorized rloop tool; the can_use_tool permission bridge is not active")
                 messages.append(asdict(message))
                 # SDK reports these as protocol fields; never retry or change auth.
                 if limit_message(asdict(message)):

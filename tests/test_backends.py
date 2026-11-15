@@ -9,6 +9,7 @@ from research_loops.domain import IntegrityError, Limits, Workspace
 from research_loops.storage import Repository
 from test_mcp import task
 from sdk_seams import openai_model, claude_transport
+from research_loops.transports.protocol import TOOL_NAMES
 
 
 def backend(name):
@@ -70,6 +71,29 @@ def test_claude_rejects_effective_builtin(tmp_path):
     adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options: claude_transport(options, extra_tool=True))
     with pytest.raises(IntegrityError, match="effective tool list"):
         asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+
+
+@pytest.mark.parametrize("name", TOOL_NAMES)
+def test_claude_rejects_authorized_tool_permission_denial(tmp_path, name):
+    pytest.importorskip("claude_agent_sdk")
+    from research_loops.adapters.claude_agent import ClaudeBackend
+    adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options:
+        claude_transport(options, denied_tool="mcp__rloop__" + name))
+    with pytest.raises(IntegrityError) as caught:
+        asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+    assert str(caught.value) == "Claude CLI denied an authorized rloop tool; the can_use_tool permission bridge is not active"
+    assert not (tmp_path / "outbox" / "adapter-trace.json").exists()
+    assert not (tmp_path / "outbox" / "report.json").exists()
+
+
+@pytest.mark.parametrize("name", ["Bash", "mcp__other__read_contract"])
+def test_claude_accepts_unauthorized_tool_permission_denial(tmp_path, name):
+    pytest.importorskip("claude_agent_sdk")
+    from research_loops.adapters.claude_agent import ClaudeBackend
+    adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options:
+        claude_transport(options, denied_tool=name))
+    result = asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+    assert result.backend == "claude_agent"
 
 
 @pytest.mark.parametrize("error, expected", [
