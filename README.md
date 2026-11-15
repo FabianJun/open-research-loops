@@ -199,7 +199,7 @@ Without an authorization in `project.json`, `rloop pilot` refuses before any SDK
 | What | Result |
 |---|---|
 | Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
-| Test suite | **123 passed** on Windows and in a Linux container, offline, network blocked in the test process; real worker and evaluator containers included. CI: 123 on Ubuntu, 117 plus 6 container skips on Windows |
+| Test suite | **144 passed** locally on Windows, offline, network blocked in the test process; real worker and evaluator containers included. CI: 144 on Ubuntu, 138 plus 6 container skips on Windows |
 | SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
 
 Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). What has **not** happened yet: no live provider run, no real scientific problem run end to end, no PyPI release.

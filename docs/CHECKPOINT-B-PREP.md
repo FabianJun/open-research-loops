@@ -62,6 +62,8 @@ uv run --locked rloop pilot examples/planted-signal --backend claude_agent --wor
 
 Warm-install init-to-completed-fake-pilot timings (CLI startup, controls and two candidates; excludes installation): Windows **1.178735 / 1.151790 / 1.080726 s**, median **1.152 s**; final Linux run **1.513499 / 1.365201 / 1.407606 s**, median **1.408 s**. These are observations, not targets or live-provider timings.
 
+> The run links below point to the private predecessor of this repository. The repository was recreated before it went public, so those runs are no longer reachable. Commit SHAs are unchanged; re-run the workflow on a SHA to reproduce a result.
+
 Implementation commit `3862d35`; concurrent README clarification `6dbf2f4` was preserved in merge `acebb26`, with no pushed-history rewrite. [GitHub run 43659595886](https://github.com/scaled-thinking/open-research-loops/actions/runs/43659595886) on `acebb26` is green on both jobs, verified with `gh run view 43659595886 --json status,conclusion,jobs` and `gh run view 43659595886 --log`:
 
 | CI job | `uv run --locked pytest` result | Other checks |
@@ -75,6 +77,13 @@ Final implementation fix `4468691`: [run 43660437230](https://github.com/scaled-
 |---|---|---|
 | offline (ubuntu-latest) | **123 passed in 68.66s** | Full fake campaign, report/export, committed report regeneration and protected-base check passed. |
 | offline (windows-latest) | **117 passed, 6 skipped in 61.33s** | Same checks passed; the six Linux-container skips retain their visible reason. |
+
+Owner follow-up `27486ec` (owner recorded at `rloop init`, approvals matched against it) and `e918a9f` (protected amendments bound to the owner in the trusted base): run 43662074774 is green on both jobs.
+
+| CI job | `uv run --locked pytest` result |
+|---|---|
+| offline (ubuntu-latest) | **144 passed in 67.01s** |
+| offline (windows-latest) | **138 passed, 6 skipped in 59.55s** |
 
 ## The project owner's steps at go
 
