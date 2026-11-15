@@ -85,6 +85,9 @@ These are observed warm-install timings, not a performance target or a claim abo
 
 ## GitHub CI
 
+> [!NOTE]
+> The run links below point to the private predecessor of this repository. The repository was recreated before it went public, so those runs are no longer reachable. Commit SHAs are unchanged; re-run the workflow on a SHA to reproduce a result.
+
 The SDK step [43654130390](https://github.com/scaled-thinking/open-research-loops/actions/runs/43654130390) is green: Ubuntu 69 passed in 20.32s; Windows 69 passed in 35.16s. The Sandbox step [43656074784](https://github.com/scaled-thinking/open-research-loops/actions/runs/43656074784) is green: Ubuntu 83 passed in 62.02s; Windows 78 passed, 5 skipped in 46.13s. Each skip explicitly explains that GitHub Windows runners cannot run Linux containers.
 
 Final implementation `68c395a`: [run 43656721319](https://github.com/scaled-thinking/open-research-loops/actions/runs/43656721319), both jobs green:

@@ -145,29 +145,27 @@ Execution status, scientific outcome and verification are three separate fields.
 Isolation does not depend on which LLM SDK runs the worker. Every backend gets the same six MCP tools and nothing else. The SDKs' built-in tools are switched off, and the tests check the effective tool list for each backend.
 
 ```mermaid
-flowchart LR
+flowchart TB
     LLM(["Model provider"])
     subgraph HOST["Host: trusted side"]
-        direction TB
         SDK["Agent loop<br/>Claude or OpenAI SDK<br/>credentials stay here"]
         C["Coordinator"]
         DB[("SQLite state<br/>JSONL export")]
         EV["Protected evaluator<br/>holdout, trusted manifest"]
     end
     subgraph BOX["Worker container"]
-        direction TB
         MCP["MCP tool server<br/>six tools, no shell"]
-        WS["workspace<br/>read-write"]
+        WS["workspace, read-write<br/>sealed outbox"]
         PUB["public inputs<br/>read-only"]
     end
-    SDK <-->|"prompts and replies"| LLM
+    LLM <-->|"prompts and replies"| SDK
+    C -->|"public contract"| SDK
+    C --> DB
+    C -->|"exact imported bytes"| EV
     SDK <-->|"MCP over stdio"| MCP
     MCP --- WS
     MCP --- PUB
-    C -->|"public contract"| SDK
-    WS -->|"sealed outbox"| C
-    C --> DB
-    C -->|"exact imported bytes"| EV
+    WS -.->|"validated, hashed import"| C
 ```
 
 - **Never reaches a worker:** evaluator code, holdout and final data, the database, credentials, final scores.
