@@ -7,7 +7,7 @@
 For researchers and students working with a coding agent. No coding needed.
 
 [![tests](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml/badge.svg)](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml)
-[![you decide: question and verdict](https://img.shields.io/badge/you_decide-question_and_verdict-c4432b)](#two-ways-to-work)
+[![you decide: question and verdict](https://img.shields.io/badge/you_decide-question_and_verdict-b51f33)](#two-ways-to-work)
 [![your agent: any capable coding agent](https://img.shields.io/badge/your_agent-any_capable_coding_agent-2f5bea)](#two-ways-to-work)
 [![evidence: checked, negatives kept](https://img.shields.io/badge/evidence-checked%2C_negatives_kept-0e7c7b)](#measured-not-promised)
 ![python 3.12+](https://img.shields.io/badge/python-3.12%2B-59636e)

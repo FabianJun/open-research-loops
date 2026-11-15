@@ -55,7 +55,7 @@ provider, compute, publication or holdout permission.
 
 ## The route
 
-The coral person icon <img src="assets/icon-you.svg" width="14" height="14" alt=""> marks the
+The carmine person icon <img src="assets/icon-you.svg" width="14" height="14" alt=""> marks the
 four moments where your view comes before the agent's, one question per reply.
 Elsewhere the agent does the work and names the current step. If you already
 gave an answer, it confirms it and moves on.

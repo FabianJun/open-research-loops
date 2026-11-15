@@ -2,14 +2,14 @@
 
 | Role | Light | Dark | Icon | Meaning |
 |---|---|---|---|---|
-| You decide | `#c4432b` | `#ff8a70` | person | Your question, choices, prediction, verdict and own words |
+| You decide | `#b51f33` | `#ff6470` | person | Your question, choices, prediction, verdict and own words |
 | Your agent | `#2f5bea` | `#7c9cff` | checkbox | Technical work: code, workers, tools and compute |
 | Route and evidence | `#0e7c7b` | `#2fb8b0` | arrow or check | The route, protected evaluator, checked evidence, report and what you keep |
 | Neutral | `#59636e` | `#9198a1` | none | Infrastructure, notes and facts |
 
 Where each role appears:
 
-- **Badges** double as the legend: `you decide` coral, `your agent` blue, `evidence` teal, then
+- **Badges** double as the legend: `you decide` carmine, `your agent` blue, `evidence` teal, then
   facts (Python, licence, status) in grey.
 - **Pictures:** `loop-*` is the main diagram, `competence-*` the coaching principle, `route-*` who
   does what in coached mode. The social preview is the riso print.

@@ -5,8 +5,8 @@
 <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9198a1"/></marker>
 <marker id="arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2fb8b0"/></marker>
 </defs>
-<rect x="20" y="56" width="184" height="248" rx="14" fill="#161b22" stroke="#ff8a70" stroke-width="1.5"/>
-<circle cx="48" cy="90" r="14" fill="#ff8a70"/>
+<rect x="20" y="56" width="184" height="248" rx="14" fill="#161b22" stroke="#ff6470" stroke-width="1.5"/>
+<circle cx="48" cy="90" r="14" fill="#ff6470"/>
 <text x="48" y="95.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1117">1</text>
 <text x="72" y="97" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#f0f6fc">Register</text>
 <text x="38" y="144" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#f0f6fc">question + goal</text>
@@ -75,9 +75,9 @@
 <text x="659.5" y="355.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">findings feed the next round · the holdout never does</text>
 <text x="20" y="32" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="600" letter-spacing="1.5" fill="#9198a1">ONE RESEARCH LOOP</text>
 <text x="1080" y="32" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#9198a1">SQLite is the single writer; every step is saved</text>
-<circle cx="27" cy="379" r="4.5" fill="#ff8a70"/>
-<path d="M20,390 a7,7 0 0 1 14,0 z" fill="#ff8a70"/>
-<text x="42" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#ff8a70">You decide</text>
+<circle cx="27" cy="379" r="4.5" fill="#ff6470"/>
+<path d="M20,390 a7,7 0 0 1 14,0 z" fill="#ff6470"/>
+<text x="42" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#ff6470">You decide</text>
 <rect x="239" y="376" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
 <path d="M242.5,383 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="261" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#7c9cff">Your agent and its workers</text>
