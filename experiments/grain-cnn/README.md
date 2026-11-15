@@ -79,4 +79,18 @@ No real holdout split is read or scored.
 Code is Apache-2.0; this README is CC BY 4.0. The copied metric's upstream
 attribution is in the script docstring and repository NOTICE.
 
+## Attempt log
+
+1. Smoke run (`--smoke`, 1 epoch on 8/4/2 images) on a Kaggle Tesla T4:
+   completed end to end, about 2 minutes. Not scored.
+2. Full run, 2026-11-15: failed while loading data, before the first epoch.
+   The loader assumed every image is 300x400 RGB, but the archive mixes
+   300x400 RGB png, 400x400 RGB jpg and 300x400 grayscale png (train: 213,
+   367 and 31 images; val: 14 png and 26 jpg). The smoke subset held only
+   300x400 RGB png. Fix: grayscale images are replicated to three channels,
+   any size of at least 256 per side is accepted, and image and mask sizes
+   must match. Crops and padded full-image inference already handled any
+   size. No training, selection or val score happened, so the fixed
+   configuration is unchanged.
+
 Result: **not run yet**.

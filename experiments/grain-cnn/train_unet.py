@@ -155,10 +155,14 @@ def postprocess(probability, threshold, min_area):
 def load_image(path, mask=False):
     import numpy as np
     from PIL import Image
+    # The archive mixes 300x400 RGB png, 400x400 RGB jpg and 300x400 grayscale png
+    # images; grayscale is replicated to three channels so every input is RGB.
     with Image.open(path) as image:
+        if not mask and image.mode == "L":
+            image = image.convert("RGB")
         array = np.array(image)
-    expected = (300, 400) if mask else (300, 400, 3)
-    if array.shape != expected or array.dtype != np.uint8:
+    if (array.ndim != (2 if mask else 3) or (not mask and array.shape[2] != 3)
+            or min(array.shape[:2]) < 256 or array.dtype != np.uint8):
         raise IntegrityError("unexpected image shape or dtype")
     if mask and not np.isin(array, (0, 1)).all():
         raise IntegrityError("expected binary interior mask")
@@ -275,7 +279,11 @@ def train(grouped, output, smoke):
     fit_images = [load_image(grouped["train", "images"][n]) for n in fit]
     fit_masks = [load_image(grouped["train", "masks"][n], mask=True) for n in fit]
     check_images = {n: load_image(grouped["train", "images"][n]) for n in check}
-    truths = {n: truth(load_image(grouped["train", "masks"][n], mask=True)) for n in check}
+    check_masks = {n: load_image(grouped["train", "masks"][n], mask=True) for n in check}
+    if any(i.shape[:2] != m.shape for i, m in zip(fit_images, fit_masks)) or any(
+            check_images[n].shape[:2] != check_masks[n].shape for n in check):
+        raise IntegrityError("image and mask sizes differ")
+    truths = {n: truth(m) for n, m in check_masks.items()}
     loader = DataLoader(make_dataset(fit_images, fit_masks), batch_size=16, shuffle=True,
         num_workers=0, generator=torch.Generator().manual_seed(SEED))
     model = make_model().to(device)
@@ -330,7 +338,7 @@ def train(grouped, output, smoke):
         labels[name] = regions.astype(np.uint16)
     np.savez_compressed(output / "val_labels.npz", **labels)
     return dict(config=dict(model="UNet", down_levels=4, base_channels=32,
-        normalization="BatchNorm", activation="ReLU", input_scale="RGB uint8 / 255",
+        normalization="BatchNorm", activation="ReLU", input_scale="RGB uint8 / 255 (grayscale replicated to RGB)",
         output="one grain-interior logit", loss="BCE + soft Dice (per-image, smoothing=1)",
         crop_size=256, crops_per_image_per_epoch=1, flips=True, rot90=True,
         brightness=[0.9, 1.1], contrast=[0.9, 1.1], optimizer="AdamW", lr=1e-3,
