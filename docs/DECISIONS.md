@@ -96,7 +96,7 @@ After the Phase 4b record, the owner identified the limiting factor: no run coul
 - **Compute layer:** `rloop compute` with the `local`, `kaggle`, `manual` and `command` adapters ([COMPUTE](COMPUTE.md)). Only code leaves the machine, never data. Kaggle kernels are always private, and the owner's Kaggle handle never enters tracked files.
 - **One feasibility run:** a small U-Net on a private Kaggle kernel, after one smoke run ([experiments/grain-cnn](../experiments/grain-cnn/README.md)). The rule is pre-registered there and committed before the run. Val is scored once, locally, with the Phase 4b evaluator; the `test` split is never read.
 
-Result: the first full run stopped in the data loader (mixed image formats; fixed in 9ec364d, no training happened). The second completed on a Tesla T4. Val `max_rel_error` 0.1639, scored once: worse than the team's 0.1259 and short of the 0.10 target. The record is [experiments/grain-cnn](../experiments/grain-cnn/README.md#attempt-log).
+Result: the first full run stopped in the data loader (mixed image formats; fixed in bd56566, no training happened). The second completed on a Tesla T4. Val `max_rel_error` 0.1639, scored once: worse than the team's 0.1259 and short of the 0.10 target. The record is [experiments/grain-cnn](../experiments/grain-cnn/README.md#attempt-log).
 
 A worker loop around training, live use of other hosts, and any use of the holdout need a new go.
 
@@ -108,7 +108,7 @@ PresentTogether repository, and approved its design.
 The agent does the technical work and explains and suggests research methods;
 the person decides. Autonomous remains the default. Coached mode adds four
 moments for the person's view, named methods, reflection and a research brief.
-The owner also requested a local competence profile that guides explanation
+The owner also specified a local competence profile that guides explanation
 depth per area and is updated through learning progress, with changes confirmed
 by the person. The shared scale, Markdown format and update rules match
 PresentTogether; only the areas differ. Only the person's coaching agent
@@ -118,3 +118,11 @@ reports, briefs, receipts and the ledger, and is never sent to workers or servic
 Mode is a way of working, not a security barrier: the tool cannot verify who
 wrote a prediction or rationale. This offline implementation grants no live
 provider, compute, publication or holdout authorization.
+
+## Record maintenance — 2026-11-15
+
+Decision records use neutral paraphrase and name roles, not tools. On the
+owner's instruction, earlier entries were reworded and the published history
+from the Phase 4a record onward was rewritten; those commits have new hashes,
+and hash references in these documents were updated. CI run numbers cited
+elsewhere refer to the commits before the rewrite.

@@ -47,13 +47,13 @@ and interior truth grains otherwise. The older defaults artifact has NaN for an
 undefined size; the current scoring code excludes undefined sizes. The main
 control numbers reproduce under that current code.
 
-Authorization-only commit `7f1cdbe1e47ee066b4c41dabc59c8184ca819775` was pushed
+Authorization-only commit `a346b539e894de43e0068ef5d95e03ce986abd86` was pushed
 alone. CI run `43672496642` completed successfully on Ubuntu and Windows.
 The protected hash moves from
 `9c1a922e6006f18059367ade09c49733ebb430507337af960bef394ef8766d7e` to
 `574d2edbce7a6211f57ef0ab8f4392f8cd86329fc2940fa53b2899c0d8edb945`.
 `check_protected.py --base origin/main` passes against that trusted authorization.
-The implementation `c059223` was pushed after that; CI run `43673161341`
+The implementation `4770c9d` was pushed after that; CI run `43673161341`
 passed on Ubuntu and Windows.
 
 Documentation licensed CC BY 4.0.

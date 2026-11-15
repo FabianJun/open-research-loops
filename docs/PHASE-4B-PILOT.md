@@ -34,7 +34,7 @@ This is the record of the first live runs on a real, licensed problem with a pub
 
 **Arms.** For live workers, the two `agent` and two `random` runs are four replicates. The arm label reaches the worker context but changes no instruction. The grain selection takes the best of all four.
 
-**Hashes.** The registration hash was `dddd23c2…` for both projects. The protected hash was `574d2edb…`, from code at c059223.
+**Hashes.** The registration hash was `dddd23c2…` for both projects. The protected hash was `574d2edb…`, from code at 4770c9d.
 
 ## Attempt log
 

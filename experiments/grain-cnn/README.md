@@ -92,7 +92,7 @@ attribution is in the script docstring and repository NOTICE.
    must match. Crops and padded full-image inference already handled any
    size. No training, selection or val score happened, so the fixed
    configuration is unchanged.
-3. Full run, 2026-11-15, after the loader fix (commit 9ec364d): completed on
+3. Full run, 2026-11-15, after the loader fix (commit bd56566): completed on
    a Kaggle Tesla T4 in 571 s of training wall time. Best checkpoint epoch 49
    of 60; chosen post-processing t=0.6, a=200 on the internal-check images.
 
