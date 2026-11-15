@@ -12,7 +12,7 @@ For researchers and students working with a coding agent. No coding needed.
 [![evidence: checked, negatives kept](https://img.shields.io/badge/evidence-checked%2C_negatives_kept-0e7c7b)](#measured-not-promised)
 ![python 3.12+](https://img.shields.io/badge/python-3.12%2B-59636e)
 [![licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](#names-and-licences)
-![status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-59636e)
+![status: released v0.1.0](https://img.shields.io/badge/status-released_v0.1.0-59636e)
 
 [Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [Why this exists](#why-this-exists) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
 
@@ -180,7 +180,7 @@ command-configured host: [COMPUTE](docs/COMPUTE.md).
 |---|---|
 | First live pilot, planted-signal, 8 worker runs per backend | `claude-sonnet-5-5`: **8/8 supported** in 2 min 11 s, estimated USD 0.32 in total. `gpt-6.1-terra`: **8/8 supported** in 2 min 01 s, about 72k tokens, cost not reported under ChatGPT sign-in. Every first submission was valid |
 | First real problem, grain counting on 316L micrographs, 4 worker runs per backend | Controls reproduced to 1e-9; 8/8 completed and re-checked on the first attempt. Best development `max_rel_error`: Terra **0.126**, the published baseline resubmitted; Sonnet **0.141**. Pre-registered target 0.10 **not reached**. Holdout: 0.176 and 0.182 |
-| Grain U-Net, one pre-registered training run | Val `max_rel_error` **0.1639**, scored once; team pipeline 0.1259. **No win** ([record](experiments/grain-cnn/README.md)) |
+| Grain counting with a small U-Net, one pre-registered training run | Validation error **0.1639** (`max_rel_error`, lower is better), scored once on images the U-Net never saw. The team's **0.1259** was tuned on those same images; on unseen images their setup scored **0.1739**, level with the U-Net within its 95% interval of 0.119 to 0.231. No win by the written rule, and a fair comparison is still open. The saved record let the owner identify the unfair baseline in review; coached mode now raises it before a run ([record](experiments/grain-cnn/README.md#interpretation-added-after-the-result)) |
 | Offline test suite, network blocked in the test process | CI: Ubuntu **463 passed, 1 skipped**; Windows **457 passed, 7 skipped** (container tests skip there). Includes real worker and evaluator containers, and both SDK adapters against stubs with real MCP subprocesses |
 
 Commands and raw results: [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md), the
