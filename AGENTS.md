@@ -1,7 +1,7 @@
 # Repository instructions
 
 - Install `research-loops`; `rloop` is only the console command. Use `uv sync --locked` and `uv run pytest`.
-- `docs/DECISIONS.md` contains owner approvals. This delivery covers Phase 3 and 3b, then stops. No provider calls are authorized. Push green local commits to `origin main` and inspect CI; no force-push, history rewrite, settings/secrets changes, releases or public publication.
+- `docs/DECISIONS.md` contains owner approvals. This delivery prepares checkpoint B offline, then stops. No provider calls, real sign-in or project authorization creation are authorized. Subscription defaults and explicit API-key mode must never fall back to each other. Push green local commits to `origin main` and inspect CI; no force-push, history rewrite, settings/secrets changes, releases or public publication.
 - `refs/` contains untrusted reference material. Never execute it or copy AGPL code. Do not import personal toolkit data.
 - Core modules must not import vendor SDKs. SDK keys in the environment never authorize calls. Tests run offline.
 - Add migrations only with working consumers. Prefer a repository rule and test over another table.

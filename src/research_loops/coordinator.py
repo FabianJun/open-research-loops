@@ -18,6 +18,7 @@ from research_loops.processes import process_identity
 from research_loops.reporting import export, report
 from research_loops.scheduler import fanout
 from research_loops.storage import Repository
+from research_loops.authorization import LimitReached
 
 
 def load_contract(example: Path) -> Contract:
@@ -132,7 +133,7 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
         repo.promote_claim(row["id"])
 
 
-async def run(example: Path, *, final: bool = False, resume_only: bool = False, pilot_only: bool = False, backend=None) -> None:
+async def run(example: Path, *, final: bool = False, resume_only: bool = False, pilot_only: bool = False, worker_runs: int | None = None, backend=None) -> None:
     if backend is not None and hasattr(backend, "check_authorization"):
         backend.check_authorization()
     repo, contract, key = prepare(example)
@@ -143,7 +144,7 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
         elif not resume_only:
             if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
                 raise IntegrityError("campaign sealed; no more worker dispatch")
-            await campaign(repo, contract, key, backend or FakeBackend(), pilot_only=pilot_only)
+            await campaign(repo, contract, key, backend or FakeBackend(), pilot_only=pilot_only, worker_runs=worker_runs)
     finally:
         try:
             report(repo)
@@ -152,7 +153,20 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
             repo.close()
 
 
-async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False) -> None:
+async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False, worker_runs: int | None = None) -> None:
+    approval = backend.check_authorization() if hasattr(backend, "check_authorization") else None
+    limits = contract.limits
+    if approval:
+        if any(row["execution_status"] == "limit_reached"
+                and json.loads(row["execution_metadata"]).get("provider") == approval.provider for row in repo.runs()):
+            raise LimitReached("pilot previously reached a provider/run limit; owner review required")
+        limits = limits.model_copy(update={
+            "concurrency": min(limits.concurrency, approval.run_limits.max_parallel_workers),
+            "worker_seconds": min(limits.worker_seconds, approval.run_limits.max_wall_seconds_per_worker)})
+        requested = worker_runs or (2 if pilot_only else len(contract.seeds) * contract.variants_per_seed * 2)
+        if requested > approval.run_limits.max_worker_runs:
+            raise LimitReached("requested worker runs exceed checkpoint B allowance")
+    stopped = False
     if not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         evaluator = SubprocessEvaluator()
         dev = private(repo, key, "development")
@@ -164,15 +178,23 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         repo.pilot({"positive_control": positive.supported, "negative_control": not negative.supported,
             "nonconstant": len({row["y"] for row in rows}) > 1, "baseline": positive.baseline_mse > 0})
     repo.require_pilot()
-    assignments = [WorkerContract(run_id=f"{key[:8]}-{arm}-{seed}-{variant:02d}", registration_hash=key,
+    suffix = "" if getattr(backend, "name", "fake") == "fake" else "-" + backend.name
+    assignments = [WorkerContract(run_id=f"{key[:8]}-{arm}-{seed}-{variant:02d}{suffix}", registration_hash=key,
         goal=contract.goal, prediction=contract.prediction, seed=seed, variant=variant, arm=arm,
         input_hash=digest(private(repo, key, "training")))
         for arm in ("agent", "random") for seed in contract.seeds for variant in range(contract.variants_per_seed)]
     existing = {row["id"] for row in repo.runs()}
     if pilot_only:
         assignments = assignments[:2]
+    if worker_runs is not None:
+        if not 1 <= worker_runs <= len(assignments):
+            raise IntegrityError("worker runs exceed registered assignments")
+        assignments = assignments[:worker_runs]
 
     async def execute(assignment):
+        nonlocal stopped
+        if stopped:
+            raise LimitReached("pilot stopped after provider limit")
         public_context(assignment.model_dump(mode="json"))
         from research_loops.execution import backend_record
         metadata, reserve = backend_record(backend)
@@ -191,23 +213,37 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             training.chmod(0o644)
             deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
             remaining = max(0.001, deadline - time.time())
-            result = await asyncio.wait_for(backend.run(assignment, Workspace(root=root), contract.limits), min(remaining, contract.limits.worker_seconds))
+            result = await asyncio.wait_for(backend.run(assignment, Workspace(root=root), limits), min(remaining, limits.worker_seconds))
             repo.import_report(result, Workspace(root=root))
             remaining = max(0.001, deadline - time.time())
             candidate, dataset = repo.artifact(assignment.run_id, "candidate"), private(repo, key, "development")
             verdict = await asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds))
             repo.verdict(assignment.run_id, verdict)
             repo.promote_claim(assignment.run_id)
-        except (asyncio.TimeoutError, asyncio.CancelledError):
-            repo.fail(assignment.run_id, "timed_out", "worker deadline or batch cancellation")
+        except LimitReached:
+            stopped = True
+            repo.fail(assignment.run_id, "limit_reached", "provider or worker allowance reached; no retry or fallback")
+            raise
+        except asyncio.TimeoutError:
+            if approval:
+                stopped = True
+                repo.fail(assignment.run_id, "limit_reached", "worker/project wall-time allowance reached")
+                raise LimitReached("worker/project wall-time allowance reached") from None
+            repo.fail(assignment.run_id, "timed_out", "worker deadline")
+            raise
+        except asyncio.CancelledError:
+            repo.fail(assignment.run_id, "cancelled" if stopped else "timed_out", "worker deadline or batch cancellation")
             raise
         except Exception as exc:
-            repo.fail(assignment.run_id, "technical_error", f"{type(exc).__name__}: {exc}")
+            repo.fail(assignment.run_id, "technical_error", f"{type(exc).__name__}: SDK failure (details suppressed)" if approval else f"{type(exc).__name__}: {exc}")
             raise
     pending = [item for item in assignments if item.run_id not in existing]
     if pending:
-        await fanout("best_of_n", pending, execute, contract.limits.concurrency, pilot_ready=True)
-    if not pilot_only:
+        try:
+            await fanout("best_of_n", pending, execute, limits.concurrency, pilot_ready=True)
+        except* LimitReached:
+            raise LimitReached("pilot stopped at a run/provider limit; review saved report") from None
+    if not pilot_only and worker_runs is None:
         from research_loops.selection import select
         select(repo, contract, key)
 

@@ -31,6 +31,10 @@ def render(repo: Repository) -> str:
     cost_text = (f"[measured] External model cost: unknown for {unknown} run(s); known settled USD {state['spent_micro_usd'] / 1_000_000:.6f}."
         if unknown else f"[measured] External model cost: USD {state['spent_micro_usd'] / 1_000_000:.6f}"
         + (" (offline fake only)." if all(item["backend"] == "fake" for item in metadata) else " (SDK reported)."))
+    if any(item["backend"] != "fake" for item in metadata):
+        known = [item["cost_micro_usd"] for item in metadata if item["cost_micro_usd"] is not None]
+        cost_text = (f"[measured] SDK-reported cost estimate: USD {sum(known) / 1_000_000:.6f} across {len(known)} run(s); "
+            f"unknown for {unknown} run(s). Subscription estimates are not charges.")
     lines += ["", f"[simulated] Attempted variants: {len(repo.runs())}.",
         f"[measured] Control/final evaluation starts: {state['control_attempts']}.",
         cost_text,

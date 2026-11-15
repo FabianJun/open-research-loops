@@ -40,3 +40,13 @@ The project owner authorized MCP stdio parity, both optional SDK adapters tested
 The private `origin` repository and its noreply history rewrite are legitimate. Green local commits may be pushed with `git push origin main`; inspect CI with `gh`. No force-push, pushed-history rewrite, settings/visibility/secrets changes, releases, tags or other repositories. Public publication remains checkpoint C.
 
 Lead with time to the first running scientific experiment. Measure the offline init-to-pilot path; no invented time target. The first scaffold remains explicitly simulated planted-signal, not a substituted evaluator for the scientist's real problem. GUIDE and skills remain Phase 4.
+
+## Checkpoint-B preparation — 2026-11-15
+
+The project owner approved keeping both vendor adapters and using each user's own subscriptions by default: Claude Code login and Sign in with ChatGPT token sharing for locally run open-source apps. API-key mode remains an explicit option. Credentials never authorize a run. Do not read existing credential files, perform a real sign-in, create project authorization or call providers in this delivery.
+
+The implementation may prepare the proposed gate: owner, provider, exact model, explicit auth mode, effort, maximum worker runs, parallel workers, turns and wall time. A USD cap is optional and API-key-only. This is approval to build the offline gate, not approval of any live run or particular limits. Record token usage and SDK-reported USD as estimates; unknown stays unknown.
+
+The proposed documentation choices are `claude-fable-5-2` at high effort and `gpt-6-astra` if listed for the signed-in ChatGPT account. `gpt-6.1-sol` requires a separate explicit project choice if Astra is unavailable; never fall back automatically. Cheaper models require explicit project configuration. Model IDs were checked against official model pages on this date. Models and limits remain configurable before go.
+
+Proposed next: eight workers per backend first, 48 later, and cross-vendor rechecking. First example remains planted-signal, controls first, MCP-only, no final ticket or candidate code. Cross-vendor rechecking should use existing verification only if it fits without new machinery; otherwise report the recommendation. These proposals are not a live authorization. Checkpoint C still governs publication.

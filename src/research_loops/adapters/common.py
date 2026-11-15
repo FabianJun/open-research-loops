@@ -49,17 +49,22 @@ class SDKBackend:
     name: str
     provider: str
 
-    def __init__(self, model: str, *, project: Path | None = None, sandbox=None):
+    def __init__(self, model: str, *, project: Path | None = None, sandbox=None, auth_mode=None, effort="high"):
         self.model = model
         self.project = project
+        self.auth_mode = auth_mode or ("chatgpt" if self.provider == "openai" else "claude_code")
+        self.effort = effort
         from research_loops.sandbox import NoneSandbox
         self.sandbox = sandbox or NoneSandbox()
         self.offline = False
 
-    def check_authorization(self) -> int | None:
+    def check_authorization(self):
         if self.offline:
             return None  # Only an explicitly injected SDK model/transport seam, never CLI configuration.
-        return authorize(self.project, self.provider, self.model)
+        approval = authorize(self.project, self.provider, self.model)
+        if approval.auth_mode != self.auth_mode or approval.effort != self.effort:
+            raise IntegrityError("checkpoint B auth mode or effort differs from backend")
+        return approval
 
     async def launch(self, contract: WorkerContract, workspace: Workspace):
         workspace.root.mkdir(parents=True, exist_ok=True)

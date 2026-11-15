@@ -95,6 +95,16 @@ class Repository:
                 raise IntegrityError("assignment does not use current registration")
             if state["final_ticket"]:
                 raise IntegrityError("campaign sealed; no worker may see final results")
+            limits = (execution_metadata or {}).get("run_limits")
+            if limits:
+                from research_loops.authorization import LimitReached
+                rows = [row for row in self.runs() if json.loads(row["execution_metadata"]).get("provider") == execution_metadata["provider"]]
+                if any(row["execution_status"] == "limit_reached" for row in rows):
+                    raise LimitReached("pilot previously reached a provider limit; owner review required")
+                if len(rows) >= limits["max_worker_runs"]:
+                    raise LimitReached("maximum worker runs reached")
+                if sum(row["execution_status"] == "running" for row in rows) >= limits["max_parallel_workers"]:
+                    raise LimitReached("maximum parallel workers reached")
             if self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"] >= state["max_attempts"]:
                 raise IntegrityError("attempt allowance exhausted")
             authorized_cap = (execution_metadata or {}).get("authorization_cap_micro_usd")
@@ -205,18 +215,22 @@ class Repository:
             self._settle(run_id)
 
     def _settle(self, run_id: str) -> None:
+        metadata = json.loads(self.db.execute("SELECT execution_metadata FROM runs WHERE id=?", (run_id,)).fetchone()[0])
+        if metadata.get("auth_mode") in {"chatgpt", "claude_code"}:
+            self.db.execute("UPDATE runs SET settled=1 WHERE id=?", (run_id,))
+            return  # SDK USD estimates are not subscription charges.
         row = self.db.execute("SELECT reserved_micro_usd,settled,report FROM runs WHERE id=?", (run_id,)).fetchone()
         if row and not row[1] and row[2]:
             cost = WorkerReport.model_validate_json(row[2]).cost_micro_usd
             if cost is None:
                 return  # Unknown SDK cost keeps its reservation; never silently charge zero.
-            if cost > row[0]:
+            if cost > row[0] and (metadata.get("auth_mode") != "api_key" or metadata.get("authorization_cap_micro_usd") is not None):
                 raise IntegrityError("cost exceeds reservation")
             self.db.execute("UPDATE project SET reserved_micro_usd=reserved_micro_usd-?,spent_micro_usd=spent_micro_usd+?", (row[0], cost))
             self.db.execute("UPDATE runs SET settled=1 WHERE id=?", (run_id,))
 
     def fail(self, run_id: str, status: str, reason: str) -> None:
-        if status not in ("technical_error", "timed_out", "interrupted", "cancelled"):
+        if status not in ("technical_error", "timed_out", "interrupted", "cancelled", "limit_reached"):
             raise IntegrityError("invalid failure status")
         with self.db:
             self.db.execute("UPDATE runs SET execution_status=?,scientific_outcome=NULL,verification_status='unverified',error=? WHERE id=? AND execution_status='running'", (status, reason, run_id))

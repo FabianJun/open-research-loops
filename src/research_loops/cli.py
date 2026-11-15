@@ -8,6 +8,8 @@ import typer
 from research_loops import __version__
 
 app = typer.Typer(no_args_is_help=True)
+from research_loops.auth_cli import app as auth_app
+app.add_typer(auth_app, name="auth")
 
 
 @app.callback()
@@ -26,6 +28,19 @@ def run(example: Path, backend: str = "fake", final: bool = False) -> None:
         raise typer.BadParameter(str(exc)) from exc
     from research_loops.coordinator import run as execute
     asyncio.run(execute(example, final=final, backend=selected))
+    typer.echo(str(example / ".rloop" / "report.md"))
+
+
+@app.command()
+def pilot(example: Path, backend: str = typer.Option(...), workers: int = 8) -> None:
+    """Run bounded public-input workers after controls; never consume final data."""
+    from research_loops.execution import load_backend
+    from research_loops.coordinator import run as execute
+    from research_loops.domain import IntegrityError
+    try:
+        asyncio.run(execute(example, backend=load_backend(backend, example), worker_runs=workers))
+    except (IntegrityError, ExceptionGroup) as exc:
+        raise typer.BadParameter(str(exc)) from None
     typer.echo(str(example / ".rloop" / "report.md"))
 
 
