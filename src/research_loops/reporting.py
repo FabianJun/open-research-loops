@@ -11,10 +11,14 @@ from research_loops.storage import Repository
 
 
 def render(repo: Repository) -> str:
+    from research_loops.prediction import section
+    from research_loops.settings import working_mode
+    working_mode(repo.root.parent)
     registration = repo.db.execute("SELECT payload FROM registrations WHERE hash=(SELECT current_registration FROM project)").fetchone()
     if registration and json.loads(registration[0]).get("name") == "grain-316l":
         from research_loops.grain_reporting import render as grain_render
-        return grain_render(repo)
+        extra = section(repo)
+        return grain_render(repo) + ("\n".join(extra) + "\n" if extra else "")
     metadata = [json.loads(row["execution_metadata"]) for row in repo.runs()]
     live = any(item["backend"] != "fake" for item in metadata)
     tag = "measured" if live else "simulated"
@@ -62,6 +66,7 @@ def render(repo: Repository) -> str:
     for row in repo.db.execute("SELECT * FROM challenges ORDER BY id"):
         resolved = repo.db.execute("SELECT 1 FROM events WHERE kind='challenge_resolution' AND record_id=?", (row["id"],)).fetchone()
         lines.append(f"[interpretation] Challenge {row['id']} to {row['claim_id']}: {'resolved' if resolved else 'contested'}; {row['grounds']}")
+    lines += section(repo)
     lines.append("")
     return "\n".join(lines)
 

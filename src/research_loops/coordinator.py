@@ -56,6 +56,8 @@ def private(repo: Repository, key: str, split: str) -> bytes:
 
 
 def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repository, Contract, str]:
+    from research_loops.settings import working_mode
+    working_mode(example)
     contract = load_contract(example)
     repo = Repository(example / ".rloop")
     try:

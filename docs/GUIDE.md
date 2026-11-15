@@ -1,5 +1,7 @@
 # Scientist and engineer guide
 
+Want to learn research design as you work? Choose [coached mode](COACHED.md).
+
 From a source checkout, install the `research-loops` distribution with uv.
 `rloop` is the console command; `python -m research_loops.cli` invokes the same CLI.
 Run the following from the checkout root;
@@ -35,7 +37,7 @@ Live pilots require the explicit owner gate described in
 [CHECKPOINT-B-PILOT](CHECKPOINT-B-PILOT.md). Neither credentials nor the commands
 above authorize a live run. See [DESIGN](DESIGN.md) and [LESSONS](LESSONS.md).
 
-Inspect the seven skills and preview personal-agent links:
+Inspect the eight skills and preview personal-agent links:
 
 ```sh
 uv run python -m research_loops.cli skills list

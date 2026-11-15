@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import Literal
 
 import typer
 
@@ -71,15 +72,19 @@ def pilot(example: Path, backend: str = typer.Option(...), workers: int = 8) -> 
 
 
 @app.command()
-def init(example: Path, question: str = "Can we recover a planted nonlinear signal?", owner: str | None = None) -> None:
-    """Create a simulated scaffold and complete its first offline pilot."""
+def init(example: Path, question: str = "Can we recover a planted nonlinear signal?", owner: str | None = None,
+         mode: Literal["autonomous", "coached"] | None = None) -> None:
+    """Create a scaffold; autonomous (default) also runs the first fake pilot."""
     from research_loops.domain import Contract, canonical
     from research_loops.paths import atomic_write
     from research_loops.coordinator import run as execute
     from research_loops.domain import IntegrityError
     from research_loops.owner import initialize_owner
+    from research_loops.settings import initialize_mode, working_mode
     try:
+        working_mode(example)
         initialize_owner(example, owner)
+        selected_mode = initialize_mode(example, mode)
     except IntegrityError as exc:
         raise typer.BadParameter(str(exc), param_hint="--owner") from exc
     if not (example / "contract.json").exists():
@@ -91,8 +96,38 @@ def init(example: Path, question: str = "Can we recover a planted nonlinear sign
     if is_grain(load_contract(example)):
         typer.echo("Grain project initialized; fetch verified data before run.")
         return
+    if selected_mode == "coached":
+        typer.echo("Coached scaffold ready; agree the contract, then plan, predict and run.")
+        return
     asyncio.run(execute(example, pilot_only=True))
     typer.echo(f"Simulated fake pilot complete: {example / '.rloop' / 'report.md'}")
+
+
+@app.command()
+def predict(project: Path, value: float = typer.Option(...), note: str | None = None) -> None:
+    """Record one headline development-metric prediction before any scoring."""
+    from research_loops.domain import IntegrityError, canonical
+    from research_loops.coordinator import load_contract
+    from research_loops.storage import Repository
+    from research_loops.prediction import record
+    from research_loops.reporting import report, export
+    from research_loops.settings import working_mode
+    try:
+        working_mode(project)
+        contract = load_contract(project)
+        repo = Repository(project / ".rloop")
+        try:
+            registered = repo.db.execute("SELECT payload FROM registrations WHERE hash=(SELECT current_registration FROM project)").fetchone()
+            if registered and registered[0] != canonical(contract):
+                raise IntegrityError("contract changed; use rloop plan before predicting")
+            record(repo, value, note)
+            report(repo)
+            export(repo)
+        finally:
+            repo.close()
+    except (IntegrityError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from None
+    typer.echo("Prediction recorded with UTC time in the project ledger.")
 
 
 @app.command()

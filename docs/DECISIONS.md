@@ -99,3 +99,22 @@ After the Phase 4b record, the owner identified the limiting factor: no run coul
 Result: the first full run stopped in the data loader (mixed image formats; fixed in 9ec364d, no training happened). The second completed on a Tesla T4. Val `max_rel_error` 0.1639, scored once: worse than the team's 0.1259 and short of the 0.10 target. The record is [experiments/grain-cnn](../experiments/grain-cnn/README.md#attempt-log).
 
 A worker loop around training, live use of other hosts, and any use of the holdout need a new go.
+
+## Coached mode and competence profile — 2026-11-15
+
+The owner specified a selectable competence-enhancing mode, modelled on their
+PresentTogether repository, and approved its design.
+
+The agent does the technical work and explains and suggests research methods;
+the person decides. Autonomous remains the default. Coached mode adds four
+moments for the person's view, named methods, reflection and a research brief.
+The owner also requested a local competence profile that guides explanation
+depth per area and is updated through learning progress, with changes confirmed
+by the person. The shared scale, Markdown format and update rules match
+PresentTogether; only the areas differ. Only the person's coaching agent
+accesses `~/.competence-profiles/research-loops.md`; it stays outside projects,
+reports, briefs, receipts and the ledger, and is never sent to workers or services.
+
+Mode is a way of working, not a security barrier: the tool cannot verify who
+wrote a prediction or rationale. This offline implementation grants no live
+provider, compute, publication or holdout authorization.

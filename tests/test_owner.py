@@ -19,7 +19,7 @@ def test_init_records_explicit_owner_and_preserves_other_host_settings(example):
     result = CliRunner().invoke(app, ["init", str(example), "--owner", "  Ada Lovelace  "])
     assert result.exit_code == 0, (result.output, result.exception)
     config = json.loads(path.read_bytes())
-    assert config == {"owner": {"name": "Ada Lovelace", "source": "argument"}, "sandbox": {"name": "none"}}
+    assert config == {"owner": {"name": "Ada Lovelace", "source": "argument"}, "sandbox": {"name": "none"}, "mode": "autonomous"}
     assert (example / ".rloop" / "report.md").is_file()
     assert initialize_owner(example, None) == config["owner"]
 

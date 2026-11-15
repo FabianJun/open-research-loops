@@ -12,6 +12,7 @@ from research_loops.domain import IntegrityError, digest
 NAMES = (
     "rloop-research-loop", "rloop-bounded-iteration", "rloop-evidence-gate",
     "rloop-challenge", "rloop-parallel-fanout", "rloop-handoff-report", "rloop-self-assess",
+    "rloop-coach",
 )
 app = typer.Typer(no_args_is_help=True)
 

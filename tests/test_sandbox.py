@@ -60,12 +60,43 @@ def sandbox_image(tmp_path_factory):
             pytest.fail("Linux CI must provide its required OCI runtime")
         pytest.skip("Linux container integration requires docker/podman CLI; use Linux CI or Docker Desktop locally")
     image = os.environ.get("RLOOP_SANDBOX_IMAGE")
+    # Opt-in for offline local runs; never set by fixtures, so CI keeps building and running the contract.
+    if os.environ.get("RLOOP_TEST_NO_CONTAINER_BUILD") == "1":
+        if not image:
+            pytest.skip("offline container tests require an already-local RLOOP_SANDBOX_IMAGE; no build or pull")
+        local = subprocess.run([runtime, "image", "inspect", image], capture_output=True)
+        if local.returncode != 0:
+            pytest.skip("offline sandbox image is not local; no build or pull")
     if not image:
         output = tmp_path_factory.mktemp("image") / "iid"
         built = subprocess.run([runtime, "build", "--file", "Containerfile", "--iidfile", str(output), "."], capture_output=True)
         assert built.returncode == 0, built.stderr.decode(errors="replace")
         image = output.read_text().strip()
     return image
+
+
+@pytest.mark.parametrize("image,local", [(None, False), ("sha256:local-test", False), ("sha256:local-test", True)])
+def test_offline_container_fixture_never_builds_or_pulls(monkeypatch, tmp_path_factory, image, local):
+    from types import SimpleNamespace
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setenv("RLOOP_TEST_NO_CONTAINER_BUILD", "1")
+    if image:
+        monkeypatch.setenv("RLOOP_SANDBOX_IMAGE", image)
+    else:
+        monkeypatch.delenv("RLOOP_SANDBOX_IMAGE", raising=False)
+    monkeypatch.setattr(shutil, "which", lambda runtime: "/local/docker")
+    calls = []
+    def inspect(argv, **kwargs):
+        calls.append(argv)
+        assert argv[1:] == ["image", "inspect", image]
+        return SimpleNamespace(returncode=0 if local else 1)
+    monkeypatch.setattr(subprocess, "run", inspect)
+    if local:
+        assert sandbox_image.__wrapped__(tmp_path_factory) == image
+    else:
+        with pytest.raises(pytest.skip.Exception, match="no build or pull"):
+            sandbox_image.__wrapped__(tmp_path_factory)
+    assert len(calls) == (1 if image else 0)
 
 
 @pytest.fixture

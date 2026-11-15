@@ -21,7 +21,7 @@ def temporary_home(tmp_path, monkeypatch):
     return home
 
 
-def test_seven_skills_frontmatter_links_and_exposed_commands():
+def test_skills_frontmatter_links_and_exposed_commands():
     root = skills.resources() / "skills"
     assert set(p.name for p in root.iterdir() if p.is_dir()) == set(skills.NAMES)
     for name in skills.NAMES:
@@ -112,7 +112,7 @@ def test_install_refuses_conflicts_without_partial_changes(kind, temporary_home,
 
 def test_dry_run_never_creates_home(temporary_home):
     result = CliRunner().invoke(app, ["skills", "install", "--target", "both", "--dry-run"])
-    assert result.exit_code == 0 and result.output.count("would link") == 14
+    assert result.exit_code == 0 and result.output.count("would link") == 2 * len(skills.NAMES)
     assert not temporary_home.exists()
 
 

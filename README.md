@@ -23,6 +23,74 @@ Publish only what the saved evidence supports, negative results included.
 
 </div>
 
+## Two ways to work
+
+> **Competence-enhancing AI** makes you more capable, not more dependent: it explains, you decide, and you keep what you learn.
+
+Your own coding agent handles code, evaluators, compute, Kaggle and CI. Choose
+**autonomous** for delegated work, or **coached** to learn research design along
+the way: the agent explains and suggests; you decide on the research method.
+Paste either starter into your agent:
+
+```text
+Mode: autonomous
+Use open-research-loops and follow AGENTS.md. Handle the technical work,
+propose a bounded research plan and work within my permissions.
+My question: …
+```
+
+```text
+Mode: coached
+Use open-research-loops and skills/rloop-coach/SKILL.md. Coach me on research
+design and do the technical work. Explain the methods; let me decide.
+Reply in my language. My question: …
+```
+
+In coached mode, the agent uses `rloop init PROJECT --mode coached`, agrees
+the contract, then plans and records your number with `rloop predict` before
+running. Default autonomous init still completes its offline fake pilot.
+
+**One example from this repository.** A small U-Net was meant to beat a
+team's grain-counting pipeline. The agent set the rule, ran it once and
+reported honestly: val error **0.1639** against the team's **0.1259**, no win.
+Two things went wrong on the way. The smoke test held one of three image
+formats, so the first full run failed in the loader. And the bar was unfair:
+the team's number was tuned on the same 40 val images the U-Net never saw. The
+owner identified both problems in review: a bar tuned on the scoring images,
+and a sample of 40 that leaves a wide interval. A coached agent raises these
+points before the run, names the methods (**smoke test**, **fair comparison**, **sample size
+and intervals**: the U-Net's 95% interval is 0.119 to 0.231), and records your
+prediction first. [What happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result).
+
+| Step | Agent's work | Your part / what you learn |
+|---|---|---|
+| 1. Question and rights 🗣️ | Check licences, data and privacy. | Your question and disproof; a testable claim. |
+| 2. Metric, target, falsifier | Make the rule executable. | Decide what the score means. |
+| 3. Baselines and controls | Prepare defaults, team comparison, random or negative control; check each was tuned on the same data. | Recognise a fair test. |
+| 4. Approach 🗣️ | Offer safe, unusual and cheap no-GPU options; recommend one. | Your first idea, then your choice. |
+| 5. Pre-register 🗣️ | Record rule, budget, stop rule and prediction before scoring. | Your number and reason. |
+| 6. Compute and cost | Choose a host; cost first; representative smoke test. | Approve resources; learn what the test covers. |
+| 7. Evaluate once 🗣️ | Show the result, uncertainty and limits. | Your verdict before the agent's. |
+| 8. Reflect | Short questions, method card, proposed profile updates. | Keep the method in your words. |
+
+🗣️ marks the four moments for your view first, one question per reply.
+Otherwise the agent gets on with the work and names the step. **Every method
+has a name**, a reason, instructions and limits in its [card](skills/rloop-coach/references/methods.md).
+You get a checked result, a project `BRIEF.md`, a personal method card and an
+optional **private competence profile**, kept outside the repository and adapted
+per area as you learn. Say “shorter”, “explain more” or “just do it” at any time.
+
+**Say what you noticed; the agent finds the cause.**
+
+| You notice | The agent looks at |
+|---|---|
+| “Too good to be true.” | Leakage, the holdout barrier, double scoring. |
+| “Isn't the other number adapted to these images?” | Fair comparison: same tuning data and budget for every method. |
+| “Can we still adjust it?” | Yes, on training data with grouped cross-validation, under a new plan; the scored images stay untouched. |
+| “Are these images enough?” | A bootstrap interval and a paired comparison, image by image. |
+
+[How coached mode works](docs/COACHED.md).
+
 ## Why this exists
 
 This repository carries lessons from the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* hackathon (Berlin, November 2026). Thirteen submissions pointed agent loops at open science problems. The published assessments show the same failure modes again and again, and they are rarely about the science. They are about the loop: a threshold that moved mid-run, a prompt that leaked test scores, a headline result whose artifacts were never saved.

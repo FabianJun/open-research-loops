@@ -112,3 +112,27 @@ did not predict val well. Val was scored once with `score_local.py`; the
 configuration was not changed afterwards. A boundary-aware variant (for
 example an interior/boundary/background target or a distance transform with
 watershed) would need its own pre-registration and a new go.
+
+## Interpretation, added after the result
+
+The verdict above follows the written rule and stands. The rule itself was
+unfair, and the agent that set it up should have caught this: the team's
+0.1259 comes from a configuration chosen on these same 40 val images, while
+the U-Net never saw them. A number tuned on the scoring set is optimistic. On
+the 165 unseen holdout images the same team configuration scored 0.1739
+(published) or 0.1765 (this repository's port, [Phase 4b](../../docs/PHASE-4B-PILOT.md#final-holdout)).
+Those are different images, so the comparison only indicates the range.
+
+The U-Net's val score is uncertain too. Resampling the 40 per-image errors
+with replacement (bootstrap, 10,000 resamples, seed 0, no rescoring) gives a
+95% interval of 0.119 to 0.231. In 3.9% of the resamples the score is at or
+below 0.1259, in 48% at or below 0.1739. Seven of 40 images have both errors
+within 10%; 30 of 40 are undercounted.
+
+What a fair follow-up needs: tune both methods on the same training data with
+a stated budget, choose by cross-validation grouped by micrograph, freeze, and
+score both once on images neither has seen, with a paired interval. The
+method cards [fair comparison](../../skills/rloop-coach/references/methods.md#fair-comparison),
+[grouped cross-validation](../../skills/rloop-coach/references/methods.md#grouped-cross-validation)
+and [sample size and intervals](../../skills/rloop-coach/references/methods.md#sample-size-and-intervals)
+explain each step.

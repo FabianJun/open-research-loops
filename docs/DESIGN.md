@@ -403,7 +403,13 @@ Registration amendments require `plan --reason`; prior versions and comparison f
 
 Resume reconciles fake work in the dead coordinator and separately checks evaluator PID plus creation identity. An unresolved launch intent or unknown/live process blocks replay. A dead incomplete run remains interrupted; an already sealed evaluator/final receipt is imported without repeating evaluation. Failed variants are retained, not automatically retried. A started final ticket without a durable result stays consumed.
 
-Durable outputs are local and ignored under `.rloop/`; publication remains checkpoint C. Export is an event/audit derivative, not yet an automatic database restore command. The runtime license helper, literature/ideation APIs, seven skills, installer, GUIDE and self-assessment have offline tests.
+Durable outputs are local and ignored under `.rloop/`; publication remains checkpoint C. Export is an event/audit derivative, not yet an automatic database restore command. The runtime license helper, literature/ideation APIs, eight skills, installer, GUIDE and self-assessment have offline tests.
+
+Coached mode adds `rloop-coach` for the person's own agent. Its mode setting is
+host-only in `project.json`. A single numerical pre-scoring prediction uses the
+existing events ledger and binds to its registration; it adds no table or worker
+input. The competence profile is managed only by the coaching agent outside the
+project. See [COACHED](COACHED.md).
 
 ## Phase 3b Sandbox policy and threat model
 
