@@ -12,6 +12,8 @@ from research_loops.auth_cli import app as auth_app
 app.add_typer(auth_app, name="auth")
 from research_loops.skills import app as skills_app
 app.add_typer(skills_app, name="skills")
+from research_loops.compute.cli import app as compute_app
+app.add_typer(compute_app, name="compute")
 data_app = typer.Typer(no_args_is_help=True)
 app.add_typer(data_app, name="data")
 

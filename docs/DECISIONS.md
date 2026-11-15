@@ -88,3 +88,12 @@ The project owner chose autonomous mode as an end-to-end test of the framework: 
 Result: both backends completed 4/4 on the first attempt, all `not supported`. The best development `max_rel_error` was 0.1259 (Terra, the published baseline) and 0.1414 (Sonnet). The holdout gave 0.1765 and 0.1818 against the cited 0.1739. The record is [PHASE-4B-PILOT](PHASE-4B-PILOT.md).
 
 Scaling beyond this pilot and Phase 5 still need a new go.
+
+## CNN feasibility on external compute — 2026-11-15
+
+After the Phase 4b record, the owner identified the limiting factor: no run could reach the target because no model was trained. They directed a CNN feasibility test, chose Kaggle as the GPU host, set up its credentials and specified a vendor-agnostic compute layer for the repository (Kaggle, Google alternatives and others). The owner approved:
+
+- **Compute layer:** `rloop compute` with the `local`, `kaggle`, `manual` and `command` adapters ([COMPUTE](COMPUTE.md)). Only code leaves the machine, never data. Kaggle kernels are always private, and the owner's Kaggle handle never enters tracked files.
+- **One feasibility run:** a small U-Net on a private Kaggle kernel, after one smoke run ([experiments/grain-cnn](../experiments/grain-cnn/README.md)). The rule is pre-registered there and committed before the run. Val is scored once, locally, with the Phase 4b evaluator; the `test` split is never read.
+
+A worker loop around training, live use of other hosts, and any use of the holdout need a new go.

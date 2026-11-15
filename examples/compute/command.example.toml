@@ -1,0 +1,20 @@
+# Illustrative SSH/scp configuration only; nothing here has been verified live.
+# Copy outside your job directory as host.compute.local.toml, then adapt and test.
+# Commands are argument lists. Placeholders must occupy a whole argument.
+# {job_dir} and {staging} both name the filtered code-only staging directory.
+# Your submit wrapper must upload staging via scp, invoke a trusted launcher
+# via ssh, and print JOB_ID=<remote-id>. The launcher runs the staged entry.
+# Configure RLOOP_OUTPUT_DIR on the remote host; fetch copies only its outputs.
+# No shell expansion or command chaining is performed by the command adapter.
+#
+# submit = ["/absolute/path/to/submit-via-ssh", "{staging}", "{name}"]
+# status = ["ssh", "YOUR_HOST", "job-status", "{remote_id}"]
+# fetch = ["/absolute/path/to/fetch-via-scp", "{remote_id}", "{out_dir}"]
+# remote_id_regex = 'JOB_ID=([A-Za-z0-9_-]+)'
+#
+# [status_map]
+# '^QUEUED$' = "queued"
+# '^RUNNING$' = "running"
+# '^DONE$' = "complete"
+# '^FAILED$' = "failed"
+# '^CANCELLED$' = "cancelled"

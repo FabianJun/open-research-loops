@@ -1,0 +1,17 @@
+{
+  "name": "grain-316l-unet-feasibility",
+  "entry": "train_unet.py",
+  "args": [],
+  "smoke_args": ["--smoke"],
+  "needs_gpu": true,
+  "needs_internet": true,
+  "max_runtime_s": 43200,
+  "outputs": ["val_labels.npz", "run.json"],
+  "data": [
+    {
+      "url": "https://zenodo.org/records/22039777/files/Grain.zip?download=1",
+      "size": 100439005,
+      "sha256": "30ca8e80392519bb790d6093b5deb86df4d4aedf8cbe9beedbf329106d54d9d0"
+    }
+  ]
+}
