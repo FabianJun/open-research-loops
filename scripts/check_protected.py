@@ -5,6 +5,7 @@ import json
 import subprocess
 
 from research_loops.protection import authorize_change, verify_anchor
+from pathlib import Path
 
 
 def main():
@@ -20,7 +21,14 @@ def main():
         # First introduction is checked by the tests/owner review, not a fabricated prior anchor.
         print("no evaluator anchor in trusted base; initial anchor requires owner review")
         return
-    authorize_change(base, current, read("docs/evaluator-authorizations.json") or [])
+    # Both identity and decisions come from the base, never the changed checkout.
+    trusted_config = read("project.json") or {}
+    current_config = json.loads(Path("project.json").read_bytes())
+    authorize_change(
+        {"anchor": base, "owner": trusted_config.get("owner")},
+        {"anchor": current, "owner": current_config.get("owner")},
+        trusted_config.get("evaluator_authorizations", []),
+    )
     print("protected evaluator matches trusted base or prior human authorization")
 
 
