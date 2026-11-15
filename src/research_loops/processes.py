@@ -53,7 +53,7 @@ def process_identity(pid: int) -> str | None:
         if fields[0] == "Z":
             return None
         return fields[19]
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
         return None
     except OSError as exc:
         raise IntegrityError("process identity unavailable") from exc

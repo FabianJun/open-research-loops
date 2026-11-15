@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
@@ -12,6 +14,33 @@ from research_loops.domain import Contract, IntegrityError, Verdict, canonical
 from research_loops.evaluation import SubprocessEvaluator
 from research_loops.fake import oracle
 from research_loops.processes import process_identity, supervised
+from research_loops import processes
+
+
+@pytest.mark.parametrize("error", [FileNotFoundError, ProcessLookupError])
+def test_process_identity_vanished_during_stat_read(monkeypatch, error):
+    # Replace only this module's OS reference so the Linux branch runs on every host.
+    monkeypatch.setattr(processes, "os", SimpleNamespace(name="posix"))
+
+    def vanished(path):
+        assert str(path).replace("\\", "/") == "/proc/123/stat"
+        raise error()
+
+    monkeypatch.setattr(Path, "read_text", vanished)
+    assert process_identity(123) is None
+
+
+def test_process_identity_other_read_errors_remain_integrity_errors(monkeypatch):
+    monkeypatch.setattr(processes, "os", SimpleNamespace(name="posix"))
+    error = PermissionError("stat unreadable")
+
+    def unreadable(path):
+        raise error
+
+    monkeypatch.setattr(Path, "read_text", unreadable)
+    with pytest.raises(IntegrityError, match="process identity unavailable") as raised:
+        process_identity(123)
+    assert raised.value.__cause__ is error
 
 
 def test_wrong_and_known_correct_candidates():
