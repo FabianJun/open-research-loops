@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 476" width="1100" height="476" role="img" aria-labelledby="title desc">
+  <title id="title">open-research-loops: one route, two roles</title>
+  <desc id="desc">One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data and privacy first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card.</desc>
+  <text x="20" y="28" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="600" letter-spacing="1.5" fill="#9198a1">ONE ROUTE, TWO ROLES</text>
+  <text x="1080" y="28" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#9198a1">you never need to code  ·  the verdict stays yours</text>
+  <circle cx="27" cy="57" r="4.5" fill="#ff8a70" />
+  <path d="M20,68 a7,7 0 0 1 14,0 z" fill="#ff8a70" />
+  <text x="42" y="66" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.2" fill="#ff8a70">YOU DECIDE</text>
+  <rect x="20" y="78" width="196" height="70" rx="12" fill="#0d1117" stroke="#ff8a70" stroke-width="1.6" />
+  <rect x="20" y="90" width="4" height="46" rx="2" fill="#ff8a70" />
+  <text x="38" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">your question and</text>
+  <text x="38" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">what disproves it</text>
+  <rect x="236" y="78" width="196" height="70" rx="12" fill="#0d1117" stroke="#ff8a70" stroke-width="1.6" />
+  <rect x="236" y="90" width="4" height="46" rx="2" fill="#ff8a70" />
+  <text x="254" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">what the score means,</text>
+  <text x="254" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">what counts as fair</text>
+  <rect x="452" y="78" width="196" height="70" rx="12" fill="#0d1117" stroke="#ff8a70" stroke-width="1.6" />
+  <rect x="452" y="90" width="4" height="46" rx="2" fill="#ff8a70" />
+  <text x="470" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">your idea and pick,</text>
+  <text x="470" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">your predicted number</text>
+  <rect x="668" y="78" width="196" height="70" rx="12" fill="#0d1117" stroke="#ff8a70" stroke-width="1.6" />
+  <rect x="668" y="90" width="4" height="46" rx="2" fill="#ff8a70" />
+  <text x="686" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">the budget, then</text>
+  <text x="686" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">your verdict first</text>
+  <rect x="884" y="78" width="196" height="70" rx="12" fill="#0d1117" stroke="#ff8a70" stroke-width="1.6" />
+  <rect x="884" y="90" width="4" height="46" rx="2" fill="#ff8a70" />
+  <text x="902" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">your method card,</text>
+  <text x="902" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">in your own words</text>
+  <line x1="118.0" y1="194" x2="982.0" y2="194" stroke="#2fb8b0" stroke-width="3" stroke-linecap="round" />
+  <circle cx="118.0" cy="194" r="19" fill="#2fb8b0" stroke="#0d1117" stroke-width="4" />
+  <text x="118.0" y="199.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0d1117">1</text>
+  <text x="118.0" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#f0f6fc">Your question</text>
+  <circle cx="334.0" cy="194" r="19" fill="#2fb8b0" stroke="#0d1117" stroke-width="4" />
+  <text x="334.0" y="199.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0d1117">2</text>
+  <text x="334.0" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#f0f6fc">A fair test</text>
+  <circle cx="550.0" cy="194" r="19" fill="#2fb8b0" stroke="#0d1117" stroke-width="4" />
+  <text x="550.0" y="199.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0d1117">3</text>
+  <text x="550.0" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#f0f6fc">Plan and predict</text>
+  <circle cx="766.0" cy="194" r="19" fill="#2fb8b0" stroke="#0d1117" stroke-width="4" />
+  <text x="766.0" y="199.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0d1117">4</text>
+  <text x="766.0" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#f0f6fc">Run once</text>
+  <circle cx="982.0" cy="194" r="19" fill="#2fb8b0" stroke="#0d1117" stroke-width="4" />
+  <text x="982.0" y="199.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" font-weight="700" fill="#0d1117">5</text>
+  <text x="982.0" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#f0f6fc">Reflect</text>
+  <path d="M792.0,180 A30,30 0 1 0 796.0,200" fill="none" stroke="#2fb8b0" stroke-width="1.8" stroke-dasharray="4 4" />
+  <path d="M790.5,195 l6,6 l4.5,-7.5" fill="none" stroke="#2fb8b0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="806.0" y="170" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" font-style="italic" fill="#9198a1">workers, protected evaluator</text>
+  <rect x="20" y="297" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2" />
+  <path d="M23.5,280 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 24)" />
+  <text x="42" y="310" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.2" fill="#7c9cff">YOUR AGENT DOES THE TECHNICAL WORK</text>
+  <rect x="20" y="322" width="196" height="70" rx="12" fill="#0d1117" stroke="#7c9cff" stroke-width="1.6" />
+  <rect x="20" y="334" width="4" height="46" rx="2" fill="#7c9cff" />
+  <text x="38" y="352" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">checks licences, data</text>
+  <text x="38" y="374" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">and privacy first</text>
+  <rect x="236" y="322" width="196" height="70" rx="12" fill="#0d1117" stroke="#7c9cff" stroke-width="1.6" />
+  <rect x="236" y="334" width="4" height="46" rx="2" fill="#7c9cff" />
+  <text x="254" y="352" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">executable rule,</text>
+  <text x="254" y="374" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">fair baselines</text>
+  <rect x="452" y="322" width="196" height="70" rx="12" fill="#0d1117" stroke="#7c9cff" stroke-width="1.6" />
+  <rect x="452" y="334" width="4" height="46" rx="2" fill="#7c9cff" />
+  <text x="470" y="352" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">three options: safe,</text>
+  <text x="470" y="374" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">unusual, no GPU</text>
+  <rect x="668" y="322" width="196" height="70" rx="12" fill="#0d1117" stroke="#7c9cff" stroke-width="1.6" />
+  <rect x="668" y="334" width="4" height="46" rx="2" fill="#7c9cff" />
+  <text x="686" y="352" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">states cost first,</text>
+  <text x="686" y="374" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">tests, scores once</text>
+  <rect x="884" y="322" width="196" height="70" rx="12" fill="#0d1117" stroke="#7c9cff" stroke-width="1.6" />
+  <rect x="884" y="334" width="4" height="46" rx="2" fill="#7c9cff" />
+  <text x="902" y="352" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">asks short questions,</text>
+  <text x="902" y="374" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">drafts method card</text>
+  <rect x="20" y="416" width="1060" height="44" rx="22" fill="#161b22" stroke="#3d444d" stroke-width="1" />
+  <text x="550.0" y="444" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#f0f6fc">
+    <tspan font-weight="700">You leave with</tspan>
+    <tspan fill="#9198a1">   </tspan>a checked result<tspan fill="#9198a1">  ·  </tspan>a research brief<tspan fill="#9198a1">  ·  </tspan>your own method card</text>
+  <text x="118.0" y="261" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" fill="#9198a1" text-anchor="middle">step 1</text>
+  <text x="334.0" y="261" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" fill="#9198a1" text-anchor="middle">steps 2–3</text>
+  <text x="550.0" y="261" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" fill="#9198a1" text-anchor="middle">steps 4–5</text>
+  <text x="766.0" y="261" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" fill="#9198a1" text-anchor="middle">steps 6–7</text>
+  <text x="982.0" y="261" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13" fill="#9198a1" text-anchor="middle">step 8</text>
+</svg>

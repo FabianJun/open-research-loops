@@ -8,11 +8,13 @@ Lock the question before anyone looks at results. Fan out agent workers. Score e
 Publish only what the saved evidence supports, negative results included.
 
 [![tests](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml/badge.svg)](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml)
-![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)
-![Windows | Linux](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-6e7781)
-[![Code: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-0969da)](LICENSE)
-[![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-8250df)](LICENSE-CC-BY-4.0)
+[![Licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-2f5bea)](LICENSE)
+![For researchers and students](https://img.shields.io/badge/for-researchers_and_students-0e7c7b)
+![No coding needed](https://img.shields.io/badge/coding-not_needed-c4432b)
+[![Works with any capable coding agent](https://img.shields.io/badge/works_with-any_capable_coding_agent-59636e)](#backends)
 ![Status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-bc4c00)
+
+[Start here](#two-ways-to-work) · [How it works](#how-one-loop-runs) · [Quickstart](#quickstart) · [Backends](#backends) · [Results](#measured-not-promised) · [Learn more](#documentation)
 
 <br/>
 
@@ -25,7 +27,10 @@ Publish only what the saved evidence supports, negative results included.
 
 ## Two ways to work
 
-> **Competence-enhancing AI** makes you more capable, not more dependent: it explains, you decide, and you keep what you learn.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/competence-dark.svg">
+  <img alt="Competence-enhancing AI makes you more capable, not more dependent: it explains, you decide, and you keep what you learn." src="docs/assets/competence-light.svg" width="100%">
+</picture>
 
 Your own coding agent handles code, evaluators, compute, Kaggle and CI. Choose
 **autonomous** for delegated work, or **coached** to learn research design along
@@ -49,6 +54,11 @@ Reply in my language. My question: …
 In coached mode, the agent uses `rloop init PROJECT --mode coached`, agrees
 the contract, then plans and records your number with `rloop predict` before
 running. Default autonomous init still completes its offline fake pilot.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/route-dark.svg">
+  <img alt="One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data and privacy first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card." src="docs/assets/route-light.svg" width="100%">
+</picture>
 
 **One example from this repository.** A small U-Net was meant to beat a
 team's grain-counting pipeline. The agent set the rule, ran it once and
@@ -111,7 +121,7 @@ Details, with links to each assessment: [docs/LESSONS.md](docs/LESSONS.md).
 
 ## Quickstart
 
-You need [uv](https://docs.astral.sh/uv/) and Python 3.12+. Nothing here calls a model provider.
+You need [uv](https://docs.astral.sh/uv/) and Python 3.12+ on Windows or Linux. Nothing here calls a model provider.
 
 ```console
 git clone https://github.com/scaled-thinking/open-research-loops
