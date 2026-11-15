@@ -1,6 +1,7 @@
 """Explicit user-invoked auth commands. Importing this module does not sign in."""
 
 import typer
+from research_loops.domain import IntegrityError
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -23,7 +24,7 @@ def login_openai(account: str | None = None):
         typer.echo("Continue with ChatGPT. Complete sign-in in your system browser.")
         label = login(ChatGPTAuth(), account=account)
         typer.echo(f"Active account registration: {label}. No inference was requested.")
-    except AuthError as exc:
+    except IntegrityError as exc:
         raise typer.BadParameter(str(exc)) from None
 
 
@@ -37,7 +38,7 @@ def accounts(select: str | None = None):
             store.select(select)
         for label, active in store.accounts():
             typer.echo(f"{label}{' (active)' if active else ''}")
-    except AuthError as exc:
+    except IntegrityError as exc:
         raise typer.BadParameter(str(exc)) from None
 
 
@@ -48,5 +49,5 @@ def models():
     try:
         for model in ChatGPTAuth().models():
             typer.echo(f"{model['slug']}\t{model['display_name']}")
-    except AuthError as exc:
+    except IntegrityError as exc:
         raise typer.BadParameter(str(exc)) from None

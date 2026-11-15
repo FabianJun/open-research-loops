@@ -32,7 +32,7 @@ class OpenAIBackend(SDKBackend):
             if self.auth_mode == "chatgpt":
                 from research_loops.openai_auth import ChatGPTAuth, TokenStore
                 from research_loops.adapters.chatgpt_responses import ChatGPTResponsesModel, MCPAgent
-                auth = self.offline_auth or ChatGPTAuth(TokenStore(project=self.project))
+                auth = self.offline_auth or ChatGPTAuth(TokenStore(project=self.project)).pin_account()
                 import asyncio
                 catalog = await asyncio.to_thread(auth.models)
                 if self.model not in {item["slug"] for item in catalog}:
@@ -67,7 +67,7 @@ class OpenAIBackend(SDKBackend):
     async def execute(self, contract, workspace, limits, approval, model, agent_class):
         from agents import ModelSettings, Runner, RunConfig, MaxTurnsExceeded
         from agents.mcp import MCPServerStdio
-        from openai import RateLimitError
+        from openai import APIStatusError
         launch = await self.launch(contract, workspace)
         server = MCPServerStdio(params={"command": launch.command, "args": launch.args, "env": launch.env,
             **({"cwd": launch.cwd} if launch.cwd else {})}, name="rloop", cache_tools_list=True,
@@ -78,7 +78,7 @@ class OpenAIBackend(SDKBackend):
             agent = agent_class(name="rloop-worker", instructions=prompt, model=model,
                 tools=[], handoffs=[], mcp_servers=[server],
                 model_settings=ModelSettings(parallel_tool_calls=False, store=False,
-                    reasoning={"effort": self.effort}, retry=None))
+                    reasoning={"effort": self.effort}, response_include=["reasoning.encrypted_content"], retry=None))
             exposed = await server.list_tools()
             if {tool.name for tool in exposed} != set(TOOL_NAMES):
                 raise IntegrityError("effective MCP tool list differs from rloop policy")
@@ -92,8 +92,13 @@ class OpenAIBackend(SDKBackend):
                     result = Runner.run_streamed(agent, **arguments)
                     async for _ in result.stream_events():
                         pass
-            except (RateLimitError, MaxTurnsExceeded):
+            except MaxTurnsExceeded:
                 raise LimitReached("OpenAI rate or turn limit reached; no retry or fallback") from None
+            except APIStatusError as exc:
+                from research_loops.adapters.chatgpt_responses import LIMIT_CODES
+                if exc.status_code == 429 or exc.code in LIMIT_CODES:
+                    raise LimitReached("OpenAI subscription or rate limit reached; no retry or fallback") from None
+                raise IntegrityError("OpenAI request refused; no retry or fallback") from None
         usage = asdict(result.context_wrapper.usage)
         # Agents Usage reports tokens/requests, not a USD invoice. Do not invent zero.
         return self.finish(contract, workspace, launch, sdk_version=version("openai-agents"), cost=None,

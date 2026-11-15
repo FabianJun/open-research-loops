@@ -25,6 +25,7 @@ import uuid
 
 from research_loops.domain import IntegrityError
 from research_loops.locking import ProjectLock
+from research_loops.authorization import LimitReached
 
 ISSUER = "https://auth.openai.com"
 AUTHORIZE = ISSUER + "/api/accounts/authorize"
@@ -58,10 +59,13 @@ def request_json(method, url, *, headers=None, data=None):
             if isinstance(candidate, dict):
                 candidate = candidate.get("code")
             if candidate in {"invalid_grant", "invalid_refresh_token", "token_expired", "refresh_token_expired",
-                    "refresh_token_invalidated", "refresh_token_reused", "invalid_client"}:
+                    "refresh_token_invalidated", "refresh_token_reused", "invalid_client",
+                    "subscription_sharing_usage_limit_exceeded", "subscription_sharing_usage_unavailable"}:
                 code = candidate
         except (ValueError, TypeError, AttributeError):
             pass
+        if exc.code == 429 or code in {"subscription_sharing_usage_limit_exceeded", "subscription_sharing_usage_unavailable"}:
+            raise LimitReached("OpenAI authentication/catalog usage or rate limit reached; no retry or fallback") from None
         raise AuthError(f"OpenAI auth HTTP {exc.code}: {code}; no fallback") from None
     except (URLError, ValueError, OSError):
         raise AuthError("OpenAI authentication transport failed; no fallback") from None
@@ -207,6 +211,16 @@ class ChatGPTAuth:
     def __init__(self, store=None, request=request_json, clock=time.time):
         self.store = store or TokenStore()
         self.request, self.clock = request, clock
+        self.account = None
+
+    def pin_account(self):
+        """Keep discovery and every worker turn on the same registration."""
+        with self.store.locked():
+            value = self.store.read()
+            if value["active"] not in value["accounts"]:
+                raise AuthError("Sign in with ChatGPT required; no API-key fallback")
+            self.account = value["active"]
+        return self
 
     def begin(self, redirect_uri, account=None):
         with self.store.locked():
@@ -280,7 +294,7 @@ class ChatGPTAuth:
     def access_token(self):
         with self.store.locked():
             value = self.store.read()
-            account = value["accounts"].get(value["active"])
+            account = value["accounts"].get(self.account or value["active"])
             if not account or not account.get("access_token"):
                 raise AuthError("Sign in with ChatGPT required; no API-key fallback")
             if "chatgpt.tokens.use.direct" not in account["scopes"]:

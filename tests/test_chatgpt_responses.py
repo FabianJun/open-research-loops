@@ -23,11 +23,13 @@ def stream_client(mode="success"):
         body = json.loads(request.content)
         requests.append(body)
         assert body["stream"] is True and body["store"] is False and isinstance(body["input"], list)
+        assert body["include"] == ["reasoning.encrypted_content"]
         assert not UNSUPPORTED & body.keys()
         assert body["tools"][0]["type"] == "namespace" and body["tools"][0]["name"] == "rloop"
         assert len(body["tools"][0]["tools"]) == 6
-        if mode == "http_limit":
-            return httpx2.Response(429, json={"error": {"message": "offline limit", "type": "rate_limit_error", "code": "subscription_sharing_usage_limit_exceeded"}})
+        if mode in {"http_limit", "http_unavailable"}:
+            return httpx2.Response(429 if mode == "http_limit" else 503, json={"error": {"message": "offline limit",
+                "type": "rate_limit_error", "code": "subscription_sharing_usage_limit_exceeded" if mode == "http_limit" else "subscription_sharing_usage_unavailable"}})
         try:
             if len(requests) == 1:
                 name, arguments = next(plan)
@@ -57,7 +59,9 @@ def stream_client(mode="success"):
             events.append(dict(type="response.completed", response=response))
         return httpx2.Response(200, headers={"content-type": "text/event-stream"},
             content="".join("data: " + json.dumps({**event, "sequence_number": i}) + "\n\n" for i, event in enumerate(events)).encode())
-    client = AsyncOpenAI(api_key="offline-access", max_retries=0, base_url="https://api.openai.com/v1",
+    async def credential():
+        return "offline-access"
+    client = AsyncOpenAI(api_key=credential, max_retries=0, base_url="https://api.openai.com/v1",
         http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler)))
     return client, requests
 
@@ -80,7 +84,7 @@ def test_actual_sdk_streaming_mcp_worker(tmp_path):
 
 
 @pytest.mark.parametrize("mode,exception", [("failed", LimitReached), ("http_limit", LimitReached),
-    ("incomplete", LimitReached), ("interrupted", IntegrityError)])
+    ("http_unavailable", LimitReached), ("incomplete", LimitReached), ("interrupted", IntegrityError)])
 def test_stream_limits_and_interruptions_do_not_retry(tmp_path, mode, exception):
     from research_loops.adapters.openai_agents import OpenAIBackend
     client, requests = stream_client(mode)

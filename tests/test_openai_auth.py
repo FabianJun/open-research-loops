@@ -212,3 +212,35 @@ def test_refresh_waits_for_server_earliest_time(oauth):
     assert auth.access_token() == "access-0" and endpoint.rotation == 0
     auth.clock = lambda: expiry - 5
     assert auth.access_token() == "access-1" and endpoint.rotation == 1
+
+
+@pytest.mark.parametrize("status,body", [(429, {"detail": "offline limit"}),
+    (503, {"error": {"code": "subscription_sharing_usage_unavailable"}})])
+def test_auth_and_catalog_admission_limits_stop_without_retry(monkeypatch, status, body):
+    from io import BytesIO
+    from urllib.error import HTTPError
+    from research_loops.openai_auth import request_json
+    from research_loops.authorization import LimitReached
+    import urllib.request
+    calls = []
+    class Stub:
+        def open(self, request, timeout):
+            calls.append(request)
+            raise HTTPError(request.full_url, status, "offline", {}, BytesIO(json.dumps(body).encode()))
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: Stub())
+    with pytest.raises(LimitReached):
+        request_json("GET", RESOURCE + "/models", headers={"Authorization": "Bearer offline"})
+    assert len(calls) == 1
+
+
+def test_running_worker_keeps_its_selected_account(oauth):
+    auth, pending, _ = oauth
+    label = complete(auth, pending)
+    auth.pin_account()
+    with auth.store.locked():
+        value = auth.store.read()
+        value["accounts"]["other"] = {**value["accounts"][label], "client_id": "oaiapp_other", "access_token": "other-access"}
+        auth.store.write(value)
+    auth.store.select("other")
+    assert auth.access_token() == "access-0"
+    assert ChatGPTAuth(TokenStore(auth.store.root)).access_token() == "other-access"
