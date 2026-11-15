@@ -9,6 +9,12 @@
       "new": "9c1a922e6006f18059367ade09c49733ebb430507337af960bef394ef8766d7e",
       "authority": "scaled-thinking",
       "reason": "Owner-requested follow-up: replace the fixed approver with the configured project owner from the trusted base. No numerical evaluator or research criteria change."
+    },
+    {
+      "old": "9c1a922e6006f18059367ade09c49733ebb430507337af960bef394ef8766d7e",
+      "new": "574d2edbce7a6211f57ef0ab8f4392f8cd86329fc2940fa53b2899c0d8edb945",
+      "authority": "scaled-thinking",
+      "reason": "Phase 4b grain-316l evaluator, owner go recorded in docs/DECISIONS.md (Phase 4b authorization, 2026-11-15)"
     }
   ]
 }
