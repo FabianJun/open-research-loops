@@ -6,6 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from research_loops.domain import IntegrityError
+from research_loops.owner import owner_name
 
 
 class LimitReached(IntegrityError):
@@ -48,12 +49,14 @@ def authorize(project: Path | None, provider: str, model: str) -> Authorization:
     if path is None or not path.is_file():
         raise IntegrityError("provider calls are not authorized: checkpoint B project configuration required")
     try:
-        value = json.loads(path.read_bytes())["checkpoint_b"]
+        config = json.loads(path.read_bytes())
+        owner = owner_name(config)
+        value = config["checkpoint_b"]
         if "backends" in value:
             value = value["backends"][provider]
         approval = Authorization.model_validate(value)
         modes = {"openai": {"chatgpt", "api_key"}, "anthropic": {"claude_code", "api_key"}}
-        if (approval.approved_by != "scaled-thinking" or approval.provider != provider or approval.model != model
+        if (approval.approved_by.strip() != owner or approval.provider != provider or approval.model != model
                 or not model.strip() or approval.auth_mode not in modes.get(provider, set())
                 or approval.effort not in {"low", "medium", "high", "xhigh", "max"}
                 or (approval.usd_cap is not None and approval.auth_mode != "api_key")):
@@ -61,4 +64,4 @@ def authorize(project: Path | None, provider: str, model: str) -> Authorization:
         approval.cap_micro_usd
         return approval
     except (ValueError, KeyError, TypeError, ValidationError) as exc:
-        raise IntegrityError("invalid checkpoint B provider, model, auth mode or run limits") from exc
+        raise IntegrityError("provider calls are not authorized: invalid checkpoint B provider, model, auth mode or run limits") from exc

@@ -20,6 +20,9 @@ def task():
 def test_direct_and_stdio_results_and_refusals_match(tmp_path):
     async def check():
         assignment = task()
+        owner_path = tmp_path / "project.json"
+        owner_record = b'{"owner":{"name":"Private Owner","source":"argument"}}'
+        owner_path.write_bytes(owner_record)
         direct = Dispatcher(ToolService(assignment, tmp_path / "direct"))
         launch = local_launch(assignment, tmp_path / "remote" / "outbox")
         async with session(launch) as client:
@@ -29,12 +32,18 @@ def test_direct_and_stdio_results_and_refusals_match(tmp_path):
                 b = value(await client.call_tool(name, arguments))
                 assert a == b
                 return a
-            assert (await call("read_contract", {}))["ok"]
+            contract = await call("read_contract", {})
+            assert contract["ok"] and "owner" not in contract["value"]
+            assert "Private Owner" not in json.dumps(contract)
             assert not (await call("read_artifact", {"relative": "../private/final.json"}))["ok"]
             assert not (await call("read_artifact", {"relative": "/evaluator.py"}))["ok"]
             assert not (await call("read_findings", {"ids": ["final-score"]}))["ok"]
             assert (await call("read_findings", {"ids": []}))["value"] == []
             assert (await call("register_variant", {"prediction": assignment.prediction}))["ok"]
+            for relative in ("../project.json", "../../project.json", str(owner_path.resolve())):
+                assert not (await call("read_artifact", {"relative": relative}))["ok"]
+                assert not (await call("write_artifact", {"relative": relative, "content": "YQ=="}))["ok"]
+            assert owner_path.read_bytes() == owner_record
             assert not (await call("write_artifact", {"relative": "../escape", "content": "YQ=="}))["ok"]
             candidate_bytes = b'{"constant":0}'
             candidate = (await call("write_artifact", {"relative": "candidate.json", "content": base64.b64encode(candidate_bytes).decode()}))["value"]

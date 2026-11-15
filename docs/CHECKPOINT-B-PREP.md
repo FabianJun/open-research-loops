@@ -97,7 +97,7 @@ These are instructions for the project owner later. **The JSON below is an examp
 
    Complete **Continue with ChatGPT** in the system browser. `rloop auth accounts` shows the active opaque registration; `rloop auth accounts --select LABEL` switches saved registrations. Prefer `gpt-6-astra` only if listed. If unavailable, explicitly decide whether to choose listed `gpt-6.1-sol`; there is no automatic fallback. These commands do not request inference, but do perform the explicitly invoked sign-in/discovery requests. No such command was run here.
 
-3. Copy `examples/planted-signal/contract.json` into fresh `pilots/claude/contract.json` and `pilots/openai/contract.json`. Before registration, add this `limits` object to each copied contract:
+3. Run `uv run --locked rloop init pilots/claude --owner "Your Name"` and `uv run --locked rloop init pilots/openai --owner "Your Name"`. These run only the fake pilot and record the owner and its source in host-only `project.json`. Omit `--owner` to use Git's `user.name`, otherwise the OS login. Repeated init retains an existing owner unless `--owner` explicitly replaces it. Before registering provider workers, add this `limits` object to each contract:
 
    ```json
    {
@@ -110,15 +110,16 @@ These are instructions for the project owner later. **The JSON below is an examp
    }
    ```
 
-   The default example's 10-second worker/300-second project ceilings would otherwise remain in force. The proposed 300-second per-worker ceiling accommodates high-effort model/tool turns; it is not a latency forecast. Controls count against contract attempts, separate from checkpoint B's worker count.
+   The default example's 10-second worker/300-second project ceilings would otherwise remain in force. The proposed 300-second per-worker ceiling accommodates high-effort model/tool turns; it is not a latency forecast. Controls count against contract attempts, separate from checkpoint B's worker count. Init already registered the fake pilot's original contract; after changing these limits, register the amendment explicitly with `uv run --locked rloop plan pilots/claude --reason "Set owner-approved provider pilot limits"` and the equivalent command for `pilots/openai`. The provider pilot will check controls against that amended registration.
 
-4. **Only after explicit go**, create `pilots/claude/project.json` with the actual approved choices. Proposed content:
+4. **Only after explicit go**, add `checkpoint_b` to each existing `project.json`, preserving its `owner` record and other settings. Replace `YOUR RECORDED OWNER` below with the recorded `owner.name`; approval matching strips whitespace and is case-sensitive. Proposed Claude content:
 
    ```json
    {
+     "owner": {"name": "YOUR RECORDED OWNER", "source": "argument"},
      "sandbox": {"name": "none"},
      "checkpoint_b": {
-       "approved_by": "scaled-thinking",
+       "approved_by": "YOUR RECORDED OWNER",
        "provider": "anthropic",
        "model": "claude-fable-5-2",
        "auth_mode": "claude_code",
@@ -137,9 +138,10 @@ These are instructions for the project owner later. **The JSON below is an examp
 
    ```json
    {
+     "owner": {"name": "YOUR RECORDED OWNER", "source": "argument"},
      "sandbox": {"name": "none"},
      "checkpoint_b": {
-       "approved_by": "scaled-thinking",
+       "approved_by": "YOUR RECORDED OWNER",
        "provider": "openai",
        "model": "gpt-6-astra",
        "auth_mode": "chatgpt",

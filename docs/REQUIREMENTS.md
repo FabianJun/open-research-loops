@@ -105,3 +105,10 @@ A2: install `research-loops`; never depend on PyPI `rloop`; mention the unrelate
 ## Checkpoint-B preparation evidence
 
 The earlier Phase-3 R36 USD-only gate is superseded by exact provider/model/auth mode/effort and four run limits. Subscription cost is an estimate, never a ledger charge; unknown tokens/cost stay unknown. API-key mode requires explicit selection; an optional cap retains conservative reservations. No approval is created. `test_authorization.py` covers absent/mismatched approval, durable count/parallel limits, actual SDK turn exhaustion, wall time, rate-limit shutdown and credential-free Claude child environment. `test_openai_auth.py` covers OAuth registration, PKCE, state, cryptographic identity, returning accounts, scope refusals, protected storage, rotation/serialization and callback ordering through offline endpoints. `test_chatgpt_responses.py` drives actual SDK streaming plus MCP, checks preview request constraints, rejects unlisted models and verifies no retries/fallback on limits or interrupted streams. The socket guard remains enabled. Model choices and proposed 8/48-worker pilots still need owner go. Exact verification belongs in CHECKPOINT-B-PREP.md.
+
+## Project-owner identity follow-up
+
+- Init records one nonblank owner and its source in host-only `project.json`: explicit `--owner`, Git `user.name`, then OS login. Repeated init preserves a recorded owner unless explicitly replaced.
+- Checkpoint B matches `approved_by` to the recorded owner, case-sensitive after stripping. All other authorization checks and refusal before SDK import remain.
+- Protected spec/anchor amendments match `authority` only to the owner in the trusted base; editing the current owner in the same change conveys no authority.
+- Workers cannot read or write the owner record. No migration, provider call or live approval is part of this change.

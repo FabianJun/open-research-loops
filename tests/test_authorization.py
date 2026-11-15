@@ -11,7 +11,7 @@ from research_loops.domain import IntegrityError
 
 
 def approval(provider="openai", mode="chatgpt", **updates):
-    return dict(approved_by="scaled-thinking", provider=provider, model="offline-stub", auth_mode=mode,
+    return dict(approved_by="Ada", provider=provider, model="offline-stub", auth_mode=mode,
         run_limits=dict(max_worker_runs=8, max_parallel_workers=1, max_turns_per_worker=16,
             max_wall_seconds_per_worker=10), **updates)
 
@@ -21,7 +21,7 @@ def test_explicit_gate(tmp_path, mode):
     record = approval(mode=mode)
     if mode == "api_key":
         record["usd_cap"] = "2.50"
-    (tmp_path / "project.json").write_text(json.dumps({"checkpoint_b": record}))
+    (tmp_path / "project.json").write_text(json.dumps({"owner": {"name": "Ada", "source": "argument"}, "checkpoint_b": record}))
     value = authorize(tmp_path, "openai", "offline-stub")
     assert value.auth_mode == mode
     assert value.cap_micro_usd == (2500000 if mode == "api_key" else None)
@@ -29,7 +29,7 @@ def test_explicit_gate(tmp_path, mode):
         authorize(tmp_path, "openai", "cheaper-model")
     record["usd_cap"] = 1
     record["auth_mode"] = "chatgpt"
-    (tmp_path / "project.json").write_text(json.dumps({"checkpoint_b": record}))
+    (tmp_path / "project.json").write_text(json.dumps({"owner": {"name": "Ada", "source": "argument"}, "checkpoint_b": record}))
     with pytest.raises(IntegrityError):
         authorize(tmp_path, "openai", "offline-stub")
 

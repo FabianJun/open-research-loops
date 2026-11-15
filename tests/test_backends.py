@@ -86,11 +86,11 @@ def test_claude_records_sdk_reported_cost(tmp_path):
     assert result.cost_micro_usd == 1234
 
 
-@pytest.mark.parametrize("approval", [{}, {"approved_by": "scaled-thinking", "provider": "anthropic", "model": "x", "usd_cap": 1},
-    {"approved_by": "scaled-thinking", "provider": "openai", "model": "x", "usd_cap": 0}])
+@pytest.mark.parametrize("approval", [{}, {"approved_by": "Ada", "provider": "anthropic", "model": "x", "usd_cap": 1},
+    {"approved_by": "Ada", "provider": "openai", "model": "x", "usd_cap": 0}])
 def test_checkpoint_b_must_match_and_have_positive_cap(tmp_path, approval):
     from research_loops.authorization import authorize
-    (tmp_path / "project.json").write_text(json.dumps({"checkpoint_b": approval}))
+    (tmp_path / "project.json").write_text(json.dumps({"owner": {"name": "Ada", "source": "argument"}, "checkpoint_b": approval}))
     with pytest.raises(IntegrityError):
         authorize(tmp_path, "openai", "x")
 

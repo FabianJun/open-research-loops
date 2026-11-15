@@ -1,0 +1,14 @@
+{
+  "owner": {
+    "name": "scaled-thinking",
+    "source": "git"
+  },
+  "evaluator_authorizations": [
+    {
+      "old": "ecd4f29d20dcef1fdf2babb16e35273821c078e9e6ac9f3349e2a7deedf6e199",
+      "new": "9c1a922e6006f18059367ade09c49733ebb430507337af960bef394ef8766d7e",
+      "authority": "scaled-thinking",
+      "reason": "Owner-requested follow-up: replace the fixed approver with the configured project owner from the trusted base. No numerical evaluator or research criteria change."
+    }
+  ]
+}

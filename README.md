@@ -52,6 +52,8 @@ uv sync --locked
 uv run rloop init my-pilot --question "Can we recover a planted nonlinear signal?"
 ```
 
+Add `--owner "Your Name"` to choose the project owner. Otherwise init records Git's `user.name`, falling back to the OS login. The identity and its source stay in host-only `project.json`; later approvals must match it exactly after stripping whitespace.
+
 ```text
 Simulated fake pilot complete: my-pilot/.rloop/report.md
 ```

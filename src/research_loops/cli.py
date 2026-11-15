@@ -45,11 +45,17 @@ def pilot(example: Path, backend: str = typer.Option(...), workers: int = 8) -> 
 
 
 @app.command()
-def init(example: Path, question: str = "Can we recover a planted nonlinear signal?") -> None:
+def init(example: Path, question: str = "Can we recover a planted nonlinear signal?", owner: str | None = None) -> None:
     """Create a simulated scaffold and complete its first offline pilot."""
     from research_loops.domain import Contract, canonical
     from research_loops.paths import atomic_write
     from research_loops.coordinator import run as execute
+    from research_loops.domain import IntegrityError
+    from research_loops.owner import initialize_owner
+    try:
+        initialize_owner(example, owner)
+    except IntegrityError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--owner") from exc
     if not (example / "contract.json").exists():
         contract = Contract(goal=question, falsifier="The candidate fails the locked planted-signal criteria.",
             prediction="Uncertain; the negative control should fail and the planted oracle should pass.")

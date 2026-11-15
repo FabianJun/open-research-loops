@@ -50,3 +50,7 @@ The implementation may prepare the proposed gate: owner, provider, exact model, 
 The proposed documentation choices are `claude-fable-5-2` at high effort and `gpt-6-astra` if listed for the signed-in ChatGPT account. `gpt-6.1-sol` requires a separate explicit project choice if Astra is unavailable; never fall back automatically. Cheaper models require explicit project configuration. Model IDs were checked against official model pages on this date. Models and limits remain configurable before go.
 
 Proposed next: eight workers per backend first, 48 later, and cross-vendor rechecking. First example remains planted-signal, controls first, MCP-only, no final ticket or candidate code. Cross-vendor rechecking should use existing verification only if it fits without new machinery; otherwise report the recommendation. These proposals are not a live authorization. Checkpoint C still governs publication.
+
+## Project-owner identity follow-up (2026-11-15)
+
+The owner requested replacing person-specific authority checks before public publication. Init records the project owner in host configuration (explicit option, Git name, OS login), and checkpoint-B approval matches that identity. Protected amendments must use the owner in the trusted base, with a regression test for simultaneous owner substitution. This request authorizes the protection-policy change; it does not authorize provider calls or publication. Land the owner and hash-bound amendment record before changing the anchored policy, so CI can check a prior trusted decision.
