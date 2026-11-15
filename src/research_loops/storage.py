@@ -97,7 +97,9 @@ class Repository:
                 raise IntegrityError("campaign sealed; no worker may see final results")
             if self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"] >= state["max_attempts"]:
                 raise IntegrityError("attempt allowance exhausted")
-            if reserve_micro_usd < 0 or state["spent_micro_usd"] + state["reserved_micro_usd"] + reserve_micro_usd > state["cap_micro_usd"]:
+            authorized_cap = (execution_metadata or {}).get("authorization_cap_micro_usd")
+            cap = min(state["cap_micro_usd"], authorized_cap) if authorized_cap is not None else state["cap_micro_usd"]
+            if reserve_micro_usd < 0 or state["spent_micro_usd"] + state["reserved_micro_usd"] + reserve_micro_usd > cap:
                 raise IntegrityError("shared budget exceeded")
             registration = json.loads(self.db.execute("SELECT payload FROM registrations WHERE hash=?", (assignment.registration_hash,)).fetchone()[0])
             deadline = state["deadline"] or time.time() + registration["limits"]["project_seconds"]
@@ -108,6 +110,7 @@ class Repository:
             if execution_metadata:
                 self.db.execute("UPDATE runs SET execution_metadata=? WHERE id=?", (canonical(execution_metadata), assignment.run_id))
             self.event("dispatch", assignment.run_id, assignment.model_dump(mode="json"))
+            self.event("execution", assignment.run_id, execution_metadata or {"backend": "fake", "provider": "offline", "model": "deterministic-v1", "sdk_version": None, "cost_micro_usd": 0})
             folder = Path(__file__).parent
             self.event("runtime", assignment.run_id, {"framework": "0.1.0", "python": sys.version.split()[0],
                 "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
@@ -121,10 +124,15 @@ class Repository:
         checksum = digest(payload.encode())
         if row["report_hash"]:
             if row["report_hash"] != checksum:
-                raise IntegrityError("conflicting duplicate report")
+                # Phase-2 envelopes omit the new optional execution fields. Compare
+                # validated values without rewriting their immutable original bytes.
+                if (digest(row["report"].encode()) != row["report_hash"]
+                        or WorkerReport.model_validate_json(row["report"]) != report):
+                    raise IntegrityError("conflicting duplicate report")
             return False
         expected = json.loads(row["execution_metadata"])
         if (report.backend != expected["backend"] or report.provider != expected["provider"] or report.model != expected["model"]
+            or report.sandbox_image != expected.get("sandbox_image") or report.sdk_version != expected.get("sdk_version")
             or (report.backend == "fake" and report.cost_micro_usd != 0)):
             raise IntegrityError("report backend/provider/model/cost is not authorized for this dispatch")
         if report.backend != "fake" and (not report.sdk_trace or report.sdk_version != expected.get("sdk_version")

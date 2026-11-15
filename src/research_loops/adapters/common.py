@@ -2,12 +2,25 @@
 
 from decimal import Decimal, ROUND_CEILING
 from pathlib import Path
+from functools import wraps
+import asyncio
 
 from research_loops.authorization import authorize
 from research_loops.domain import Artifact, IntegrityError, WorkerContract, Workspace, canonical, digest
 from research_loops.paths import atomic_write
 from research_loops.reports import WorkerReport
 from research_loops.transports.launch import local_launch
+
+
+def cleanup_worker(operation):
+    @wraps(operation)
+    async def run(self, contract, workspace, limits):
+        try:
+            return await operation(self, contract, workspace, limits)
+        finally:
+            if self.sandbox:
+                self.sandbox.cleanup(workspace.root)
+    return run
 
 
 def instructions(contract: WorkerContract) -> str:
@@ -37,7 +50,8 @@ class SDKBackend:
     def __init__(self, model: str, *, project: Path | None = None, sandbox=None):
         self.model = model
         self.project = project
-        self.sandbox = sandbox
+        from research_loops.sandbox import NoneSandbox
+        self.sandbox = sandbox or NoneSandbox()
         self.offline = False
 
     def check_authorization(self) -> int | None:
@@ -45,13 +59,15 @@ class SDKBackend:
             return None  # Only an explicitly injected SDK model/transport seam, never CLI configuration.
         return authorize(self.project, self.provider, self.model)
 
-    def launch(self, contract: WorkerContract, workspace: Workspace):
+    async def launch(self, contract: WorkerContract, workspace: Workspace):
         workspace.root.mkdir(parents=True, exist_ok=True)
         if self.sandbox:
-            return self.sandbox.tool_launch(contract, workspace.root, adapter=True)
+            return await asyncio.to_thread(self.sandbox.tool_launch, contract, workspace.root, adapter=True)
         return local_launch(contract, workspace.root, adapter=True)
 
     def finish(self, contract, workspace, launch, *, sdk_version, cost, usage, trace) -> WorkerReport:
+        if hasattr(self.sandbox, "materialize"):
+            self.sandbox.materialize(workspace.root)
         submitted = workspace.root / "submission.json"
         if not submitted.exists():
             raise IntegrityError("SDK finished without a sealed tool submission")

@@ -11,3 +11,5 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.sandbox-image
+/.container-tests/

@@ -28,6 +28,7 @@ packages = ["src/research_loops"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = ["container: actual Linux OCI isolation tests (explicit skip on Windows CI)"]
 
 [tool.uv]
 default-groups = ["dev"]

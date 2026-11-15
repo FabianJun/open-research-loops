@@ -3,7 +3,7 @@
 from dataclasses import asdict
 from importlib.metadata import version
 
-from research_loops.adapters.common import SDKBackend, instructions, micro_usd
+from research_loops.adapters.common import SDKBackend, instructions, micro_usd, cleanup_worker
 from research_loops.domain import IntegrityError
 from research_loops.transports.protocol import TOOL_NAMES
 
@@ -17,10 +17,11 @@ class ClaudeBackend(SDKBackend):
         self.transport_factory = offline_transport_factory
         self.offline = offline_transport_factory is not None
 
+    @cleanup_worker
     async def run(self, contract, workspace, limits):
         cap = self.check_authorization()
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, PermissionResultAllow, PermissionResultDeny, ResultMessage, SystemMessage
-        launch = self.launch(contract, workspace)
+        launch = await self.launch(contract, workspace)
         allowed = {"mcp__rloop__" + name for name in TOOL_NAMES}
         async def permission(name, arguments, context):
             if name in allowed:

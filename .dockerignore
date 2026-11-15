@@ -1,0 +1,16 @@
+**
+!Containerfile
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!src/research_loops/
+!src/research_loops/__init__.py
+!src/research_loops/domain.py
+!src/research_loops/reports.py
+!src/research_loops/paths.py
+!src/research_loops/tools.py
+!src/research_loops/transports/
+!src/research_loops/transports/__init__.py
+!src/research_loops/transports/server.py
+!src/research_loops/transports/protocol.py

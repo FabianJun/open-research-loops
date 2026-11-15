@@ -90,3 +90,44 @@ def test_checkpoint_b_must_match_and_have_positive_cap(tmp_path, approval):
     (tmp_path / "project.json").write_text(json.dumps({"checkpoint_b": approval}))
     with pytest.raises(IntegrityError):
         authorize(tmp_path, "openai", "x")
+
+
+def test_authorization_cap_is_shared_even_with_larger_contract_budget(example):
+    from research_loops.coordinator import prepare
+    from test_integrity import assignment
+    path = example / "contract.json"
+    contract = json.loads(path.read_bytes())
+    contract.setdefault("limits", {})["budget_micro_usd"] = 1000
+    path.write_text(json.dumps(contract))
+    repo, _, key = prepare(example)
+    try:
+        repo.dispatch(assignment(repo, key, "first"), 80, execution_metadata={"authorization_cap_micro_usd": 100})
+        with pytest.raises(IntegrityError, match="shared budget"):
+            repo.dispatch(assignment(repo, key, "second"), 80, execution_metadata={"authorization_cap_micro_usd": 100})
+        assert len(repo.runs()) == 1
+    finally:
+        repo.close()
+
+
+def test_phase_two_report_duplicate_preserves_original_bytes(example):
+    from research_loops.coordinator import prepare
+    from research_loops.domain import canonical, digest
+    from research_loops.fake import FakeBackend
+    from research_loops.reports import WorkerReport
+    from test_integrity import assignment
+    repo, _, key = prepare(example)
+    try:
+        assigned = assignment(repo, key)
+        repo.dispatch(assigned)
+        workspace = Workspace(root=repo.root / "runs" / assigned.run_id / "outbox")
+        legacy = asyncio.run(FakeBackend().run(assigned, workspace, Limits()))
+        raw = canonical(legacy)
+        with repo.db:
+            repo.db.execute("UPDATE runs SET report=?,report_hash=? WHERE id=?", (raw, digest(raw.encode()), assigned.run_id))
+        before = repo.runs()
+        events = repo.db.execute("SELECT count(*) FROM events").fetchone()[0]
+        assert not repo.import_report(WorkerReport.model_validate_json(raw), workspace)
+        assert repo.runs() == before
+        assert repo.db.execute("SELECT count(*) FROM events").fetchone()[0] == events
+    finally:
+        repo.close()

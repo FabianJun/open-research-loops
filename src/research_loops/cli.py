@@ -18,15 +18,12 @@ def main() -> None:
 @app.command()
 def run(example: Path, backend: str = "fake", final: bool = False) -> None:
     """Run the offline planted-signal example."""
-    if backend != "fake":
-        from research_loops.execution import load_backend
-        from research_loops.domain import IntegrityError
-        try:
-            selected = load_backend(backend, example)
-        except IntegrityError as exc:
-            raise typer.BadParameter(str(exc)) from exc
-    else:
-        selected = None
+    from research_loops.execution import load_backend
+    from research_loops.domain import IntegrityError
+    try:
+        selected = load_backend(backend, example)
+    except IntegrityError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     from research_loops.coordinator import run as execute
     asyncio.run(execute(example, final=final, backend=selected))
     typer.echo(str(example / ".rloop" / "report.md"))

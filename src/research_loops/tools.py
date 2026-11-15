@@ -9,12 +9,13 @@ from research_loops.paths import atomic_write, confined
 
 
 class ToolService:
-    def __init__(self, contract: WorkerContract, root: Path, *, submission_name: str = "report.json"):
+    def __init__(self, contract: WorkerContract, root: Path, *, submission_name: str = "report.json", shared_files=False):
         self.contract = contract
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.registered = False
         self.submission_name = submission_name
+        self.shared_files = shared_files
 
     def sealed(self) -> bool:
         return (self.root / self.submission_name).exists() or (self.root / "report.json").exists()
@@ -59,6 +60,8 @@ class ToolService:
             raise IntegrityError("register before writing; artifact size bounded")
         path = confined(self.root, relative)
         atomic_write(path, content, exclusive=True)
+        if self.shared_files:
+            path.chmod(0o644)
         return Artifact(path=relative, sha256=digest(content), size=len(content))
 
     def submit_result(self, report: WorkerReport) -> WorkerReport:
@@ -71,6 +74,8 @@ class ToolService:
             if digest(data) != artifact.sha256 or len(data) != artifact.size:
                 raise IntegrityError("artifact hash/size mismatch")
         atomic_write(self.root / self.submission_name, canonical(report).encode(), exclusive=True)
+        if self.shared_files:
+            (self.root / self.submission_name).chmod(0o644)
         return report
 
     def execute_candidate(self, *_args, **_kwargs):

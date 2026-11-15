@@ -50,13 +50,16 @@ def main() -> None:
     parser.add_argument("--outbox", type=Path, required=True)
     parser.add_argument("--audit", type=Path, required=True)
     parser.add_argument("--adapter", action="store_true")
+    parser.add_argument("--shared-files", action="store_true")
     args = parser.parse_args()
     # Store names only; never dump environment values.
     atomic_write(args.audit, canonical({"environment_keys": sorted(os.environ)}).encode())
+    if args.shared_files:
+        args.audit.chmod(0o644)
     if any("API_KEY" in name.upper() or "TOKEN" in name.upper() or "SECRET" in name.upper() for name in os.environ):
         raise RuntimeError("tool server received a credential environment variable")
     contract = WorkerContract.model_validate_json(args.context.read_bytes())
-    service = ToolService(contract, args.outbox, submission_name="submission.json" if args.adapter else "report.json")
+    service = ToolService(contract, args.outbox, submission_name="submission.json" if args.adapter else "report.json", shared_files=args.shared_files)
     create_server(Dispatcher(service)).run(transport="stdio")
 
 

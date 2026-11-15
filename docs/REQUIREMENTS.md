@@ -13,12 +13,12 @@ Source keys:
 - **P**: primary documents, repository licenses and exact version evidence in [PRIOR-ART.md](PRIOR-ART.md).
 
 Each requirement has an implementation location in [DESIGN.md](DESIGN.md) and an observable acceptance check.
-Phase 1-2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
+Phase 1-3b are authorized and the current delivery stops after 3b. Phase 4-5 remain later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
 
 | ID | Requirement | Source | Design location | Acceptance / phase |
 |---|---|---|---|---|
 | R01 | Vendor-neutral Python 3.12+ package `research_loops`, CLI `rloop`; uv/Pydantic/Typer/pytest, no ORM/web/queue/Postgres implementation. | M §3–4 | Architecture | Core import works without vendor extras; fresh-clone offline command on Windows/Linux; 1–2, 5. |
-| R02 | One `AgentBackend.run(contract, workspace, limits)` port, fake and two required real adapters. | M §4; T `references/models.md`; P SDK docs | Ports; Worker tools and backend equivalence | Identical port contract cases across fake/OpenAI/Claude; live cases explicitly opt-in and skipped without keys; 2–3, 5. |
+| R02 | One `AgentBackend.run(contract, workspace, limits)` port, fake and two required real adapters. | M §4; T `references/models.md`; P SDK docs | Ports; Worker tools and backend equivalence | Identical offline port contract cases across fake/OpenAI/Claude; live acceptance needs explicit checkpoint-B authorization; 2–3, 5. |
 | R03 | Optional SDK extras and per-task backend selection, including mixed-backend projects. | M §4 | Worker tools and backend equivalence | Resolve/install base, each extra and both; mixed fake/stub runs share one state; 1, 3. |
 | R04 | One MCP tool implementation; direct wrappers only where MCP is unavailable. | M §4; P MCP/SDK docs | Worker tools and backend equivalence | Same service/schema/errors via direct fake and stdio; run scope cannot be changed by caller; 3. |
 | R05 | Seven source skill folders/frontmatter use `rloop-` prefixes; no aliases/wrappers. Link installer refuses collisions; explicit SDK text injection. | M §4, §5 phase 4; P Skills | Skills, guide and command surface | Validate frontmatter, relative references and injected hashes; test symlink/junction collision without overwriting existing skills; 4. |
@@ -59,7 +59,7 @@ Phase 1-2 are authorized now; Phase 3, 3b, 4 and 5 require later work. Schema in
 | R40 | CLI init/plan/run/status/resume/report/export plus self-assess workflow. | M §5 phases 2, 4 | Skills, guide and command surface | CLI smoke paths exercised offline; invalid final/recovery states fail visibly; 2, 4–5. |
 | R41 | Apache-2.0 code, CC BY 4.0 docs, factual AGENTS/CLAUDE pointer and CI scaffold. | M §5 phase 1; event `CLAUDE.md` | Architecture decisions; Skills | Root license files and split agree with docs; instructions avoid duplicating source; CI exists for both OSes; 1. |
 | R42 | Short docs/instructions, no personal toolkit clone or paper/hosted platform expansion. | M §1, §6; T `references/sources.md`; event `CLAUDE.md` | Architecture; Skills; L simplification | Review scope and agent instructions at handoff; disclose optional/unimplemented features; all phases. |
-| R43 | Record A; finish Phase 1-2 only, vertical slice then individual integrity checks; stop before Phase 3. | A1-A6; session scope | Approved delivery order and scope | Full local Windows and disposable Linux suite; Linux environment outside mount; exact results and next three steps. No WSL change, provider calls or remote. |
+| R43 | Record A; finish Phase 1-2 with vertical slice then individual integrity checks (completed prior session). Current authorized scope is Phase 3 then 3b; stop before 4 and provider calls. | A1-A6; subsequent owner authorization | Approved delivery order and scope | Full local Windows and disposable Linux suite; Linux environment outside mount; Linux CI container tests and visible Windows CI skip; exact results, measured init time and checkpoint-B questions. No WSL change or provider calls; ordinary private-origin pushes authorized. |
 
 ## Phase-5 test coverage index
 
@@ -77,7 +77,7 @@ The eleven explicit test bullets in M §5 map as follows, in their original orde
 | Killed worker/resume, no completed rerun | R18 |
 | Quote and report-number grounding | R21, R28 |
 | Report regeneration matches committed copy | R27 |
-| Both real adapters share contract tests; skip without keys | R02, R36 |
+| Both SDK adapters share offline contract tests through SDK seams; real calls require checkpoint B | R02, R36 |
 
 Phase 0 checks are documented in the final handoff; they do not satisfy these runtime tests.
 No design decision at checkpoint A substitutes for proof in phases 2–5.
@@ -87,7 +87,7 @@ No design decision at checkpoint A substitutes for proof in phases 2–5.
 | Mechanism | Executable evidence |
 |---|---|
 | I01 registration/prediction | `test_registration_is_immutable_and_required`, `test_amendment_is_explicit_and_retains_history`; DB triggers and explicit amendments. |
-| I02 information barrier/final | `test_final_labels_are_not_reopened_before_ticket`, `test_public_projection_has_no_private_fields`, final/crash/receipt/reused-PID tests. Host capability boundary only; OCI/SDK isolation tests are Phase 3/3b. |
+| I02 information barrier/final | `test_final_labels_are_not_reopened_before_ticket`, `test_public_projection_has_no_private_fields`, final/crash/receipt/reused-PID tests; `test_mcp.py`, shared SDK and container isolation tests now add Phase 3/3b evidence. |
 | I03 complete records | `test_import_is_true_noop_and_seals_evidence`, `test_tampered_artifact_never_imports`, full slice artifact/claim counts; raw outputs, transcripts, source hash, inputs, cost and seeds saved. |
 | I04 controls/baselines | `test_wrong_and_known_correct_candidates`, `test_failed_control_blocks_all_worker_dispatch`, `test_splits_are_disjoint_tuples_and_not_constant`; random-expression arm uses the same candidate grammar. |
 | I05 selection | Full 48-run slice, attempt/budget gates, frozen seeds/margin, deterministic descriptive bootstrap and method fingerprint. Fake oracle comparison is simulated, not scientific efficacy evidence. |
@@ -98,6 +98,6 @@ No design decision at checkpoint A substitutes for proof in phases 2–5.
 | I10 pilot | `test_deadline_and_pilot_gate`, `test_failed_control_blocks_all_worker_dispatch`. |
 | I11 licenses | `test_license_metadata_and_repository_check`; synthetic contract CC0, code/docs root license checks. Full self-assess skill remains Phase 4. |
 
-R02-R05 live adapter/MCP/skill acceptance remains pending; R11 is Phase 3b. R13 has four tested pattern policies; generic multi-contract/dependency planning and R21/R34's full guide/cockpit experience remain later work. R18 recovery is implemented for in-process fake workers and supervised evaluators; future SDK session recovery needs its own contract tests. R36 is enforced by a fake-only CLI/import gate and no provider imports, with external network blocked in tests even when dummy API keys are present. The full Windows/Linux command evidence is in the status record.
+R02-R04: MCP parity and both optional SDK adapters now have offline SDK-seam contract tests, including effective tools and key-free server environments. Live acceptance remains checkpoint-B gated, independent of keys. R05 skills remain Phase 4. R11: none/container Sandbox, digest/mount/resource policy, separate code-evaluation container and four actual probes are implemented and tested. Podman command parity is tested; actual engine verification uses Docker. R13 has four tested pattern policies; generic multi-contract/dependency planning and R21/R34's full guide/cockpit experience remain later work. R18 recovery is implemented for in-process fake workers and supervised evaluators; live SDK session recovery remains pending. R36 is enforced by matching owner/provider/model/USD-cap configuration and the offline socket guard with dummy keys present. Exact executed evidence belongs in PHASE-3-STATUS.
 
 A2: install `research-loops`; never depend on PyPI `rloop`; mention the unrelated package once in README. A5 defers optional CLI adapters. A4 container implementation is Phase 3b, not Phase 2.

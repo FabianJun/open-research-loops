@@ -3,7 +3,7 @@
 from dataclasses import asdict
 from importlib.metadata import version
 
-from research_loops.adapters.common import SDKBackend, instructions
+from research_loops.adapters.common import SDKBackend, instructions, cleanup_worker
 from research_loops.domain import IntegrityError
 from research_loops.transports.protocol import TOOL_NAMES
 
@@ -17,11 +17,12 @@ class OpenAIBackend(SDKBackend):
         self.offline_model = offline_model
         self.offline = offline_model is not None
 
+    @cleanup_worker
     async def run(self, contract, workspace, limits):
         self.check_authorization()  # Before SDK import, MCP launch, or any possible model call.
         from agents import Agent, ModelSettings, Runner, RunConfig
         from agents.mcp import MCPServerStdio
-        launch = self.launch(contract, workspace)
+        launch = await self.launch(contract, workspace)
         server = MCPServerStdio(params={"command": launch.command, "args": launch.args, "env": launch.env,
             **({"cwd": launch.cwd} if launch.cwd else {})}, name="rloop", cache_tools_list=True,
             use_structured_content=True, client_session_timeout_seconds=limits.worker_seconds,
