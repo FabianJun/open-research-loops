@@ -47,39 +47,51 @@ class ClaudeBackend(SDKBackend):
         from research_loops.adapters.claude_transport import LoginTransport
         transport = self.transport_factory(options) if self.transport_factory else LoginTransport(options, self.auth_mode)
         messages, init_seen, result = [], False, None
-        async with ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("Execute the assigned public contract.")
-            async for message in client.receive_response():
-                if (isinstance(message, SystemMessage) and message.subtype == "permission_denied"
-                        and message.data.get("tool_name") in allowed):
-                    raise IntegrityError("Claude CLI denied an authorized rloop tool; the can_use_tool permission bridge is not active")
-                messages.append(asdict(message))
-                # SDK reports these as protocol fields; never retry or change auth.
-                if limit_message(asdict(message)):
-                    raise LimitReached("Claude subscription or rate limit reached")
-                if error := getattr(message, "error", None):
-                    if error == "authentication_failed":
-                        raise IntegrityError("Claude Code is not logged in for this worker (authentication_failed); run `claude` and /login in a terminal, then start a new pilot. No API-key fallback.")
-                    # The SDK parser does not validate its Literal field. Record only enum values.
-                    if error not in get_args(AssistantMessageError):
-                        error = "unknown"
-                    raise IntegrityError(f"Claude CLI reported error: {error}")
-                if isinstance(message, SystemMessage) and message.subtype == "init":
-                    if set(message.data.get("tools", [])) != allowed:
-                        raise IntegrityError("Claude effective tool list includes missing or unauthorized tools")
-                    init_seen = True
-                    if message.data.get("model", self.model) != self.model:
-                        raise IntegrityError("Claude selected a different model; no fallback permitted")
-                if hasattr(message, "model") and message.model != self.model:
-                    raise IntegrityError("Claude response model differs from authorization")
-                if isinstance(message, ResultMessage):
-                    result = message
-        if not init_seen or result is None or result.is_error:
-            raise IntegrityError("Claude failed or omitted effective tool list/result")
-        return self.finish(contract, workspace, launch, sdk_version=version("claude-agent-sdk"),
-            cost=micro_usd(result.total_cost_usd), usage=result.usage or {},
-            trace={"instructions": instructions(contract), "input": "Execute the assigned public contract.",
-                "messages": messages, "effective_tools": sorted(allowed), "offline_seam": self.offline})
+        trace = {"instructions": instructions(contract), "input": "Execute the assigned public contract.",
+            "messages": messages, "effective_tools": [], "offline_seam": self.offline}
+        try:
+            async with ClaudeSDKClient(options=options, transport=transport) as client:
+                await client.query("Execute the assigned public contract.")
+                async for message in client.receive_response():
+                    if (isinstance(message, SystemMessage) and message.subtype == "permission_denied"
+                            and message.data.get("tool_name") in allowed):
+                        raise IntegrityError("Claude CLI denied an authorized rloop tool; the can_use_tool permission bridge is not active")
+                    # SDK reports these as protocol fields; never retry or change auth.
+                    if limit_message(asdict(message)):
+                        raise LimitReached("Claude subscription or rate limit reached")
+                    if error := getattr(message, "error", None):
+                        if error == "authentication_failed":
+                            raise IntegrityError("Claude Code is not logged in for this worker (authentication_failed); run `claude` and /login in a terminal, then start a new pilot. No API-key fallback.")
+                        # The SDK parser does not validate its Literal field. Record only enum values.
+                        if error not in get_args(AssistantMessageError):
+                            error = "unknown"
+                        raise IntegrityError(f"Claude CLI reported error: {error}")
+                    if isinstance(message, SystemMessage) and message.subtype == "init":
+                        trace["effective_tools"] = sorted(message.data.get("tools", []))
+                        if set(message.data.get("tools", [])) != allowed:
+                            raise IntegrityError("Claude effective tool list includes missing or unauthorized tools")
+                        init_seen = True
+                        if message.data.get("model", self.model) != self.model:
+                            raise IntegrityError("Claude selected a different model; no fallback permitted")
+                    if hasattr(message, "model") and message.model != self.model:
+                        raise IntegrityError("Claude response model differs from authorization")
+                    if isinstance(message, ResultMessage):
+                        result = message
+                    # Error/permission diagnostics can contain private SDK/HTTP text.
+                    if isinstance(message, SystemMessage) and message.subtype == "permission_denied":
+                        continue
+                    if not (isinstance(message, ResultMessage) and message.is_error):
+                        messages.append(asdict(message))
+            if not init_seen or result is None or result.is_error:
+                raise IntegrityError("Claude failed or omitted effective tool list/result")
+            return self.finish(contract, workspace, launch, sdk_version=version("claude-agent-sdk"),
+                cost=micro_usd(result.total_cost_usd), usage=result.usage or {},
+                trace={"instructions": instructions(contract), "input": "Execute the assigned public contract.",
+                    "messages": messages, "effective_tools": sorted(allowed), "offline_seam": self.offline})
+        except BaseException:
+            if not (workspace.root / "adapter-trace.json").exists():
+                self.save_trace(workspace, trace)
+            raise
 
 
 def limit_message(value):

@@ -1,6 +1,5 @@
 """Offline SDK seams. Real SDK orchestration and real MCP, no provider transports."""
 import asyncio
-import base64
 import json
 
 from research_loops.domain import canonical, digest
@@ -13,7 +12,7 @@ def script():
     contract = response["value"]
     training = yield "read_artifact", {"relative": "inputs/training.json"}
     if training["ok"]:  # Standalone transport fixtures intentionally have no dataset.
-        data = base64.b64decode(training["value"]["base64"])
+        data = training["value"]["text"].encode()
         assert digest(data) == contract["input_hash"] and json.loads(data)["rows"]
     for name, args in [("read_artifact", {"relative": "../private/final.json"}),
                        ("read_artifact", {"relative": "/evaluator.py"}),
@@ -22,20 +21,17 @@ def script():
     assert (yield "read_findings", {"ids": []})["value"] == []
     assert (yield "register_variant", {"prediction": contract["prediction"]})["ok"]
     tree = oracle() if contract["variant"] == 1 else {"constant": contract["variant"] - 1}
-    artifacts = []
-    for path, data in [("candidate.json", canonical(tree).encode()),
-                       ("transcript.json", canonical({"prompt": canonical(contract), "response": tree}).encode())]:
-        artifacts.append((yield "write_artifact", {"relative": path, "content": base64.b64encode(data).decode()})["value"])
-    assert (yield "read_artifact", {"relative": "candidate.json"})["ok"]
-    result = {"report_id": contract["run_id"], "run_id": contract["run_id"],
-              "contract_hash": contract["registration_hash"], "seed": contract["seed"],
-              "candidate": artifacts[0], "transcript": artifacts[1], "prompt_hash": digest(canonical(contract).encode())}
-    assert (yield "submit_result", {"report": result})["ok"]
-    assert not (yield "write_artifact", {"relative": "late.txt", "content": "YQ=="})["ok"]
-    assert not (yield "submit_result", {"report": result})["ok"]
+    invalid = {"op": "add", "args": [{"constant": 2}, {"feature": 0}]}
+    rejected = yield "submit_result", {"candidate": invalid}
+    assert rejected == {"ok": False, "error": "candidate node keys must be exactly feature, constant, or op/left/right; replace args with left and right"}
+    assert not (yield "read_artifact", {"relative": "candidate.json"})["ok"]
+    assert (yield "submit_result", {"candidate": tree})["ok"]
+    assert (yield "read_artifact", {"relative": "candidate.json"})["value"]["text"] == canonical(tree)
+    assert not (yield "write_artifact", {"relative": "late.txt", "content": "late"})["ok"]
+    assert not (yield "submit_result", {"candidate": tree})["ok"]
 
 
-def openai_model():
+def openai_model(*, plan_factory=script):
     from agents import Model, ModelResponse, Usage
     from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
 
@@ -50,7 +46,7 @@ def openai_model():
             assert not handoffs and tracing.is_disabled()
             try:
                 if system_instructions not in self.plans:
-                    self.plans[system_instructions] = script()
+                    self.plans[system_instructions] = plan_factory()
                     step = next(self.plans[system_instructions])
                 else:
                     outputs = [item for item in input if isinstance(item, dict) and item.get("type") == "function_call_output"]
@@ -74,7 +70,7 @@ def openai_model():
     return Stub()
 
 
-def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None, denied_tool=None):
+def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None, denied_tool=None, plan_factory=script):
     from claude_agent_sdk._internal.transport import Transport
     from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
     from claude_agent_sdk import PermissionResultAllow, PermissionResultDeny
@@ -127,7 +123,7 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
                     config = options.mcp_servers["rloop"]
                     async with session(Launch(command=config["command"], args=config["args"], env=config["env"])) as client:
                         assert {t.name for t in (await client.list_tools()).tools} == set(TOOL_NAMES)
-                        plan = script()
+                        plan = plan_factory()
                         try:
                             name, arguments = next(plan)
                             while True:

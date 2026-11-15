@@ -1,5 +1,4 @@
 import asyncio
-import base64
 
 import pytest
 
@@ -42,7 +41,7 @@ def test_public_training_read_only_and_hash_checked(transport, tmp_path, request
             async def call(name, arguments):
                 return value(await client.call_tool(name, arguments))
             result = await call("read_artifact", {"relative": "inputs/training.json"})
-            assert result["ok"] and base64.b64decode(result["value"]["base64"]) == data
+            assert result["ok"] and result["value"]["text"].encode() == data
             assert not (await call("read_artifact", {"relative": "inputs/final.json"}))["ok"]
             assert not (await call("read_artifact", {"relative": "inputs/../worker-context.json"}))["ok"]
             assert (await call("register_variant", {"prediction": assigned.prediction}))["ok"]

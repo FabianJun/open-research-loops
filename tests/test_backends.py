@@ -82,7 +82,7 @@ def test_claude_rejects_authorized_tool_permission_denial(tmp_path, name):
     with pytest.raises(IntegrityError) as caught:
         asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
     assert str(caught.value) == "Claude CLI denied an authorized rloop tool; the can_use_tool permission bridge is not active"
-    assert not (tmp_path / "outbox" / "adapter-trace.json").exists()
+    assert (tmp_path / "outbox" / "adapter-trace.json").exists()
     assert not (tmp_path / "outbox" / "report.json").exists()
 
 
@@ -111,6 +111,8 @@ def test_claude_synthetic_error_precedes_model_check(tmp_path, error, expected):
     with pytest.raises(IntegrityError) as caught:
         asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
     assert str(caught.value) == expected
+    trace_bytes = (tmp_path / "outbox" / "adapter-trace.json").read_bytes()
+    assert b"private SDK text" not in trace_bytes and b"private provider text" not in trace_bytes
     assert not (tmp_path / "outbox" / "report.json").exists()
 
 
@@ -188,3 +190,49 @@ def test_phase_two_report_duplicate_preserves_original_bytes(example):
         assert repo.db.execute("SELECT count(*) FROM events").fetchone()[0] == events
     finally:
         repo.close()
+
+
+def incomplete_plan():
+    assert (yield "read_contract", {})["ok"]
+    assert (yield "register_variant", {"prediction": "signal"})["ok"]
+    assert not (yield "submit_result", {"candidate": {"op": "add", "args": []}})["ok"]
+
+
+@pytest.mark.parametrize("name", ["openai_agents", "claude_agent"])
+def test_no_submission_keeps_canonical_trace(tmp_path, name):
+    if name == "openai_agents":
+        from research_loops.adapters.openai_agents import OpenAIBackend
+        adapter = OpenAIBackend("offline-stub", offline_model=openai_model(plan_factory=incomplete_plan))
+    else:
+        from research_loops.adapters.claude_agent import ClaudeBackend
+        adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options:
+            claude_transport(options, plan_factory=incomplete_plan))
+    with pytest.raises(IntegrityError, match="without a sealed tool submission"):
+        asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+    from research_loops.domain import canonical
+    data = (tmp_path / "outbox" / "adapter-trace.json").read_bytes()
+    trace = json.loads(data)
+    assert canonical(trace).encode() == data and len(data) <= 1_000_000
+    assert trace["instructions"] and len(trace["effective_tools"]) == 6
+    assert trace["items" if name == "openai_agents" else "messages"]
+    assert b"test-present-must-never-trigger-provider" not in data
+    assert not (tmp_path / "outbox" / "submission.json").exists()
+    assert not (tmp_path / "outbox" / "report.json").exists()
+
+
+@pytest.mark.parametrize("field", ["items", "messages"])
+def test_trace_quota_preserves_bounded_failure_evidence(tmp_path, field):
+    from research_loops.adapters.common import SDKBackend
+    from research_loops.domain import canonical
+    adapter = SDKBackend.__new__(SDKBackend)
+    adapter.sandbox = None
+    trace = {"instructions": "trusted instructions", "effective_tools": list(TOOL_NAMES),
+        field: ["x" * 1_000_001, {"role": "assistant", "text": "submission failed"}]}
+    with pytest.raises(IntegrityError, match="SDK trace quota exceeded"):
+        adapter.save_trace(Workspace(root=tmp_path), trace)
+    data = (tmp_path / "adapter-trace.json").read_bytes()
+    bounded = json.loads(data)
+    assert len(data) <= 1_000_000 and canonical(bounded).encode() == data
+    assert bounded["truncated"] and bounded[field] == [trace[field][-1]]
+    assert bounded["instructions"] == trace["instructions"]
+    assert bounded["effective_tools"] == trace["effective_tools"]

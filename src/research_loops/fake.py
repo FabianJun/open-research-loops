@@ -3,7 +3,7 @@
 import asyncio
 import random
 
-from research_loops.domain import Limits, WorkerContract, WorkerReport, Workspace, canonical, digest
+from research_loops.domain import Limits, WorkerContract, WorkerReport, Workspace
 from research_loops.tools import ToolService
 
 
@@ -14,7 +14,7 @@ def oracle() -> dict:
 class FakeBackend:
     async def run(self, contract: WorkerContract, workspace: Workspace, limits: Limits) -> WorkerReport:
         tools = ToolService(contract, workspace.root)
-        prompt = canonical(tools.read_contract()).encode()
+        tools.read_contract()
         tools.register_variant(contract.prediction)
         await asyncio.sleep(0)  # Cooperatively bounded by the coordinator.
         if contract.arm == "random":
@@ -26,8 +26,4 @@ class FakeBackend:
             tree = expression()
         else:
             tree = oracle() if contract.variant == 1 else {"constant": contract.variant - 1}
-        candidate = tools.write_artifact("candidate.json", canonical(tree).encode())
-        transcript = tools.write_artifact("transcript.json", canonical({"prompt": prompt.decode(), "response": tree}).encode())
-        return tools.submit_result(WorkerReport(report_id=contract.run_id, run_id=contract.run_id,
-            contract_hash=contract.registration_hash, candidate=candidate, prompt_hash=digest(prompt),
-            transcript=transcript, seed=contract.seed))
+        return tools.submit_result(tree)

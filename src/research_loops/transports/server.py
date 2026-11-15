@@ -33,13 +33,14 @@ def create_server(dispatch: Dispatcher) -> MCPServer:
         return dispatch.call("register_variant", {"prediction": prediction})
 
     @server.tool()
-    def write_artifact(relative: str, content: str) -> dict:
-        """Write base64-encoded bytes under the assigned outbox."""
-        return dispatch.call("write_artifact", {"relative": relative, "content": content})
+    def write_artifact(relative: str, content: str, encoding: str = "utf-8") -> dict:
+        """Write UTF-8 text; use encoding='base64' explicitly for binary notes. Reserved host files are forbidden."""
+        return dispatch.call("write_artifact", {"relative": relative, "content": content, "encoding": encoding})
 
     @server.tool()
-    def submit_result(report: dict) -> dict:
-        return dispatch.call("submit_result", {"report": report})
+    def submit_result(candidate: dict) -> dict:
+        """Validate one expression tree and seal its host-built report and transcript. Correct tool errors and resubmit."""
+        return dispatch.call("submit_result", {"candidate": candidate})
 
     return server
 

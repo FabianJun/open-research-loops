@@ -74,31 +74,43 @@ class OpenAIBackend(SDKBackend):
             use_structured_content=True, client_session_timeout_seconds=limits.worker_seconds,
             tool_filter={"allowed_tool_names": list(TOOL_NAMES)})
         prompt = instructions(contract)
-        async with server:
-            agent = agent_class(name="rloop-worker", instructions=prompt, model=model,
-                tools=[], handoffs=[], mcp_servers=[server],
-                model_settings=ModelSettings(parallel_tool_calls=False, store=False,
-                    reasoning={"effort": self.effort}, response_include=["reasoning.encrypted_content"], retry=None))
-            exposed = await server.list_tools()
-            if {tool.name for tool in exposed} != set(TOOL_NAMES):
-                raise IntegrityError("effective MCP tool list differs from rloop policy")
-            arguments = dict(input=[{"role": "user", "content": "Execute the assigned public contract."}],
-                max_turns=approval.run_limits.max_turns_per_worker if approval else 16,
-                run_config=RunConfig(tracing_disabled=True, trace_include_sensitive_data=False))
-            try:
-                if self.offline_model is not None:
-                    result = await Runner.run(agent, **arguments)
-                else:
-                    result = Runner.run_streamed(agent, **arguments)
-                    async for _ in result.stream_events():
-                        pass
-            except MaxTurnsExceeded:
-                raise LimitReached("OpenAI rate or turn limit reached; no retry or fallback") from None
-            except APIStatusError as exc:
-                from research_loops.adapters.chatgpt_responses import LIMIT_CODES
-                if exc.status_code == 429 or exc.code in LIMIT_CODES:
-                    raise LimitReached("OpenAI subscription or rate limit reached; no retry or fallback") from None
-                raise IntegrityError("OpenAI request refused; no retry or fallback") from None
+        result = None
+        trace = {"instructions": prompt, "input": "Execute the assigned public contract.",
+            "items": [], "effective_tools": [], "offline_seam": self.offline}
+        try:
+            async with server:
+                agent = agent_class(name="rloop-worker", instructions=prompt, model=model,
+                    tools=[], handoffs=[], mcp_servers=[server],
+                    model_settings=ModelSettings(parallel_tool_calls=False, store=False,
+                        reasoning={"effort": self.effort}, response_include=["reasoning.encrypted_content"], retry=None))
+                exposed = await server.list_tools()
+                trace["effective_tools"] = sorted(tool.name for tool in exposed)
+                if {tool.name for tool in exposed} != set(TOOL_NAMES):
+                    raise IntegrityError("effective MCP tool list differs from rloop policy")
+                arguments = dict(input=[{"role": "user", "content": "Execute the assigned public contract."}],
+                    max_turns=approval.run_limits.max_turns_per_worker if approval else 16,
+                    run_config=RunConfig(tracing_disabled=True, trace_include_sensitive_data=False))
+                try:
+                    if self.offline_model is not None:
+                        result = await Runner.run(agent, **arguments)
+                    else:
+                        result = Runner.run_streamed(agent, **arguments)
+                        async for _ in result.stream_events():
+                            pass
+                except MaxTurnsExceeded:
+                    raise LimitReached("OpenAI rate or turn limit reached; no retry or fallback") from None
+                except APIStatusError as exc:
+                    from research_loops.adapters.chatgpt_responses import LIMIT_CODES
+                    if exc.status_code == 429 or exc.code in LIMIT_CODES:
+                        raise LimitReached("OpenAI subscription or rate limit reached; no retry or fallback") from None
+                    raise IntegrityError("OpenAI request refused; no retry or fallback") from None
+        except BaseException:
+            # The streamed result retains completed items even when the SDK raises.
+            # Never serialize the exception or HTTP response.
+            if result is not None:
+                trace["items"] = result.to_input_list()
+            self.save_trace(workspace, trace)
+            raise
         usage = asdict(result.context_wrapper.usage)
         # Agents Usage reports tokens/requests, not a USD invoice. Do not invent zero.
         return self.finish(contract, workspace, launch, sdk_version=version("openai-agents"), cost=None,

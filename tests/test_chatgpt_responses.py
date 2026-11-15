@@ -92,6 +92,9 @@ def test_stream_limits_and_interruptions_do_not_retry(tmp_path, mode, exception)
     with pytest.raises(exception):
         asyncio.run(backend.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
     assert len(requests) == 1
+    trace = (tmp_path / "outbox" / "adapter-trace.json").read_bytes()
+    assert b"offline-access" not in trace and b"offline limit" not in trace
+    assert len(json.loads(trace)["effective_tools"]) == 6
     assert not (tmp_path / "outbox" / "report.json").exists()
 
 

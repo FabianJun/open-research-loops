@@ -104,10 +104,10 @@ The fake backend invokes those same functions directly; transport parity is test
 |---|---|
 | `read_contract()` | Return the assigned public contract and versions. Assignment is bound at startup, not selected by caller-supplied project ID. |
 | `read_findings(ids)` | Read allowlisted, visibility-filtered claims/challenges from the frozen bundle. Final-evaluation artifacts are never included. |
-| `read_artifact(id)` | Read an allowed input or own artifact by ID, with bounded bytes and provenance. No arbitrary filesystem or URL access. |
+| `read_artifact(relative)` | Read an allowed input or own artifact as UTF-8 text, falling back to base64 for binary; retain SHA-256 and byte size. No arbitrary filesystem or URL access. |
 | `register_variant(proposal)` | Append an outbox proposal with ID, parent, prediction, rationale and attempt accounting. Refuse local scope exhaustion. |
-| `write_artifact(relative_path, content)` | Atomically save bounded content under this run's outbox; return ID/hash. Reject overwrites and traversal. |
-| `submit_result(report)` | Validate and seal one structured report in the outbox. It proposes evidence; it does not modify the database or promote claims. |
+| `write_artifact(relative, content, encoding="utf-8")` | Save bounded UTF-8 notes (explicit `encoding="base64"` for binary); return path/hash/size. Reject overwrites, traversal and host-reserved candidate/transcript paths. |
+| `submit_result(candidate)` | Validate the expression tree; return a correctable tool error on failure. The host writes candidate.json and transcript.json (canonical public JSON prompt and candidate response), fills trusted scope/hashes/seed, and seals one report in the outbox. It proposes evidence; it does not modify the database or promote claims. |
 
 All tool outputs and source passages are untrusted data for instruction purposes.
 No generic shell, evaluator execution, SQL, uncontrolled retrieval, subprocess launch or new-agent tool is exposed in the default worker profile.

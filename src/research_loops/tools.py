@@ -1,11 +1,11 @@
 """Run-scoped service functions shared by direct fake and MCP transports."""
 
-import json
 import os
 from pathlib import Path
 
 from research_loops.domain import Artifact, IntegrityError, WorkerContract, WorkerReport, canonical, digest
 from research_loops.paths import atomic_write, confined
+from research_loops.candidate_schema import validate_submission
 
 
 class ToolService:
@@ -65,26 +65,36 @@ class ToolService:
     def write_artifact(self, relative: str, content: bytes) -> Artifact:
         if self.sealed():
             raise IntegrityError("outbox is sealed")
-        if relative in {"report.json", "submission.json", "journal.jsonl"} or relative.startswith("inputs/"):
+        path = confined(self.root, relative)
+        reserved = {"report.json", "submission.json", "journal.jsonl", "candidate.json", "transcript.json", "adapter-trace.json"}
+        if relative.split("/")[0].casefold() in reserved or relative.startswith("inputs/"):
             raise IntegrityError("reserved outbox path")
         if not self.registered or not 0 < len(content) <= 1_000_000:
             raise IntegrityError("register before writing; artifact size bounded")
-        path = confined(self.root, relative)
         atomic_write(path, content, exclusive=True)
         if self.shared_files:
             path.chmod(0o644)
         return Artifact(path=relative, sha256=digest(content), size=len(content))
 
-    def submit_result(self, report: WorkerReport) -> WorkerReport:
+    def submit_result(self, candidate: dict) -> WorkerReport:
         if self.sealed():
             raise IntegrityError("outbox is sealed")
-        if (not self.registered or report.run_id != self.contract.run_id
-                or report.report_id != self.contract.run_id or report.contract_hash != self.contract.registration_hash):
-            raise IntegrityError("report scope differs from assignment: run_id and report_id must equal the assigned run_id; contract_hash must equal registration_hash")
-        for artifact in (report.candidate, report.transcript):
-            data = self.read_artifact(artifact.path)
-            if digest(data) != artifact.sha256 or len(data) != artifact.size:
-                raise IntegrityError("artifact hash/size mismatch")
+        if not self.registered:
+            raise IntegrityError("register a prediction before submitting a candidate")
+        validate_submission(candidate)
+        prompt = canonical(self.contract)
+        artifacts = []
+        for name, value in (("candidate.json", candidate), ("transcript.json", {"prompt": prompt, "response": candidate})):
+            data = canonical(value).encode()
+            if not 0 < len(data) <= 1_000_000:
+                raise IntegrityError("submission artifact size exceeds 1 MB")
+            atomic_write(confined(self.root, name), data, exclusive=True)
+            if self.shared_files:
+                (self.root / name).chmod(0o644)
+            artifacts.append(Artifact(path=name, sha256=digest(data), size=len(data)))
+        report = WorkerReport(report_id=self.contract.run_id, run_id=self.contract.run_id,
+            contract_hash=self.contract.registration_hash, seed=self.contract.seed,
+            prompt_hash=digest(prompt.encode()), candidate=artifacts[0], transcript=artifacts[1])
         atomic_write(self.root / self.submission_name, canonical(report).encode(), exclusive=True)
         if self.shared_files:
             (self.root / self.submission_name).chmod(0o644)

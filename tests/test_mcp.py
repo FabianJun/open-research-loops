@@ -45,18 +45,22 @@ def test_direct_and_stdio_results_and_refusals_match(tmp_path):
                 assert not (await call("write_artifact", {"relative": relative, "content": "YQ=="}))["ok"]
             assert owner_path.read_bytes() == owner_record
             assert not (await call("write_artifact", {"relative": "../escape", "content": "YQ=="}))["ok"]
-            candidate_bytes = b'{"constant":0}'
-            candidate = (await call("write_artifact", {"relative": "candidate.json", "content": base64.b64encode(candidate_bytes).decode()}))["value"]
-            assert (await call("read_artifact", {"relative": "candidate.json"}))["value"]["base64"] == base64.b64encode(candidate_bytes).decode()
-            prompt = canonical(assignment)
-            transcript_bytes = canonical({"prompt": prompt, "response": {"constant": 0}}).encode()
-            transcript = (await call("write_artifact", {"relative": "transcript.json", "content": base64.b64encode(transcript_bytes).decode()}))["value"]
-            report = WorkerReport(report_id="parity", run_id="parity", contract_hash=assignment.registration_hash,
-                candidate=candidate, transcript=transcript, prompt_hash=digest(prompt.encode()), seed=7)
-            assert (await call("submit_result", {"report": report.model_dump(mode="json")}))["ok"]
-            assert not (await call("write_artifact", {"relative": "late.txt", "content": "YQ=="}))["ok"]
+            for relative in ("candidate.json", "transcript.json", "CANDIDATE.JSON", "candidate.json/nested", "adapter-trace.json"):
+                assert not (await call("write_artifact", {"relative": relative, "content": "{}"}))["ok"]
+            for relative, data, encoding in (("notes.txt", "Signal: \u03bb".encode(), "utf-8"), ("binary.dat", b"\xff\x00", "base64")):
+                content = data.decode() if encoding == "utf-8" else base64.b64encode(data).decode()
+                descriptor = (await call("write_artifact", {"relative": relative, "content": content, "encoding": encoding}))["value"]
+                result = (await call("read_artifact", {"relative": relative}))["value"]
+                assert descriptor["sha256"] == result["sha256"] == digest(data)
+                assert descriptor["size"] == result["size"] == len(data)
+                assert result == {("text" if encoding == "utf-8" else "base64"): content, "sha256": digest(data), "size": len(data)}
+            assert (await call("write_artifact", {"relative": "default.txt", "content": "plain text"}))["ok"]
+            assert not (await call("write_artifact", {"relative": "bad.bin", "content": "Y Q==", "encoding": "base64"}))["ok"]
+            assert not (await call("write_artifact", {"relative": "bad.txt", "content": "a", "encoding": "unknown"}))["ok"]
+            assert (await call("submit_result", {"candidate": {"constant": 0}}))["ok"]
+            assert not (await call("write_artifact", {"relative": "late.txt", "content": "late"}))["ok"]
             assert not (await call("register_variant", {"prediction": "retry"}))["ok"]
-            assert not (await call("submit_result", {"report": report.model_dump(mode="json")}))["ok"]
+            assert not (await call("submit_result", {"candidate": {"constant": 0}}))["ok"]
         audit = json.loads((tmp_path / "remote" / "tool-environment.json").read_bytes())
         assert not any("API_KEY" in k or "TOKEN" in k or "SECRET" in k for k in audit["environment_keys"])
     asyncio.run(check())
