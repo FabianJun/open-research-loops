@@ -51,6 +51,40 @@ whole install. `--target claude` or `--target agents` selects one location.
 `skills show` provides text and its SHA-256 for explicit injection into your
 own agent. Skills are not injected into pilot workers in this delivery.
 
+## Planted-signal example
+
+`rloop init` on a fresh directory runs the simulated planted-signal pilot. Median from command
+start to finished pilot, three runs each and excluding installation: 1.152 s on Windows, 1.408 s on
+Linux. `uv run python scripts/measure_init.py` reproduces it on your machine.
+
+The report is rendered from the database. Each run links its evidence, and every statement carries a
+provenance tag:
+
+```text
+| Run                 | Execution | Scientific outcome | Verification | Development MSE         |
+|---------------------|-----------|--------------------|--------------|-------------------------|
+| 46d657d8-agent-7-00 | completed | negative           | checked      | 28.421875 (evidence)    |
+| 46d657d8-agent-7-01 | completed | supported          | checked      | 0 (evidence)            |
+
+[simulated] Attempted variants: 2.
+[measured] Control/final evaluation starts: 2.
+[measured] External model cost: USD 0.000000 (offline fake only).
+[cited] Synthetic dataset license: CC0-1.0.
+```
+
+The full example campaign runs 48 variants: an agent arm against a random baseline, eight per seed
+across three registered seeds.
+
+```console
+uv run rloop run examples/planted-signal            # dispatch, import, evaluate; safe to repeat
+uv run rloop status examples/planted-signal
+uv run rloop report examples/planted-signal --check # regenerate from the DB and compare
+uv run rloop run examples/planted-signal --final    # seal the campaign; allowed once
+uv run pytest
+```
+
+Repeating `run` or `resume` never reruns a completed candidate.
+
 ## Grain 316L benchmark
 
 Install the optional `grain` extra (`uv sync --locked --all-extras` includes it).

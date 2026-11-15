@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 404" width="1100" height="404" role="img" aria-labelledby="title desc">
 <title id="title">The open-research-loops cycle</title>
-<desc id="desc">Start with your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for agent work, check for route and evidence; infrastructure is neutral.</desc>
+<desc id="desc">Start with your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, check for route and evidence; infrastructure is neutral.</desc>
 <defs>
 <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9198a1"/></marker>
 <marker id="arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2fb8b0"/></marker>
@@ -80,8 +80,8 @@
 <text x="42" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#ff8a70">You decide</text>
 <rect x="239" y="376" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
 <path d="M242.5,383 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="261" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#7c9cff">Your agent</text>
-<path d="M462,383 l4,4 l7,-8" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<text x="481" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#2fb8b0">Route and evidence</text>
+<text x="261" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#7c9cff">Your agent and its workers</text>
+<path d="M502,383 l4,4 l7,-8" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="521" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#2fb8b0">Route and evidence</text>
 <text x="896" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#9198a1">Infrastructure</text>
 </svg>

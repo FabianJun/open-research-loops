@@ -20,7 +20,7 @@ For researchers and students working with a coding agent. No coding needed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/loop-dark.svg">
-  <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for agent work, check for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
+  <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, check for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
 </picture>
 
 </div>
@@ -102,48 +102,17 @@ uv sync --locked
 uv run rloop init my-pilot --question "Can we recover a planted nonlinear signal?"
 ```
 
-```text
-Simulated fake pilot complete: my-pilot/.rloop/report.md
-```
-
-`init` registers a contract, runs the controls, dispatches two deterministic candidates, evaluates
-them in a protected subprocess and writes the report. Median from command start to finished pilot:
-**1.15 s** on Windows, **1.41 s** on Linux, excluding installation.
-
-The report is rendered from the database. Each run links its evidence, and every statement carries a
-provenance tag:
-
-```text
-| Run                 | Execution | Scientific outcome | Verification | Development MSE         |
-|---------------------|-----------|--------------------|--------------|-------------------------|
-| 46d657d8-agent-7-00 | completed | negative           | checked      | 28.421875 (evidence)    |
-| 46d657d8-agent-7-01 | completed | supported          | checked      | 0 (evidence)            |
-
-[simulated] Attempted variants: 2.
-[measured] Control/final evaluation starts: 2.
-[measured] External model cost: USD 0.000000 (offline fake only).
-[cited] Synthetic dataset license: CC0-1.0.
-```
-
-The full example campaign runs 48 variants: an agent arm against a random baseline, eight per seed
-across three registered seeds.
-
-```console
-uv run rloop run examples/planted-signal            # dispatch, import, evaluate; safe to repeat
-uv run rloop status examples/planted-signal
-uv run rloop report examples/planted-signal --check # regenerate from the DB and compare
-uv run rloop run examples/planted-signal --final    # seal the campaign; allowed once
-uv run pytest
-```
-
-Repeating `run` or `resume` never reruns a completed candidate. `uv run python scripts/measure_init.py`
-reproduces the timing on your machine.
+In under two seconds, `init` registers a contract, runs the controls, scores two simulated candidates
+with the protected evaluator and writes `my-pilot/.rloop/report.md`. Every statement in it carries a
+provenance tag such as `[measured]` or `[simulated]`.
 
 > [!NOTE]
 > The planted-signal example is **simulated**: its fake workers know the answer on purpose, so it
 > shows that the machinery works, not that agents can do research. In the
 > [live pilot](docs/CHECKPOINT-B-PILOT.md), real models from two vendors found the same planted
 > answer from the public training samples. A real question needs its own data, contract and evaluator.
+
+The full example campaign, the report format and every offline command: [GUIDE](docs/GUIDE.md).
 
 ## How it works
 
@@ -209,30 +178,22 @@ command-configured host: [COMPUTE](docs/COMPUTE.md).
 
 | What | Result |
 |---|---|
-| Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
-| Test suite, offline, network blocked in the test process | CI: Ubuntu **463 passed, 1 skipped**; Windows **457 passed, 7 skipped** (container tests skip there). Real worker and evaluator containers included |
 | First live pilot, planted-signal, 8 worker runs per backend | `claude-sonnet-5-5`: **8/8 supported** in 2 min 11 s, estimated USD 0.32 in total. `gpt-6.1-terra`: **8/8 supported** in 2 min 01 s, about 72k tokens, cost not reported under ChatGPT sign-in. Every first submission was valid |
 | First real problem, grain counting on 316L micrographs, 4 worker runs per backend | Controls reproduced to 1e-9; 8/8 completed and re-checked on the first attempt. Best development `max_rel_error`: Terra **0.126**, the published baseline resubmitted; Sonnet **0.141**. Pre-registered target 0.10 **not reached**. Holdout: 0.176 and 0.182 |
 | Grain U-Net, one pre-registered training run | Val `max_rel_error` **0.1639**, scored once; team pipeline 0.1259. **No win** ([record](experiments/grain-cnn/README.md)) |
-| SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
+| Offline test suite, network blocked in the test process | CI: Ubuntu **463 passed, 1 skipped**; Windows **457 passed, 7 skipped** (container tests skip there). Includes real worker and evaluator containers, and both SDK adapters against stubs with real MCP subprocesses |
 
 Commands and raw results: [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md), the
 [pilot record](docs/CHECKPOINT-B-PILOT.md) with every live attempt (six failed before the worker
-protocol fix) and the [Phase 4b record](docs/PHASE-4B-PILOT.md). Not yet done: a positive scientific
-result, a PyPI release.
+protocol fix) and the [Phase 4b record](docs/PHASE-4B-PILOT.md).
 
 ## Roadmap
 
-| Stage | Scope | Status |
-|---|---|---|
-| Phase 0 | Lessons, prior art, design, requirements | Done |
-| Phase 1–2 | Offline vertical slice and the integrity gates | Done |
-| Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | Done |
-| Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`, then eight live workers per backend | Done: 8/8 supported on both |
-| Phase 4a | Seven portable `rloop-*` agent skills with an installer, a short [guide](docs/GUIDE.md), `rloop self-assess` | Done |
-| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs | Done: target not reached ([record](docs/PHASE-4B-PILOT.md)) |
-| Compute and coaching | `rloop compute` hosts, a U-Net feasibility run, coached mode with `rloop predict` | Done |
-| Phase 5 | Provider comparison on real work | Later |
+- **Done:** the offline core and its integrity gates, MCP workers on two vendor SDKs in an OCI
+  sandbox, live pilots on both, portable agent skills, a first real problem, compute jobs and coached
+  mode.
+- **Planned:** a provider comparison on real work.
+- **Not yet:** a positive scientific result, a PyPI release.
 
 ## Documentation
 
