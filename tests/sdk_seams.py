@@ -11,6 +11,10 @@ from research_loops.transports.protocol import TOOL_NAMES
 def script():
     response = yield "read_contract", {}
     contract = response["value"]
+    training = yield "read_artifact", {"relative": "inputs/training.json"}
+    if training["ok"]:  # Standalone transport fixtures intentionally have no dataset.
+        data = base64.b64decode(training["value"]["base64"])
+        assert digest(data) == contract["input_hash"] and json.loads(data)["rows"]
     for name, args in [("read_artifact", {"relative": "../private/final.json"}),
                        ("read_artifact", {"relative": "/evaluator.py"}),
                        ("read_findings", {"ids": ["final"]})]:

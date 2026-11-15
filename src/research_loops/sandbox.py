@@ -185,7 +185,7 @@ print(json.dumps({"private_paths":True,"write_boundary":True,"network":True}))
         atomic_write(workspace.parent / "sandbox-preflight.json", canonical(probes).encode())
         name = "rloop-" + uuid.uuid4().hex
         args = self.command(name, workspace, public) + ["-I", "-m", "research_loops.transports.server",
-            "--context", "/public/worker-context.json", "--outbox", "/workspace", "--audit", "/workspace/tool-environment.json", "--shared-files"]
+            "--context", "/public/worker-context.json", "--outbox", "/workspace", "--audit", "/workspace/tool-environment.json", "--shared-files", "--public", "/public"]
         if adapter:
             args += ["--adapter"]
         self.active[str(workspace)] = name

@@ -9,13 +9,14 @@ from research_loops.paths import atomic_write, confined
 
 
 class ToolService:
-    def __init__(self, contract: WorkerContract, root: Path, *, submission_name: str = "report.json", shared_files=False):
+    def __init__(self, contract: WorkerContract, root: Path, *, submission_name: str = "report.json", shared_files=False, public_root: Path | None = None):
         self.contract = contract
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.registered = False
         self.submission_name = submission_name
         self.shared_files = shared_files
+        self.public_root = public_root if public_root is not None else root.parent / "public"
 
     def sealed(self) -> bool:
         return (self.root / self.submission_name).exists() or (self.root / "report.json").exists()
@@ -31,6 +32,16 @@ class ToolService:
         return []
 
     def read_artifact(self, relative: str) -> bytes:
+        if relative.startswith("inputs/"):
+            if relative != "inputs/training.json":
+                raise IntegrityError("public input is outside this assignment")
+            path = confined(self.public_root, "training.json")
+            if not path.is_file() or path.stat().st_size > 1_000_000:
+                raise IntegrityError("public training input missing or oversized")
+            data = path.read_bytes()
+            if digest(data) != self.contract.input_hash:
+                raise IntegrityError("public training input hash mismatch")
+            return data
         path = confined(self.root, relative)
         if not path.is_file() or path.stat().st_size > 1_000_000:
             raise IntegrityError("missing or oversized artifact")
@@ -54,7 +65,7 @@ class ToolService:
     def write_artifact(self, relative: str, content: bytes) -> Artifact:
         if self.sealed():
             raise IntegrityError("outbox is sealed")
-        if relative in {"report.json", "submission.json", "journal.jsonl"}:
+        if relative in {"report.json", "submission.json", "journal.jsonl"} or relative.startswith("inputs/"):
             raise IntegrityError("reserved outbox path")
         if not self.registered or not 0 < len(content) <= 1_000_000:
             raise IntegrityError("register before writing; artifact size bounded")

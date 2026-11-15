@@ -179,6 +179,16 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         repo.dispatch(assignment, reserve, execution_metadata=metadata)
         root = repo.root / "runs" / assignment.run_id / "outbox"
         try:
+            public = root.parent / "public"
+            public.mkdir(mode=0o755, parents=True, exist_ok=True)
+            data = private(repo, key, "training")
+            training = public / "training.json"
+            if training.exists():
+                if training.read_bytes() != data:
+                    raise IntegrityError("public training projection changed")
+            else:
+                atomic_write(training, data, exclusive=True)
+            training.chmod(0o644)
             deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
             remaining = max(0.001, deadline - time.time())
             result = await asyncio.wait_for(backend.run(assignment, Workspace(root=root), contract.limits), min(remaining, contract.limits.worker_seconds))

@@ -42,6 +42,9 @@ def test_shared_backend_contract(name, example):
                 assert metadata["sdk_version"] == version("openai-agents" if name == "openai_agents" else "claude-agent-sdk")
                 trace = json.loads(repo.artifact(row["id"], "sdk_trace"))
                 assert len(trace["effective_tools"]) == 6 and trace["offline_seam"]
+            public = repo.root / "runs" / row["id"] / "public"
+            assert {p.name for p in public.iterdir()} <= {"training.json", "worker-context.json"}
+            assert len(json.loads((public / "training.json").read_bytes())["rows"]) == 64
         audits = list((repo.root / "runs").rglob("tool-environment.json"))
         assert len(audits) == (0 if name == "fake" else 2)
         for audit in audits:

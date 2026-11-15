@@ -25,7 +25,9 @@ def cleanup_worker(operation):
 
 def instructions(contract: WorkerContract) -> str:
     return ("You are a bounded research worker. Use only the six rloop MCP tools. "
-        "Read the contract, register one prediction, propose one bounded JSON expression candidate, "
+        "Read the contract and read_artifact('inputs/training.json') for public labeled samples (base64 bytes, hash=input_hash). "
+        "Infer the signal from those samples; no development/final labels are available. "
+        "Register one prediction, propose one bounded JSON expression candidate, "
         "write candidate.json and transcript.json, then submit_result once. "
         "The transcript JSON must contain prompt (the exact public JSON string below) and response (the candidate tree). "
         "Artifact tools return path, sha256, size descriptors. Return no scientific verdict. "
