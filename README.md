@@ -214,7 +214,8 @@ Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](d
 | Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | ✅ done |
 | Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`: built and tested offline | ✅ built |
 | First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ✅ done: 8/8 supported on both ([record](docs/CHECKPOINT-B-PILOT.md)) |
-| Phase 4 | Portable `rloop-*` agent skills, a short guide, one licensed real problem from question to pilot | ⏳ next |
+| Phase 4a | Seven portable `rloop-*` agent skills with an installer, a short [guide](docs/GUIDE.md), `rloop self-assess` | ✅ done |
+| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs, a hackathon benchmark | 🔧 in progress |
 | Phase 5 | Provider comparison on real work | ⏳ later |
 
 ## Repository map

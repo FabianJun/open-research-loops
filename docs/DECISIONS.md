@@ -70,3 +70,19 @@ The project owner approved publication. The repository was recreated with only `
 The project owner authorized autonomous completion of the low-effort Phase 4a items, offline only: the seven `rloop-` skills (A6), their installer, `docs/GUIDE.md`, the `self-assess` entry point, and report wording that names the backend that actually ran. No provider calls, sign-in, new project authorization or live pilot.
 
 Phase 4b, one licensed real problem from question to pilot, needs the owner's choice of problem and data, and a new go for its live pilot. Phase 5, the provider comparison on real work, follows 4b.
+
+## Phase 4b authorization — 2026-11-15
+
+The project owner chose autonomous mode as an end-to-end test of the framework: one licensed real problem, from question to live pilot. They set three conditions: keep token use low, prove that the framework works rather than aim for big science, and use one of the hackathon experiments as the benchmark. Selecting the problem within that mandate was part of the autonomous test.
+
+- **Problem:** grain counting and sizing on 316L stainless steel micrographs. This is project #5 of the Claude Impact Lab 2026 event, from `VanishJr/micrograph-impact-lab` at commit `9175855`, Apache-2.0. Its pipeline and metric may be ported with attribution. Their published development (40 images) and holdout (165 images) numbers are the cited benchmark.
+- **Data:** Zenodo record 22039777 (DOI 10.5281/zenodo.22039777), metadata license CC BY 4.0, from Warren et al., Computational Materials Science 233 (2024) 112739. Caveat: the deposit's README says a final license has not yet been selected inside the package. Therefore the images are never redistributed. Each user downloads the archive by DOI with hash checks, and the repository holds only code, derived statistics and provenance.
+- **Pre-registration:** supported if the development `max_rel_error` is at most 0.10, the team's own target. Two controls must reproduce the team's numbers before any worker runs: defaults 12.885…, team final 0.12586….
+- **Implementation:** offline. It includes one protected-evaluator change through the hash-bound authorization in `project.json`, with the owner as authority on the basis of this record.
+- **Live pilot:**
+  - `claude-sonnet-5-5` (Claude Code sign-in) and `gpt-6.1-terra` (Sign in with ChatGPT), effort high;
+  - 4 worker runs per backend, 1 in parallel, 32 turns and 300 s per worker, 3600 s per project;
+  - no API key, no fallback, no retry until a positive result, restarts only in fresh directories.
+- **Final holdout:** the selected candidate per backend is evaluated on it once. A negative result is reported as such.
+
+Scaling beyond this pilot and Phase 5 still need a new go.
