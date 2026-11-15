@@ -7,16 +7,17 @@
 | Route and evidence | `#0e7c7b` | `#2fb8b0` | arrow or check | The route, protected evaluator, checked evidence, report and what you keep |
 | Neutral | `#59636e` | `#9198a1` | none | Infrastructure, notes and facts |
 
-Where each role appears on the start page:
+Where each role appears:
 
 - **Badges** double as the legend: `you decide` coral, `your agent` blue, `evidence` teal, then
   facts (Python, licence, status) in grey.
 - **Pictures:** `loop-*` is the main diagram, `competence-*` the coaching principle, `route-*` who
   does what in coached mode. The social preview is the riso print.
-- **Icons:** the 16 px `icon-you.svg` and `icon-agent.svg` mark table headers (`alt=""`). A 14 px
-  `icon-you.svg` marks the moments where your view comes first (`alt="your view first"`). Their
-  light colours stay readable on both themes.
-- **Mermaid:** role strokes on GitHub's theme fills; sequence groups use transparent role tints.
+- **Icons:** in the step table of `docs/COACHED.md`, a 14 px `icon-you.svg` marks the moments where
+  your view comes first (`alt="your view first"`); 16 px role icons in table headers take `alt=""`.
+  Their light colours stay readable on both themes.
+- **Mermaid** (`docs/HOW-IT-WORKS.md`): role strokes on GitHub's theme fills; sequence groups use
+  transparent role tints.
 
 For new visuals:
 

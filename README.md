@@ -8,13 +8,13 @@ For researchers and students working with a coding agent. No coding needed.
 
 [![tests](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml/badge.svg)](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml)
 [![you decide: question and verdict](https://img.shields.io/badge/you_decide-question_and_verdict-c4432b)](#two-ways-to-work)
-[![your agent: any capable coding agent](https://img.shields.io/badge/your_agent-any_capable_coding_agent-2f5bea)](#backends)
+[![your agent: any capable coding agent](https://img.shields.io/badge/your_agent-any_capable_coding_agent-2f5bea)](#two-ways-to-work)
 [![evidence: checked, negatives kept](https://img.shields.io/badge/evidence-checked%2C_negatives_kept-0e7c7b)](#measured-not-promised)
 ![python 3.12+](https://img.shields.io/badge/python-3.12%2B-59636e)
 [![licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](#names-and-licences)
 ![status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-59636e)
 
-[Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How one loop runs](#how-one-loop-runs) · [What a worker can see](#what-a-worker-can-see) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
+[Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [Why this exists](#why-this-exists) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
 
 <br/>
 
@@ -29,9 +29,13 @@ You set the question and what would disprove it, before any result exists. Your 
 code and runs the workers in parallel. Every thread then passes the same needle, a protected
 evaluator: what holds joins the report, and what fails stays in it as a negative result.
 
+The runtime enforces each step as a rule, and every rule answers a failure found in the published
+assessments of thirteen research-loop projects ([why this exists](#why-this-exists)).
+
 ## Two ways to work
 
-Your own coding agent handles code, evaluators, compute and CI. Pick a mode and paste its starter
+Your own coding agent, any capable one, handles code, evaluators, compute and CI. The workers it
+starts are separate sessions on one of the [backends](#backends). Pick a mode and paste its starter
 into your agent.
 
 ### Autonomous
@@ -70,20 +74,9 @@ your predicted number with `rloop predict` before anything is scored.
   <img alt="One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data rights, privacy and your academic rules where applicable first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card." src="docs/assets/route-light.svg" width="100%">
 </picture>
 
-| Step | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt=""> What your agent does | <img src="docs/assets/icon-you.svg" width="16" height="16" alt=""> Your part and what you learn |
-|---|---|---|
-| 1. Question and rights <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Checks licences, data rights, privacy and your academic rules where applicable. | Your question and what would disprove it. |
-| 2. Metric, target, falsifier | Makes the rule executable. | What the score means. |
-| 3. Baselines and controls | Prepares defaults, a team comparison and a random or negative control; checks each was tuned on the same data. | How to spot an unfair test. |
-| 4. Approach <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Offers safe, unusual and cheap no-GPU options; recommends one. | Your first idea, then your choice. |
-| 5. Pre-register <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Records rule, budget, stop rule and prediction before scoring. | Your number and your reason. |
-| 6. Compute and cost | Picks a host, states the cost first, runs a representative smoke test. | Approve resources; what a small test covers. |
-| 7. Evaluate once <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Shows the result, its uncertainty and limits. | Your verdict, before the agent's. |
-| 8. Reflect | Asks short questions, drafts a method card, proposes profile updates. | The method in your own words. |
-
-The coral person icon <img src="docs/assets/icon-you.svg" width="14" height="14" alt=""> marks the
-four moments where your view comes first, one question per reply. Elsewhere the agent gets on with the work and names the
-step. Say “shorter”, “explain more” or “just do it” at any time.
+Your view comes first at four moments (question, first idea, prediction, verdict), one question per
+reply; elsewhere the agent gets on with the work and names the step. Say “shorter”, “explain more”
+or “just do it” at any time.
 
 The brief is the project's `BRIEF.md`; an optional competence profile stays on your machine. Every
 method has a [card](skills/rloop-coach/references/methods.md) with its reason, steps and limits.
@@ -95,7 +88,7 @@ and 40 images leave a wide 95% interval of 0.119 to 0.231. A coached agent raise
 comparison** and **sample size and intervals** before the run
 ([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)).
 
-More in [how coached mode works](docs/COACHED.md).
+All eight steps, the levels and the private profile: [COACHED](docs/COACHED.md).
 
 ## Quickstart
 
@@ -152,117 +145,14 @@ reproduces the timing on your machine.
 > [live pilot](docs/CHECKPOINT-B-PILOT.md), real models from two vendors found the same planted
 > answer from the public training samples. A real question needs its own data, contract and evaluator.
 
-## How one loop runs
+## How it works
 
-```mermaid
-sequenceDiagram
-    autonumber
-    box rgba(196,67,43,0.08) You decide
-        actor S as You
-    end
-    box rgba(89,99,110,0.08) Infrastructure
-        participant C as Coordinator
-        participant DB as SQLite (single writer)
-    end
-    box rgba(47,91,234,0.08) Your agent
-        participant W as Worker (Claude, OpenAI or fake)
-        participant T as MCP tools
-    end
-    box rgba(14,124,123,0.08) Route and evidence
-        participant E as Protected evaluator
-    end
-    S->>C: question and contract
-    C->>DB: register goal, falsifier, thresholds, evaluator hash
-    C->>E: run controls first
-    E-->>C: controls pass, or the pilot stops here
-    par each worker, up to the concurrency limit
-        C->>W: public contract and limits
-        W->>T: read_contract, read_findings, read_artifact
-        W->>T: register_variant, write_artifact
-        W->>T: submit_result (sealed outbox)
-    end
-    C->>C: validate, copy, hash, de-duplicate
-    C->>E: evaluate the exact imported bytes
-    E-->>C: verdict and raw metric outputs
-    C->>DB: evidence, verdict, independent re-check
-    C-->>S: report rendered from the database
-```
+Workers never touch the database or the evaluator. Each writes to a private outbox; the coordinator
+validates, hashes and imports those bytes, and the protected evaluator scores exactly what was
+imported. A worker sees six MCP tools and nothing else, optionally inside a container without network.
 
-Workers never write to the database. They write to a private outbox that the coordinator treats as
-untrusted input. One coordinator per project holds the lock; SQLite stays authoritative, and reports
-and the append-only JSONL export are read from it.
-
-### The evidence gate
-
-Every candidate passes the same gate, whatever its outcome:
-
-```mermaid
-flowchart LR
-    A["Worker proposal<br/>untrusted"] --> B{"Import<br/>schema, hash, run ID"}
-    B -- rejected --> X["technical_error<br/>saved, never promoted"]
-    B -- accepted --> C["Protected evaluator<br/>plain code"]
-    C --> V["supported, negative<br/>or inconclusive"]
-    V --> D{"Independent re-check<br/>second code path"}
-    D -- failed --> F["verification failed<br/>shown as such"]
-    D -- checked --> R["Report entry<br/>evidence ID and provenance tag"]
-    classDef agent stroke:#2f5bea,stroke-width:2px
-    classDef evidence stroke:#0e7c7b,stroke-width:2px
-    classDef neutral stroke:#59636e,stroke-width:2px
-    class A agent
-    class C,V,D,F,R evidence
-    class B,X neutral
-```
-
-Execution status, scientific outcome and verification are separate fields: a finished run is not a
-finding, a negative result is checked evidence, and an interrupted worker never becomes a positive
-one. Every report statement is tagged `measured`, `simulated`, `cited`, `assumed`, `interpretation`
-or `hypothesis`.
-
-## What a worker can see
-
-Isolation does not depend on which agent SDK runs the worker. Every backend gets the same six MCP
-tools and nothing else; the tests check the effective tool list for each backend.
-
-```mermaid
-flowchart TB
-    LLM(["Model provider"])
-    subgraph HOST["Host: trusted side"]
-        SDK["Agent loop<br/>Claude or OpenAI SDK<br/>credentials stay here"]
-        C["Coordinator"]
-        DB[("SQLite state<br/>JSONL export")]
-        EV["Protected evaluator<br/>holdout, trusted manifest"]
-    end
-    subgraph BOX["Worker container"]
-        MCP["MCP tool server<br/>six tools, no shell"]
-        WS["workspace, read-write<br/>sealed outbox"]
-        PUB["public inputs<br/>read-only"]
-    end
-    LLM <-->|"prompts and replies"| SDK
-    C -->|"public contract"| SDK
-    C --> DB
-    C -->|"exact imported bytes"| EV
-    SDK <-->|"MCP over stdio"| MCP
-    MCP --- WS
-    MCP --- PUB
-    WS -.->|"validated, hashed import"| C
-    classDef agent stroke:#2f5bea,stroke-width:2px
-    classDef evidence stroke:#0e7c7b,stroke-width:2px
-    classDef neutral stroke:#59636e,stroke-width:2px
-    class SDK,MCP agent
-    class EV evidence
-    class LLM,C,DB,WS,PUB neutral
-```
-
-- **Never reaches a worker:** evaluator code, holdout and final data, the database, credentials,
-  final scores.
-- **Two sandbox modes.** `none` serves declarative tools and refuses candidate code. `container`
-  runs the tools in an OCI container (Docker or Podman, pinned by digest): no network, read-only
-  root, non-root user, no capabilities, limits on processes, memory, CPU and wall time.
-- **Fail closed.** Four probes must pass before a container worker starts: private paths absent,
-  writes outside the workspace fail, network unreachable, timeouts clean up the whole process tree.
-- **Honest limits.** Containers share the host kernel: they stop mistaken or opportunistic worker
-  actions, not a determined kernel exploit. See the
-  [threat model](docs/DESIGN.md#phase-3b-sandbox-policy-and-threat-model).
+The full sequence, the evidence gate, worker isolation and the code map:
+[HOW-IT-WORKS](docs/HOW-IT-WORKS.md).
 
 ## Why this exists
 
@@ -284,6 +174,8 @@ the loop, not the science. `rloop` turns each one into a rule the runtime enforc
 Each lesson with a link to its assessment: [LESSONS](docs/LESSONS.md).
 
 ## Backends
+
+These backends run the workers, not your own agent.
 
 | Backend | Install | Signs in with | Status |
 |---|---|---|---|
@@ -342,33 +234,13 @@ result, a PyPI release.
 | Compute and coaching | `rloop compute` hosts, a U-Net feasibility run, coached mode with `rloop predict` | Done |
 | Phase 5 | Provider comparison on real work | Later |
 
-## Repository map
-
-```text
-src/research_loops/
-├── coordinator.py, scheduler.py, storage.py      state, dispatch, limits, recovery
-├── tools.py, transports/                         the six MCP tools, served over stdio
-├── adapters/                                     fake, claude_agent, openai_agents
-├── evaluation.py, evaluator_worker.py            protected evaluator subprocess
-├── protection.py, authorization.py               hash anchors, run authorization
-├── openai_auth.py, auth_cli.py                   Sign in with ChatGPT, protected token store
-├── sandbox.py, container_stdio.py                OCI isolation and preflight probes
-├── verification.py, grounding.py, reporting.py   re-checks, provenance, reports
-├── compute/                                      vendor-neutral training jobs
-└── migrations/                                   numbered SQLite migrations
-examples/planted-signal/                          the simulated first example
-experiments/grain-cnn/                            the U-Net feasibility run
-skills/                                           portable agent skills, incl. rloop-coach
-docs/                                             lessons, design, decisions, status
-tests/                                            offline tests, incl. container isolation
-```
-
 ## Documentation
 
 | Document | Read it for |
 |---|---|
 | [GUIDE](docs/GUIDE.md) | Offline commands from install to the grain benchmark |
 | [COACHED](docs/COACHED.md) | Coached mode: the route, levels, competence profile |
+| [HOW-IT-WORKS](docs/HOW-IT-WORKS.md) | One loop step by step, the evidence gate, worker isolation, the code map |
 | [LESSONS](docs/LESSONS.md) | What the thirteen assessments showed, and the rule each lesson became |
 | [DESIGN](docs/DESIGN.md) | Architecture, contracts, information flow, database, threat model |
 | [REQUIREMENTS](docs/REQUIREMENTS.md) | Every requirement traced to a design section and an acceptance check |
