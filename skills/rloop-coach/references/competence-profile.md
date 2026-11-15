@@ -1,7 +1,7 @@
 # Private competence profile: research-loops
 
 This is a coaching aid, not an assessment or grade. The shared scale, Markdown
-format and rules match PresentTogether; only the six areas differ.
+format and rules match present-together; only the six areas differ.
 
 ## Location and privacy
 

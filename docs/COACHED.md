@@ -5,7 +5,7 @@ experiment done. Your own coding agent handles code, evaluators, compute
 and CI. On research method it explains and suggests; you decide. Your
 question, hypothesis and conclusions stay yours.
 
-Coaching pattern adapted from PresentTogether.
+Coaching pattern adapted from present-together.
 
 ## Start with your agent
 
