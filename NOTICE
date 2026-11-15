@@ -5,7 +5,14 @@ Method and model ideas draw on scaled-thinking's research-loop toolkit.
 The event assessment rubric and lessons are credited to xemantic's
 claude-impact-lab-2026 (Apache-2.0 code, CC BY 4.0 text).
 Other design ideas and source licenses are listed in docs/PRIOR-ART.md.
-No third-party framework or AGPL source code is incorporated.
+No AGPL source code is incorporated.
+
+The grain pipeline and metric in src/research_loops/grain_evaluator.py are
+adapted from VanishJr/micrograph-impact-lab (Apache-2.0), commit
+91758551f37d54d94130ab69cd00a8ee68ac0d40: src/methods/watershed.py,
+src/methods/common.py and src/evaluate.py. Changes: parameter validation,
+lazy imports, statistics-only outputs, and omission of defect detection,
+image output, overlays and unrelated measurements. No dataset pixels included.
 
 Source code is licensed under LICENSE (Apache-2.0).
 Documentation, including README.md, docs/ and skills/*/SKILL.md, is licensed under

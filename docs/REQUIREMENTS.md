@@ -13,7 +13,7 @@ Source keys:
 - **P**: primary documents, repository licenses and exact version evidence in [PRIOR-ART.md](PRIOR-ART.md).
 
 Each requirement has an implementation location in [DESIGN.md](DESIGN.md) and an observable acceptance check.
-Phase 1-3b are complete and checkpoint B passed with a live pilot on both backends. The current delivery is Phase 4a offline (skills, installer, GUIDE, self-assess); Phase 4b (one licensed real problem) and Phase 5 remain later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
+Phase 1-3b are complete and checkpoint B passed with a live pilot on both backends. Phase 4a delivered skills, installer, GUIDE and self-assess. The current Phase 4b delivery implements grain-316l offline; the authorized live pilot runs separately. Phase 5 remains later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
 
 | ID | Requirement | Source | Design location | Acceptance / phase |
 |---|---|---|---|---|
@@ -59,7 +59,7 @@ Phase 1-3b are complete and checkpoint B passed with a live pilot on both backen
 | R40 | CLI init/plan/run/status/resume/report/export plus self-assess workflow. | M §5 phases 2, 4 | Skills, guide and command surface | CLI smoke paths exercised offline; invalid final/recovery states fail visibly; 2, 4–5. |
 | R41 | Apache-2.0 code, CC BY 4.0 docs, factual AGENTS/CLAUDE pointer and CI scaffold. | M §5 phase 1; event `CLAUDE.md` | Architecture decisions; Skills | Root license files and split agree with docs; instructions avoid duplicating source; CI exists for both OSes; 1. |
 | R42 | Short docs/instructions, no personal toolkit clone or paper/hosted platform expansion. | M §1, §6; T `references/sources.md`; event `CLAUDE.md` | Architecture; Skills; L simplification | Review scope and agent instructions at handoff; disclose optional/unimplemented features; all phases. |
-| R43 | A and Phase 1-3b complete; checkpoint B passed live. Current scope is Phase 4a offline; no live sign-in/inference or new project approval. | A1-A6; subsequent owner authorization | Approved delivery order and scope | Full Windows/disposable Linux/CI verification with exact results and owner go instructions. No WSL change, real auth/API requests or provider calls; private-origin green pushes authorized. |
+| R43 | A and Phase 1-3b complete; checkpoint B passed live. Current implementation scope is Phase 4b grain-316l offline; no live sign-in/inference or new project approval. | A1-A6; subsequent owner authorization | Approved delivery order and scope | Full Windows/disposable Linux/CI verification with exact results and owner go instructions. No WSL change, real auth/API requests or provider calls; private-origin green pushes authorized. |
 
 ## Phase-5 test coverage index
 

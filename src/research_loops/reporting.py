@@ -11,6 +11,10 @@ from research_loops.storage import Repository
 
 
 def render(repo: Repository) -> str:
+    registration = repo.db.execute("SELECT payload FROM registrations WHERE hash=(SELECT current_registration FROM project)").fetchone()
+    if registration and json.loads(registration[0]).get("name") == "grain-316l":
+        from research_loops.grain_reporting import render as grain_render
+        return grain_render(repo)
     metadata = [json.loads(row["execution_metadata"]) for row in repo.runs()]
     live = any(item["backend"] != "fake" for item in metadata)
     tag = "measured" if live else "simulated"

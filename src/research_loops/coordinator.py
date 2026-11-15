@@ -19,10 +19,32 @@ from research_loops.reporting import export, report
 from research_loops.scheduler import fanout
 from research_loops.storage import Repository
 from research_loops.authorization import LimitReached
+from research_loops.contracts import GrainWorkerContract, is_grain, parse_contract
+from research_loops.grain_evaluator import parse_verdict
 
 
 def load_contract(example: Path) -> Contract:
-    return Contract.model_validate_json((example / "contract.json").read_bytes())
+    return parse_contract((example / "contract.json").read_bytes())
+
+
+def proposal_method(contract):
+    return Path(__file__).with_name("grain_worker.py" if is_grain(contract) else "fake.py")
+
+
+def data_root(repo, contract, split):
+    if not is_grain(contract):
+        return None
+    return repo.root / "data" / "Grain" / {"training": "train", "development": "val", "final": "test"}[split]
+
+
+def training_projection(repo, contract, key):
+    if not is_grain(contract):
+        return private(repo, key, "training")
+    data = (repo.root / "inputs" / "training.json").read_bytes()
+    inputs = json.loads(repo.db.execute("SELECT inputs FROM registrations WHERE hash=?", (key,)).fetchone()[0])
+    if digest(data) != inputs["public_training"]:
+        raise IntegrityError("public grain statistics modified")
+    return data
 
 
 def private(repo: Repository, key: str, split: str) -> bytes:
@@ -37,11 +59,11 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
     contract = load_contract(example)
     repo = Repository(example / ".rloop")
     try:
-        method_hash = digest(Path(__file__).with_name("fake.py").read_bytes())
+        method_hash = digest(proposal_method(contract).read_bytes())
         current = repo.db.execute("SELECT current_registration FROM project").fetchone()[0]
         if current:
             previous = repo.db.execute("SELECT * FROM registrations WHERE hash=?", (current,)).fetchone()
-            if previous["evaluator_hash"] != evaluator_hash():
+            if previous["evaluator_hash"] != evaluator_hash(contract.name):
                 raise IntegrityError("protected evaluator changed; a trusted human evaluator decision is required")
             same_method = json.loads(previous["inputs"]).get("proposal_method") == method_hash
             if previous["payload"] == canonical(contract) and same_method:
@@ -53,10 +75,19 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
                 raise IntegrityError("registration changed; explicitly plan an amendment with a reason")
             if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
                 raise IntegrityError("sealed campaign cannot amend registration")
-        data = datasets(contract)
+        if is_grain(contract):
+            try:
+                data = {name: (repo.root / "data" / f"{split}.json").read_bytes()
+                    for name, split in (("training", "train"), ("development", "val"), ("final", "test"))}
+            except FileNotFoundError:
+                raise IntegrityError("grain data missing; run rloop data fetch PROJECT --archive PATH") from None
+        else:
+            data = datasets(contract)
         inputs = {name: digest(value) for name, value in data.items()}
+        if is_grain(contract):
+            inputs["public_training"] = digest((repo.root / "inputs" / "training.json").read_bytes())
         inputs["proposal_method"] = method_hash
-        key = repo.register(contract.model_dump(mode="json"), evaluator_hash(), inputs, supersedes=current, reason=amendment_reason)
+        key = repo.register(contract.model_dump(mode="json"), evaluator_hash(contract.name), inputs, supersedes=current, reason=amendment_reason)
         for name, value in data.items():
             path = repo.root / "private" / key / f"{name}.json"
             if not path.exists():
@@ -69,13 +100,13 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
         raise
 
 
-def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, seconds: float) -> Verdict:
+def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, seconds: float, *, data_root=None) -> Verdict:
     # All inputs are captured by the coordinator: evaluator threads get no DB handle.
     receipt = root / "evaluation_receipts" / f"{run_id}.json"
     if receipt.exists():
         value = json.loads(receipt.read_bytes())
         if value["state"] == "completed":
-            return Verdict.model_validate(value["verdict"])
+            return parse_verdict(value["verdict"])
         if value["state"] == "intent":
             raise IntegrityError("unresolved evaluator launch intent; automatic replay blocked")
         if process_identity(value["pid"]) == value["creation"]:
@@ -84,7 +115,7 @@ def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, se
     atomic_write(receipt, canonical({"state": "intent"}).encode(), exclusive=True)
     def started(identity):
         atomic_write(receipt, canonical({"state": "running", **identity}).encode())
-    verdict = SubprocessEvaluator().evaluate(candidate, dataset, seconds, started=started)
+    verdict = SubprocessEvaluator().evaluate(candidate, dataset, seconds, started=started, data_root=data_root)
     atomic_write(receipt, canonical({"state": "completed", "verdict": verdict.model_dump(mode="json")}).encode())
     return verdict
 
@@ -100,7 +131,7 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
             saved = json.loads(final_receipt.read_bytes())
             if saved["ticket"] != ticket:
                 raise IntegrityError("final recovery receipt differs from consumed ticket")
-            repo.final_result(ticket, Verdict.model_validate(saved["verdict"]))
+            repo.final_result(ticket, parse_verdict(saved["verdict"]))
     for row in repo.runs():
         if row["execution_status"] != "running":
             continue
@@ -128,7 +159,7 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
                     raise IntegrityError("prior evaluator is still alive; recovery blocked")
                 repo.fail(row["id"], "interrupted", "evaluator died without a sealed receipt")
                 continue
-        verdict = evaluate_saved(repo.root, row["id"], repo.artifact(row["id"], "candidate"), private(repo, key, "development"), contract.limits.evaluator_seconds)
+        verdict = evaluate_saved(repo.root, row["id"], repo.artifact(row["id"], "candidate"), private(repo, key, "development"), contract.limits.evaluator_seconds, data_root=data_root(repo, contract, "development"))
         repo.verdict(row["id"], verdict)
         repo.promote_claim(row["id"])
 
@@ -154,6 +185,9 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
 
 
 async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False, worker_runs: int | None = None) -> None:
+    if is_grain(contract) and type(backend) is FakeBackend:
+        from research_loops.grain_worker import GrainFakeBackend
+        backend = GrainFakeBackend()
     approval = backend.check_authorization() if hasattr(backend, "check_authorization") else None
     limits = contract.limits
     if approval:
@@ -168,6 +202,9 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             raise LimitReached("requested worker runs exceed checkpoint B allowance")
     stopped = False
     technical_failure = False
+    if is_grain(contract) and not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
+        from research_loops.grain_worker import controls
+        controls(repo, contract, key)
     if not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         evaluator = SubprocessEvaluator()
         dev = private(repo, key, "development")
@@ -180,9 +217,10 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             "nonconstant": len({row["y"] for row in rows}) > 1, "baseline": positive.baseline_mse > 0})
     repo.require_pilot()
     suffix = "" if getattr(backend, "name", "fake") == "fake" else "-" + backend.name
-    assignments = [WorkerContract(run_id=f"{key[:8]}-{arm}-{seed}-{variant:02d}{suffix}", registration_hash=key,
+    assignment_class = GrainWorkerContract if is_grain(contract) else WorkerContract
+    assignments = [assignment_class(run_id=f"{key[:8]}-{arm}-{seed}-{variant:02d}{suffix}", registration_hash=key,
         goal=contract.goal, prediction=contract.prediction, seed=seed, variant=variant, arm=arm,
-        input_hash=digest(private(repo, key, "training")))
+        input_hash=digest(training_projection(repo, contract, key)))
         for arm in ("agent", "random") for seed in contract.seeds for variant in range(contract.variants_per_seed)]
     existing = {row["id"] for row in repo.runs()}
     if pilot_only:
@@ -204,7 +242,7 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         try:
             public = root.parent / "public"
             public.mkdir(mode=0o755, parents=True, exist_ok=True)
-            data = private(repo, key, "training")
+            data = training_projection(repo, contract, key)
             training = public / "training.json"
             if training.exists():
                 if training.read_bytes() != data:
@@ -212,13 +250,16 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             else:
                 atomic_write(training, data, exclusive=True)
             training.chmod(0o644)
+            if is_grain(contract):
+                from research_loops.grain_worker import prepare_training_tool
+                prepare_training_tool(repo, contract, key, root.parent)
             deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
             remaining = max(0.001, deadline - time.time())
             result = await asyncio.wait_for(backend.run(assignment, Workspace(root=root), limits), min(remaining, limits.worker_seconds))
             repo.import_report(result, Workspace(root=root))
             remaining = max(0.001, deadline - time.time())
             candidate, dataset = repo.artifact(assignment.run_id, "candidate"), private(repo, key, "development")
-            verdict = await asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds))
+            verdict = await asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds), data_root=data_root(repo, contract, "development"))
             repo.verdict(assignment.run_id, verdict)
             repo.promote_claim(assignment.run_id)
         except LimitReached:
@@ -265,6 +306,6 @@ def final_evaluation(repo: Repository, contract: Contract, key: str) -> None:
     ticket = repo.consume_final(selection["winner"])
     deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
     seconds = min(contract.limits.evaluator_seconds, max(0.001, deadline - time.time()))
-    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds)
+    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds, data_root=data_root(repo, contract, "final"))
     atomic_write(repo.root / "private" / "final-receipt.json", canonical({"ticket": ticket, "verdict": verdict.model_dump(mode="json")}).encode(), exclusive=True)
     repo.final_result(ticket, verdict)

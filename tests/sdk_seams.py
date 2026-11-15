@@ -31,7 +31,7 @@ def script():
     assert not (yield "submit_result", {"candidate": tree})["ok"]
 
 
-def openai_model(*, plan_factory=script):
+def openai_model(*, plan_factory=script, expected_tools=TOOL_NAMES):
     from agents import Model, ModelResponse, Usage
     from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
 
@@ -41,7 +41,7 @@ def openai_model(*, plan_factory=script):
             self.index = 0
 
         async def get_response(self, system_instructions, input, model_settings, tools, output_schema, handoffs, tracing, **kwargs):
-            assert {tool.name for tool in tools} == set(TOOL_NAMES)
+            assert {tool.name for tool in tools} == set(expected_tools)
             assert all(type(tool).__name__ == "FunctionTool" for tool in tools)
             assert not handoffs and tracing.is_disabled()
             try:
@@ -70,7 +70,7 @@ def openai_model(*, plan_factory=script):
     return Stub()
 
 
-def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None, denied_tool=None, plan_factory=script):
+def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None, denied_tool=None, plan_factory=script, expected_tools=TOOL_NAMES):
     from claude_agent_sdk._internal.transport import Transport
     from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
     from claude_agent_sdk import PermissionResultAllow, PermissionResultDeny
@@ -95,7 +95,7 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
             assert not options.skills and not options.plugins and not options.agents
             assert options.allowed_tools == [] and options.permission_mode == "default"
             assert "permissions" not in json.loads(options.settings)
-            for name in TOOL_NAMES:
+            for name in expected_tools:
                 assert isinstance(await options.can_use_tool("mcp__rloop__" + name, {}, None), PermissionResultAllow)
             assert isinstance(await options.can_use_tool("Bash", {}, None), PermissionResultDeny)
             assert isinstance(await options.can_use_tool("mcp__other__read_contract", {}, None), PermissionResultDeny)
@@ -106,7 +106,7 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
                 await self.queue.put({"type": "control_response", "response": {"subtype": "success",
                     "request_id": message["request_id"], "response": {}}})
             elif message["type"] == "user":
-                names = ["mcp__rloop__" + name for name in TOOL_NAMES]
+                names = ["mcp__rloop__" + name for name in expected_tools]
                 await self.queue.put({"type": "system", "subtype": "init", "tools": names + (["Bash"] if extra_tool else [])})
                 if denied_tool:
                     await self.queue.put({"type": "system", "subtype": "permission_denied", "tool_name": denied_tool,
@@ -122,7 +122,7 @@ def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=No
                 if not extra_tool:
                     config = options.mcp_servers["rloop"]
                     async with session(Launch(command=config["command"], args=config["args"], env=config["env"])) as client:
-                        assert {t.name for t in (await client.list_tools()).tools} == set(TOOL_NAMES)
+                        assert {t.name for t in (await client.list_tools()).tools} == set(expected_tools)
                         plan = plan_factory()
                         try:
                             name, arguments = next(plan)

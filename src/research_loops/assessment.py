@@ -13,6 +13,8 @@ from research_loops.reporting import report, verify_export
 from research_loops.skills import resources
 from research_loops.storage import Repository
 from research_loops.verification import check
+from research_loops.contracts import is_grain, parse_contract
+from research_loops.grain_evaluator import parse_verdict
 
 QUESTIONS = {
     "Problem": "Is the intended problem worth solving, and what would refute the scientific claim?",
@@ -73,28 +75,34 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                 contract = json.loads(registration["payload"])
                 inputs = json.loads(registration["inputs"])
                 licenses.extend([contract.get("license", "undeclared")])
-                Contract.model_validate(contract)
+                parsed = parse_contract(contract)
                 value = {"contract": contract, "evaluator_hash": registration["evaluator_hash"], "inputs": inputs}
                 require(content_hash(value) == key, "registration content hash differs")
                 contracts[key], inputs_by_key[key] = contract, inputs
                 require(any(e["kind"] == "registration" and e["record_id"] == key and json.loads(e["payload"]) == value
                     for e in events), "registration event anchor missing or different")
-                require(registration["evaluator_hash"] == evaluator_hash(), "evaluator package anchor differs")
+                require(registration["evaluator_hash"] == evaluator_hash(parsed.name), "evaluator package anchor differs")
                 for split in ("training", "development", "final"):
                     data = (root / "private" / key / f"{split}.json").read_bytes()
                     require(digest(data) == inputs[split], f"{split} input hash differs")
-                require(inputs["proposal_method"] == digest(Path(__file__).with_name("fake.py").read_bytes()), "proposal method hash differs")
+                from research_loops.coordinator import proposal_method
+                require(inputs["proposal_method"] == digest(proposal_method(parsed).read_bytes()), "proposal method hash differs")
                 return "exists; content hash, event anchor, evaluator anchor, saved splits and proposal method verified"
             checked("Problem", f"Registration {key}", source, registration_check)
 
         def current_contract():
             key = state["current_registration"]
             require(key in contracts, "current registration missing")
-            require(canonical(Contract.model_validate_json((project / "contract.json").read_bytes())) == canonical(contracts[key]),
+            require(canonical(parse_contract((project / "contract.json").read_bytes())) == canonical(contracts[key]),
                 "working contract differs from current registration")
             return "matches current saved registration"
         checked("Problem", "Working contract", "contract.json; .rloop/state.sqlite:project.current_registration", current_contract)
-        facts["Problem"].append("Task: planted-signal is a known-answer sanity check, not an open scientific discovery. Source: `research_loops/domain.py:Contract.name`.")
+        grain = contracts.get(state["current_registration"], {}).get("name") == "grain-316l"
+        facts["Problem"].append("Task: grain-316l is a real benchmark with a published baseline. Source: `research_loops/contracts.py:GrainContract`." if grain else
+            "Task: planted-signal is a known-answer sanity check, not an open scientific discovery. Source: `research_loops/domain.py:Contract.name`.")
+        if grain:
+            from research_loops.grain_data import LICENSE_CAVEAT
+            facts["License review"].append(LICENSE_CAVEAT + " Source: `examples/grain-316l/PROVENANCE.md`.")
 
         def controls_first():
             ready, starts, dispatches = False, 0, 0
@@ -108,6 +116,10 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                     require(starts >= 2 and set(payload) == {"positive_control", "negative_control", "nonconstant", "baseline"}
                         and all(value is True for value in payload.values()), "control gate evidence missing or failed")
                     ready = True
+                    if grain:
+                        evidence = next((json.loads(e["payload"])["controls"] for e in reversed(events)
+                            if e["kind"] == "grain_controls" and e["seq"] < event["seq"]), [])
+                        require(len(evidence) == 2 and all(c["reproduced"] and abs(c["measured"] - c["expected"]) <= 1e-9 for c in evidence), "grain reproduction controls missing or failed")
                 elif event["kind"] == "dispatch":
                     require(ready, "worker dispatched before passing controls")
                     dispatches += 1
@@ -143,9 +155,11 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                 if not run["verdict"]:
                     require(run["scientific_outcome"] is None, "outcome has no verdict")
                     continue
-                verdict = Verdict.model_validate_json(run["verdict"])
+                verdict = parse_verdict(run["verdict"])
                 require(repo.artifact(run["id"], "evaluation") == canonical(verdict).encode(), "verdict lacks matching evidence object")
                 request = json.loads((root / "private" / run["registration_hash"] / "development.json").read_bytes())
+                if request.get("domain") == "grain-316l":
+                    request = {"domain": "grain-316l", "manifest": request, "data_root": str(root / "data" / "Grain" / "val")}
                 request["candidate"] = json.loads(repo.artifact(run["id"], "candidate"))
                 check(request, verdict)
                 require(run["scientific_outcome"] == ("supported" if verdict.supported else "negative"), "outcome differs from verdict")
@@ -165,8 +179,12 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
             receipt = json.loads((root / "private" / "final-receipt.json").read_bytes())
             require(receipt["verdict"] == ticket["verdict"] and receipt["ticket"] == {k: v for k, v in ticket.items() if k != "verdict"} | {"state": "started"}, "final receipt differs")
             request = json.loads((root / "private" / run["registration_hash"] / "final.json").read_bytes())
+            if request.get("domain") == "grain-316l":
+                # Rechecking saved final truth would spend holdout information
+                # again. Verify the sealed receipt/ticket only after final use.
+                return "saved final receipt and one-use ticket match; grain holdout was not reopened"
             request["candidate"] = json.loads(repo.artifact(run["id"], "candidate"))
-            check(request, Verdict.model_validate(ticket["verdict"]))
+            check(request, parse_verdict(ticket["verdict"]))
             return "saved final receipt matches ticket; independent arithmetic re-check passes"
         checked("Evidence", "Final evidence", ".rloop/state.sqlite:project.final_ticket; .rloop/private/final-receipt.json", final_check)
 
@@ -184,7 +202,7 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
     checked("License review", "Repository licenses", "LICENSE; LICENSE-CC-BY-4.0; research_loops/licensing.py:license_issues",
         lambda: license_result(repository_root or resources(), licenses, failures))
     facts["License review"].append("Declared dataset/source licenses: " + (", ".join(sorted(set(licenses))) or "unavailable")
-        + ". Source: `.rloop/state.sqlite:registrations.payload.license`. Additional real-problem sources are not supported by the current contract.")
+        + ". Source: `.rloop/state.sqlite:registrations.payload.license`. Dataset redistribution still requires human license review.")
     facts["Impact review"].append("No impact certification is computed. Source: `research_loops/assessment.py` (review policy).")
     lines = ["# Self-assessment", "", "Offline evidence inventory; no scores. No experiments were dispatched.", ""]
     for dimension, question in QUESTIONS.items():

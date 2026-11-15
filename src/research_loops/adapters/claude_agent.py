@@ -7,7 +7,7 @@ from typing import get_args
 
 from research_loops.adapters.common import SDKBackend, instructions, micro_usd, cleanup_worker
 from research_loops.domain import IntegrityError
-from research_loops.transports.protocol import TOOL_NAMES
+from research_loops.transports.protocol import tool_names
 from research_loops.authorization import LimitReached
 
 
@@ -27,7 +27,7 @@ class ClaudeBackend(SDKBackend):
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, PermissionResultAllow, PermissionResultDeny, ResultMessage, SystemMessage
         from claude_agent_sdk.types import AssistantMessageError
         launch = await self.launch(contract, workspace)
-        allowed = {"mcp__rloop__" + name for name in TOOL_NAMES}
+        allowed = {"mcp__rloop__" + name for name in tool_names(contract)}
         async def permission(name, arguments, context):
             if name in allowed:
                 return PermissionResultAllow(updated_input=arguments)

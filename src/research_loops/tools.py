@@ -6,6 +6,7 @@ from pathlib import Path
 from research_loops.domain import Artifact, IntegrityError, WorkerContract, WorkerReport, canonical, digest
 from research_loops.paths import atomic_write, confined
 from research_loops.candidate_schema import validate_submission
+from research_loops.contracts import is_grain
 
 
 class ToolService:
@@ -17,6 +18,25 @@ class ToolService:
         self.submission_name = submission_name
         self.shared_files = shared_files
         self.public_root = public_root if public_root is not None else root.parent / "public"
+        self.training_calls = 0
+        self.training = None
+        if is_grain(contract):
+            import json
+            capability = root.parent / "training-tool.json"
+            if capability.is_file():
+                self.training = json.loads(capability.read_bytes())
+                if (set(self.training) != {"manifest", "data_root"}
+                        or self.training["manifest"].get("split") != "train"
+                        or len(self.training["manifest"].get("images", [])) > 32):
+                    raise IntegrityError("training tool requires only the fixed train subset")
+            journal = self.root / "journal.jsonl"
+            if journal.exists():
+                self.training_calls = sum(json.loads(line).get("kind") == "training_start" for line in journal.read_bytes().splitlines())
+
+    @property
+    def tool_names(self):
+        from research_loops.transports.protocol import TOOL_NAMES
+        return TOOL_NAMES + (("try_on_training",) if is_grain(self.contract) else ())
 
     def sealed(self) -> bool:
         return (self.root / self.submission_name).exists() or (self.root / "report.json").exists()
@@ -81,7 +101,11 @@ class ToolService:
             raise IntegrityError("outbox is sealed")
         if not self.registered:
             raise IntegrityError("register a prediction before submitting a candidate")
-        validate_submission(candidate)
+        if is_grain(self.contract):
+            from research_loops.grain_evaluator import validate_params
+            candidate = validate_params(candidate)
+        else:
+            validate_submission(candidate)
         prompt = canonical(self.contract)
         artifacts = []
         for name, value in (("candidate.json", candidate), ("transcript.json", {"prompt": prompt, "response": candidate})):
@@ -99,6 +123,36 @@ class ToolService:
         if self.shared_files:
             (self.root / self.submission_name).chmod(0o644)
         return report
+
+    def try_on_training(self, params: dict) -> dict:
+        from research_loops.domain import content_hash
+        if not is_grain(self.contract):
+            raise IntegrityError("try_on_training is available only for grain-316l protocol v3")
+        from research_loops.grain_evaluator import validate_params
+        from research_loops.evaluation import SubprocessEvaluator
+        if self.sealed():
+            raise IntegrityError("outbox is sealed")
+        try:
+            params_hash = content_hash(params)
+        except (ValueError, TypeError):
+            params_hash = digest(b"invalid-json-parameters")
+        if self.training_calls >= 6:
+            self.journal("training_refused", {"params_hash": params_hash, "result": {"error": "six-call cap reached"}})
+            raise IntegrityError("try_on_training is capped at 6 calls per worker run; submit one candidate")
+        self.training_calls += 1
+        self.journal("training_start", {"call": self.training_calls, "params_hash": params_hash})
+        try:
+            p = validate_params(params)
+            if self.training is None:
+                raise IntegrityError("protected training capability missing")
+            result = SubprocessEvaluator().evaluate(canonical(p).encode(),
+                canonical(self.training["manifest"]).encode(), 300, data_root=Path(self.training["data_root"]))
+            value = result.model_dump(mode="json")
+            self.journal("training_result", {"call": self.training_calls, "params_hash": params_hash, "result": value})
+            return value
+        except (ValueError, OSError) as exc:
+            self.journal("training_error", {"call": self.training_calls, "params_hash": params_hash, "error": str(exc)})
+            raise
 
     def execute_candidate(self, *_args, **_kwargs):
         raise IntegrityError("candidate code execution is disabled; Phase 3b Sandbox isolation is required")

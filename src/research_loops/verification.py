@@ -6,6 +6,10 @@ from research_loops.domain import IntegrityError, Verdict, validate_candidate
 
 
 def check(request: dict, verdict: Verdict) -> None:
+    if request.get("domain") == "grain-316l":
+        from research_loops.grain_verification import check as grain_check
+        grain_check(request, verdict)
+        return
     tree = request["candidate"]
     validate_candidate(tree)
     program = []

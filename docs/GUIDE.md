@@ -49,8 +49,31 @@ whole install. `--target claude` or `--target agents` selects one location.
 `skills show` provides text and its SHA-256 for explicit injection into your
 own agent. Skills are not injected into pilot workers in this delivery.
 
-Only `planted-signal` executes today: it is a known-answer sanity check.
-A real problem needs its own licensed data, contract and evaluator in Phase 4b,
-plus a new go for a live pilot. No generic real-problem CLI is available yet.
+## Grain 316L benchmark
+
+Install the optional `grain` extra (`uv sync --locked --all-extras` includes it).
+With a previously obtained `Grain.zip` in the checkout root, the following is
+offline and leaves the holdout unspent. Start with a fresh `grain-demo` directory.
+
+```powershell
+uv run python -c "import shutil; shutil.copytree('examples/grain-316l', 'grain-demo')"
+uv run rloop init grain-demo --owner "Your Name"
+uv run rloop data fetch grain-demo --archive Grain.zip
+uv run rloop plan grain-demo
+uv run rloop run grain-demo --backend fake
+uv run rloop report grain-demo --check
+uv run rloop self-assess grain-demo --write
+```
+
+This is a real benchmark with a published baseline; fake proposals remain
+simulated. Both development controls must reproduce within 1e-9 before workers
+run. Worker protocol v3 exposes training statistics and a six-call
+`try_on_training(params)` tool on a fixed subset, with one candidate per run.
+Planted-signal retains protocol v2 and its six tools. Read
+[provenance](../examples/grain-316l/PROVENANCE.md) for the unresolved package
+license and the no-redistribution rule. The live pilot runs
+under the [Phase 4b record](DECISIONS.md#phase-4b-authorization--2026-11-15),
+using fresh projects and existing explicit provider gates. Only a later
+`run --final` consumes the selected candidate's final ticket.
 
 Documentation licensed CC BY 4.0.

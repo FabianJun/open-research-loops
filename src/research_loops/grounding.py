@@ -22,5 +22,7 @@ def number(actual: float, claimed: str, fmt: str = ".12g") -> None:
 
 def public_context(payload: dict) -> None:
     allowed = {"run_id", "registration_hash", "goal", "prediction", "seed", "variant", "arm", "input_hash"}
+    if payload.get("domain") == "grain-316l" and payload.get("worker_protocol") == 3:
+        allowed |= {"domain", "worker_protocol"}
     if set(payload) != allowed:
         raise IntegrityError("worker context is not the exact public projection")

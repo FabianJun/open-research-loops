@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "name": "grain-316l",
+  "goal": "Count and size grains on 316L micrographs with development max_rel_error <= 0.10.",
+  "falsifier": "Development max_rel_error exceeds 0.10.",
+  "prediction": "A bounded parameter search may improve on the cited team development baseline.",
+  "license": "CC-BY-4.0",
+  "dataset_doi": "10.5281/zenodo.22039777",
+  "archive_sha256": "30ca8e80392519bb790d6093b5deb86df4d4aedf8cbe9beedbf329106d54d9d0",
+  "threshold_max_rel_error": 0.1,
+  "seeds": [
+    7
+  ],
+  "variants_per_seed": 2,
+  "keep_margin": 1e-09,
+  "limits": {
+    "max_attempts": 16,
+    "concurrency": 1,
+    "worker_seconds": 300.0,
+    "evaluator_seconds": 300.0,
+    "project_seconds": 3600.0,
+    "budget_micro_usd": 0
+  }
+}

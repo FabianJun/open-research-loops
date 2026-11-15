@@ -35,6 +35,11 @@ class MCPFakeBackend(SDKBackend):
                         return {"feature": rng.randrange(4)} if rng.random() < 0.7 else {"constant": rng.randint(-3, 3)}
                     return {"op": rng.choice(("add", "sub", "mul")), "left": expression(depth + 1), "right": expression(depth + 1)}
                 tree = expression()
+            from research_loops.contracts import is_grain
+            if is_grain(contract):
+                from research_loops.grain_evaluator import TEAM_FINAL
+                tree = TEAM_FINAL if contract.arm == "agent" else {}
+                await call("try_on_training", {"params": tree})
             report = WorkerReport.model_validate(await call("submit_result", {"candidate": tree}))
             report = report.model_copy(update={"sandbox_image": launch.image})
         if hasattr(self.sandbox, "materialize"):

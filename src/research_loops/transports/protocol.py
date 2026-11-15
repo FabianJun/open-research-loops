@@ -11,6 +11,11 @@ from research_loops.tools import ToolService
 TOOL_NAMES = ("read_contract", "read_findings", "read_artifact", "register_variant", "write_artifact", "submit_result")
 
 
+def tool_names(contract):
+    from research_loops.contracts import is_grain
+    return TOOL_NAMES + (("try_on_training",) if is_grain(contract) else ())
+
+
 class Dispatcher:
     def __init__(self, service: ToolService):
         self.service = service
@@ -20,7 +25,7 @@ class Dispatcher:
         with self.lock:
             try:
                 args = dict(arguments)
-                if name not in TOOL_NAMES:
+                if name not in self.service.tool_names:
                     raise IntegrityError("unknown tool")
                 if name == "write_artifact":
                     encoding = args.pop("encoding", "utf-8")

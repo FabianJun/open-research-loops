@@ -1,12 +1,36 @@
 {
+  "domain_identities": {
+    "planted-signal": {
+      "files": {
+        "contracts.py": "859d3d340d0cabb077276c6c03a7900a7c06cfc7154ca6ca9b7ccce078750b09",
+        "domain.py": "fa20d3915c2a50c4026ebc2523480dc6644ddd28c1976b9bb254884db5512140",
+        "evaluation.py": "97cddbcb661590eddce9389e596ce39744892241acf698ed551fe4e145bcb217",
+        "evaluator_worker.py": "a6e466e0773fa8994b5818795fd07f06170048c492fae664a2a33770ebb13c92",
+        "grain_evaluator.py": "a7f72efa135981652221531274e6f3086f89a04b40f76f7c5163cb27a1336df7",
+        "grain_instructions.py": "0eec21b203a8699b6799ae2798b74bcf65ad597a5b21c1071a6a4b039c5bbcad",
+        "grain_verification.py": "30bbfc717a32b26c806cd5465c84c17f379b3e8cb557e591e595fda75bef8186",
+        "grain_worker.py": "58dd506214e38b6629220ebedde8ce24ed7c693486487fd61d4d58a4b62035d6",
+        "owner.py": "c378fac803dc3ef6af74e5f9007070ad33179ae506af283463015904add4a5d0",
+        "processes.py": "7db3a0621edee493776ca3348ea4c8d77ada9946697c81e04c7ef766868e7c2f",
+        "protection.py": "14ac7d70a526f4cbed504928998566a2c16686f85e75fb23fe91217f9a5063f1",
+        "verification.py": "aae1a677f4cbb1159f0d50ec8cd6a56c88d9e13cba65fd9c6c4958d665ebb094"
+      },
+      "identity": "47810f280d9d73b86fbbc46f7821dc8202d53d961785b165fbc0f9bcf772d57f"
+    }
+  },
   "files": {
+    "contracts.py": "859d3d340d0cabb077276c6c03a7900a7c06cfc7154ca6ca9b7ccce078750b09",
     "domain.py": "fa20d3915c2a50c4026ebc2523480dc6644ddd28c1976b9bb254884db5512140",
-    "evaluation.py": "df80614631a2a47f9f1c5e76efb7b19013f5bb9320edfc30b616cd18f613ebef",
-    "evaluator_worker.py": "06f9087911246da68b207682fcb322456f2d992d95e7e9fdcf041c8cbeccbab4",
+    "evaluation.py": "97cddbcb661590eddce9389e596ce39744892241acf698ed551fe4e145bcb217",
+    "evaluator_worker.py": "a6e466e0773fa8994b5818795fd07f06170048c492fae664a2a33770ebb13c92",
+    "grain_evaluator.py": "a7f72efa135981652221531274e6f3086f89a04b40f76f7c5163cb27a1336df7",
+    "grain_instructions.py": "0eec21b203a8699b6799ae2798b74bcf65ad597a5b21c1071a6a4b039c5bbcad",
+    "grain_verification.py": "30bbfc717a32b26c806cd5465c84c17f379b3e8cb557e591e595fda75bef8186",
+    "grain_worker.py": "58dd506214e38b6629220ebedde8ce24ed7c693486487fd61d4d58a4b62035d6",
     "owner.py": "c378fac803dc3ef6af74e5f9007070ad33179ae506af283463015904add4a5d0",
     "processes.py": "7db3a0621edee493776ca3348ea4c8d77ada9946697c81e04c7ef766868e7c2f",
     "protection.py": "14ac7d70a526f4cbed504928998566a2c16686f85e75fb23fe91217f9a5063f1",
-    "verification.py": "11ac3231ad262016712588203f6e325eec3e280984bbcaf16718ada065bfd1b5"
+    "verification.py": "aae1a677f4cbb1159f0d50ec8cd6a56c88d9e13cba65fd9c6c4958d665ebb094"
   },
   "version": 1
 }

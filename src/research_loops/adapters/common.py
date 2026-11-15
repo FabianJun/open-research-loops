@@ -25,6 +25,10 @@ def cleanup_worker(operation):
 
 
 def instructions(contract: WorkerContract) -> str:
+    from research_loops.contracts import is_grain
+    if is_grain(contract):
+        from research_loops.grain_instructions import INSTRUCTIONS
+        return INSTRUCTIONS + " Public JSON: " + canonical(contract)
     return ("You are a bounded research worker. Use only the six rloop MCP tools. "
         "Read the contract and read_artifact('inputs/training.json') for public labeled samples (UTF-8 text). "
         "Infer the signal from those samples; no development/final labels are available. "

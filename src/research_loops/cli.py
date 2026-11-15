@@ -12,6 +12,19 @@ from research_loops.auth_cli import app as auth_app
 app.add_typer(auth_app, name="auth")
 from research_loops.skills import app as skills_app
 app.add_typer(skills_app, name="skills")
+data_app = typer.Typer(no_args_is_help=True)
+app.add_typer(data_app, name="data")
+
+
+@data_app.command("fetch")
+def data_fetch(project: Path, archive: Path | None = None) -> None:
+    """Verify and safely ingest host-only grain data; omit --archive to download."""
+    from research_loops.grain_data import fetch
+    from research_loops.domain import IntegrityError, canonical
+    try:
+        typer.echo(canonical(fetch(project, archive)))
+    except (IntegrityError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from None
 
 
 @app.callback()
@@ -30,7 +43,7 @@ def failure_message(exc: Exception) -> str:
 
 @app.command()
 def run(example: Path, backend: str = "fake", final: bool = False) -> None:
-    """Run the offline planted-signal example."""
+    """Run a registered domain (fake backend by default)."""
     from research_loops.execution import load_backend
     from research_loops.coordinator import run as execute
     from research_loops.domain import IntegrityError
@@ -71,6 +84,11 @@ def init(example: Path, question: str = "Can we recover a planted nonlinear sign
         contract = Contract(goal=question, falsifier="The candidate fails the locked planted-signal criteria.",
             prediction="Uncertain; the negative control should fail and the planted oracle should pass.")
         atomic_write(example / "contract.json", canonical(contract).encode(), exclusive=True)
+    from research_loops.coordinator import load_contract
+    from research_loops.contracts import is_grain
+    if is_grain(load_contract(example)):
+        typer.echo("Grain project initialized; fetch verified data before run.")
+        return
     asyncio.run(execute(example, pilot_only=True))
     typer.echo(f"Simulated fake pilot complete: {example / '.rloop' / 'report.md'}")
 

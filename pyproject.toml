@@ -15,6 +15,7 @@ dependencies = ["pydantic==2.14.3", "typer==0.29.1"]
 mcp = ["mcp==2.3.0"]
 openai = ["openai-agents==0.24.0", "PyJWT[crypto]==2.15.1"]
 claude = ["claude-agent-sdk==0.2.182"]
+grain = ["scikit-image==0.26.0", "scipy==1.18.1", "numpy==2.5.4", "pillow==13.0.0", "imageio==2.38.1"]
 
 [dependency-groups]
 dev = ["pytest==9.2.0"]

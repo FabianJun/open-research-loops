@@ -4,7 +4,7 @@ WORKDIR /build
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --locked --extra mcp --no-dev --no-install-project
 # Deliberate allowlist: no evaluator, data, storage, SDKs, refs or host credentials.
-COPY src/research_loops/__init__.py src/research_loops/domain.py src/research_loops/reports.py src/research_loops/paths.py src/research_loops/candidate_schema.py src/research_loops/tools.py /opt/venv/lib/python3.12/site-packages/research_loops/
+COPY src/research_loops/__init__.py src/research_loops/domain.py src/research_loops/contracts.py src/research_loops/reports.py src/research_loops/paths.py src/research_loops/candidate_schema.py src/research_loops/tools.py /opt/venv/lib/python3.12/site-packages/research_loops/
 COPY src/research_loops/transports/__init__.py src/research_loops/transports/server.py src/research_loops/transports/protocol.py /opt/venv/lib/python3.12/site-packages/research_loops/transports/
 USER 1000:1000
 WORKDIR /workspace

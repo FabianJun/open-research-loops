@@ -5,7 +5,7 @@ from importlib.metadata import version
 
 from research_loops.adapters.common import SDKBackend, instructions, cleanup_worker
 from research_loops.domain import IntegrityError
-from research_loops.transports.protocol import TOOL_NAMES
+from research_loops.transports.protocol import tool_names
 from research_loops.authorization import LimitReached
 
 
@@ -65,6 +65,9 @@ class OpenAIBackend(SDKBackend):
                 await client.close()
 
     async def execute(self, contract, workspace, limits, approval, model, agent_class):
+        names = tool_names(contract)
+        if hasattr(model, "rloop_tool_names"):
+            model.rloop_tool_names = names
         from agents import ModelSettings, Runner, RunConfig, MaxTurnsExceeded
         from agents.mcp import MCPServerStdio
         from openai import APIStatusError
@@ -72,7 +75,7 @@ class OpenAIBackend(SDKBackend):
         server = MCPServerStdio(params={"command": launch.command, "args": launch.args, "env": launch.env,
             **({"cwd": launch.cwd} if launch.cwd else {})}, name="rloop", cache_tools_list=True,
             use_structured_content=True, client_session_timeout_seconds=limits.worker_seconds,
-            tool_filter={"allowed_tool_names": list(TOOL_NAMES)})
+            tool_filter={"allowed_tool_names": list(names)})
         prompt = instructions(contract)
         result = None
         trace = {"instructions": prompt, "input": "Execute the assigned public contract.",
@@ -83,9 +86,11 @@ class OpenAIBackend(SDKBackend):
                     tools=[], handoffs=[], mcp_servers=[server],
                     model_settings=ModelSettings(parallel_tool_calls=False, store=False,
                         reasoning={"effort": self.effort}, response_include=["reasoning.encrypted_content"], retry=None))
+                if hasattr(agent, "rloop_tool_names"):
+                    agent.rloop_tool_names = names
                 exposed = await server.list_tools()
                 trace["effective_tools"] = sorted(tool.name for tool in exposed)
-                if {tool.name for tool in exposed} != set(TOOL_NAMES):
+                if {tool.name for tool in exposed} != set(names):
                     raise IntegrityError("effective MCP tool list differs from rloop policy")
                 arguments = dict(input=[{"role": "user", "content": "Execute the assigned public contract."}],
                     max_turns=approval.run_limits.max_turns_per_worker if approval else 16,
@@ -115,4 +120,4 @@ class OpenAIBackend(SDKBackend):
         # Agents Usage reports tokens/requests, not a USD invoice. Do not invent zero.
         return self.finish(contract, workspace, launch, sdk_version=version("openai-agents"), cost=None,
             usage=usage, trace={"instructions": prompt, "input": "Execute the assigned public contract.",
-                "items": result.to_input_list(), "effective_tools": sorted(TOOL_NAMES), "offline_seam": self.offline})
+                "items": result.to_input_list(), "effective_tools": sorted(names), "offline_seam": self.offline})

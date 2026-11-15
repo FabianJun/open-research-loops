@@ -11,12 +11,12 @@ from sdk_seams import script
 pytest.importorskip("agents")
 
 
-def stream_client(mode="success"):
+def stream_client(mode="success", *, plan_factory=script, tool_count=6):
     import httpx2
     from openai import AsyncOpenAI
     from research_loops.adapters.chatgpt_responses import UNSUPPORTED
     requests = []
-    plan = script()
+    plan = plan_factory()
     def handler(request):
         assert str(request.url) == "https://api.openai.com/v1/responses"
         assert request.headers["authorization"] == "Bearer offline-access"
@@ -26,7 +26,7 @@ def stream_client(mode="success"):
         assert body["include"] == ["reasoning.encrypted_content"]
         assert not UNSUPPORTED & body.keys()
         assert body["tools"][0]["type"] == "namespace" and body["tools"][0]["name"] == "rloop"
-        assert len(body["tools"][0]["tools"]) == 6
+        assert len(body["tools"][0]["tools"]) == tool_count
         if mode in {"http_limit", "http_unavailable"}:
             return httpx2.Response(429 if mode == "http_limit" else 503, json={"error": {"message": "offline limit",
                 "type": "rate_limit_error", "code": "subscription_sharing_usage_limit_exceeded" if mode == "http_limit" else "subscription_sharing_usage_unavailable"}})

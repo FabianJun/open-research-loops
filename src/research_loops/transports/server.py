@@ -42,6 +42,12 @@ def create_server(dispatch: Dispatcher) -> MCPServer:
         """Validate one expression tree and seal its host-built report and transcript. Correct tool errors and resubmit."""
         return dispatch.call("submit_result", {"candidate": candidate})
 
+    if "try_on_training" in dispatch.service.tool_names:
+        @server.tool()
+        def try_on_training(params: dict) -> dict:
+            """Evaluate pipeline params on the fixed train subset; at most six calls per run. No pixels returned."""
+            return dispatch.call("try_on_training", {"params": params})
+
     return server
 
 
@@ -60,7 +66,8 @@ def main() -> None:
         args.audit.chmod(0o644)
     if any("API_KEY" in name.upper() or "TOKEN" in name.upper() or "SECRET" in name.upper() for name in os.environ):
         raise RuntimeError("tool server received a credential environment variable")
-    contract = WorkerContract.model_validate_json(args.context.read_bytes())
+    from research_loops.contracts import parse_worker
+    contract = parse_worker(args.context.read_bytes())
     service = ToolService(contract, args.outbox, submission_name="submission.json" if args.adapter else "report.json", shared_files=args.shared_files, public_root=args.public)
     create_server(Dispatcher(service)).run(transport="stdio")
 

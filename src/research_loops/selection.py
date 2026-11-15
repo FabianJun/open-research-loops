@@ -8,6 +8,9 @@ from research_loops.storage import Repository
 
 
 def select(repo: Repository, contract: Contract, key: str) -> dict:
+    from research_loops.contracts import is_grain
+    if is_grain(contract):
+        return select_grain(repo, contract, key)
     saved = repo.db.execute("SELECT selection FROM project").fetchone()[0]
     if saved:
         return json.loads(saved)
@@ -38,4 +41,25 @@ def select(repo: Repository, contract: Contract, key: str) -> dict:
     with repo.db:
         repo.db.execute("UPDATE project SET selection=?", (canonical(value),))
         repo.event("selection", agent["id"], value)
+    return value
+
+
+def select_grain(repo, contract, key):
+    saved = repo.db.execute("SELECT selection FROM project").fetchone()[0]
+    if saved:
+        return json.loads(saved)
+    rows = [r for r in repo.runs() if r["registration_hash"] == key]
+    if len(rows) != len(contract.seeds) * contract.variants_per_seed * 2:
+        raise IntegrityError("selection requires the complete registered denominator")
+    candidates = [r for r in rows if r["execution_status"] == "completed" and r["verification_status"] == "checked"]
+    if not candidates:
+        raise IntegrityError("no checked grain candidates")
+    best = min(json.loads(r["verdict"])["max_rel_error"] for r in candidates)
+    tied = [r for r in candidates if json.loads(r["verdict"])["max_rel_error"] <= best + contract.keep_margin]
+    winner = min(tied, key=lambda r: (json.loads(r["report"])["candidate"]["sha256"], r["id"]))
+    value = dict(winner=winner["id"], attempts=len(rows), keep_margin=contract.keep_margin, seeds=list(contract.seeds),
+        limitation="Adaptive development selection on a real benchmark with a published baseline; the final holdout is consumed once.")
+    with repo.db:
+        repo.db.execute("UPDATE project SET selection=?", (canonical(value),))
+        repo.event("selection", winner["id"], value)
     return value

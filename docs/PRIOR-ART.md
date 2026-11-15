@@ -1,5 +1,15 @@
 # Prior art and dependency review
 
+Phase 4b incorporates the Apache-2.0 grain pipeline, measurement and metric from
+`VanishJr/micrograph-impact-lab`, commit
+`91758551f37d54d94130ab69cd00a8ee68ac0d40` (Claude Impact Lab 2026, project #5).
+The source was read, never executed or imported. Defect detection and image outputs
+are omitted; validation, lazy imports and statistics-only evidence were added.
+The independent verifier uses SciPy rather than the port's region measurements.
+See [grain provenance](../examples/grain-316l/PROVENANCE.md) and NOTICE for source
+files, data DOI, hashes, Python 3.12 pins, cited benchmarks and the package-license
+caveat. No dataset pixels are redistributed.
+
 Phase-3 installed-source check (2026-11-15): MCP 2.3.0 exposes `MCPServer` from `mcp.server`, `ClientSession` from `mcp.client.session`, and stdio parameters from `mcp.client.stdio`. Python result fields use `is_error` and `structured_content` (wire JSON uses camel case). These names and the server decorators/run method were checked in the installed package, then exercised by a real stdio parity test. The optional `[mcp]` extra pins the tool runtime independently of either agent SDK.
 
 Reviewed 2026-11-14 for checkpoint A; this is a research record, not an implementation claim.

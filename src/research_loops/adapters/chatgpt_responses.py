@@ -15,14 +15,19 @@ LIMIT_CODES = {"subscription_sharing_usage_limit_exceeded", "subscription_sharin
 
 
 class MCPAgent(Agent):
+    rloop_tool_names = TOOL_NAMES
+
     async def get_all_tools(self, run_context):
         tools = await super().get_all_tools(run_context)
-        if {tool.name for tool in tools} != set(TOOL_NAMES) or len(tools) != len(TOOL_NAMES):
+        if {tool.name for tool in tools} != set(self.rloop_tool_names) or len(tools) != len(self.rloop_tool_names):
             raise IntegrityError("effective worker tools differ from rloop MCP policy")
-        return tool_namespace(name="rloop", description="The six run-scoped rloop MCP tools", tools=tools)
+        description = "The six run-scoped rloop MCP tools" if self.rloop_tool_names == TOOL_NAMES else "The seven run-scoped rloop MCP tools"
+        return tool_namespace(name="rloop", description=description, tools=tools)
 
 
 class ChatGPTResponsesModel(OpenAIResponsesModel):
+    rloop_tool_names = TOOL_NAMES
+
     def _build_response_create_kwargs(self, *args, **kwargs):
         request = super()._build_response_create_kwargs(*args, **kwargs)
         for name in UNSUPPORTED:
@@ -34,7 +39,7 @@ class ChatGPTResponsesModel(OpenAIResponsesModel):
             raise IntegrityError("system input messages are unsupported by the ChatGPT preview")
         tools = request.get("tools", [])
         if (len(tools) != 1 or tools[0].get("type") != "namespace" or tools[0].get("name") != "rloop"
-                or {tool.get("name") for tool in tools[0]["tools"]} != set(TOOL_NAMES)
+                or {tool.get("name") for tool in tools[0]["tools"]} != set(self.rloop_tool_names)
                 or any(tool.get("type") != "function" for tool in tools[0]["tools"])):
             raise IntegrityError("ChatGPT tool namespace differs from MCP policy")
         return request

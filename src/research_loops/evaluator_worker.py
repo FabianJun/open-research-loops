@@ -20,6 +20,9 @@ def calculate(node: dict, x: list[int]) -> int:
 
 
 def evaluate(request: dict) -> Verdict:
+    if request.get("domain") == "grain-316l":
+        from research_loops.grain_evaluator import evaluate as grain_evaluate
+        return grain_evaluate(request)
     tree, rows, mean = request["candidate"], request["rows"], request["training_mean"]
     validate_candidate(tree)
     predictions = [calculate(tree, row["x"]) for row in rows]

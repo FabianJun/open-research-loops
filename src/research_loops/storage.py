@@ -166,7 +166,12 @@ class Repository:
                 raise IntegrityError("evidence hash mismatch")
             if kind == "candidate":
                 candidate_value = json.loads(data)
-                validate_candidate(candidate_value)
+                registration = json.loads(self.db.execute("SELECT payload FROM registrations WHERE hash=?", (report.contract_hash,)).fetchone()[0])
+                if registration.get("name") == "grain-316l":
+                    from research_loops.grain_evaluator import validate_params
+                    validate_params(candidate_value)
+                else:
+                    validate_candidate(candidate_value)
             if kind == "transcript":
                 transcript = json.loads(data)
                 if (digest(transcript["prompt"].encode()) != report.prompt_hash
@@ -299,7 +304,11 @@ class Repository:
         self.artifact(run_id, "candidate")
         key = f"claim:{run_id}"
         if not self.db.execute("SELECT 1 FROM claims WHERE id=?", (key,)).fetchone():
-            payload = {"id": key, "run_id": run_id, "statement": "Candidate development error on synthetic data.", "tag": "simulated", "metric": "mse"}
+            registration = json.loads(self.db.execute("SELECT payload FROM registrations WHERE hash=?", (row["registration_hash"],)).fetchone()[0])
+            grain = registration.get("name") == "grain-316l"
+            payload = {"id": key, "run_id": run_id,
+                "statement": "Candidate development grain error." if grain else "Candidate development error on synthetic data.",
+                "tag": "measured" if grain else "simulated", "metric": "max_rel_error" if grain else "mse"}
             with self.db:
                 self.db.execute("INSERT INTO claims(id,run_id,statement,tag,metric) VALUES(?,?,?,?,?)", tuple(payload.values()))
                 self.event("claim", key, payload)
