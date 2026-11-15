@@ -2,7 +2,7 @@
 
 Move a real scientific problem forward by getting the first experiment running quickly, then iterating with saved evidence and protected evaluation. **Time to the first running experiment is the headline goal.**
 
-This repository carries lessons from *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* . It turns the method into a small executable runtime.
+This repository carries lessons from *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* hackathon. It turns the method into a small executable runtime.
 Python 3.12+, Windows and Linux. Code: Apache-2.0; documentation: CC BY 4.0.
 
 ```console
