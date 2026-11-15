@@ -254,14 +254,14 @@ Only the coordinator can open the corresponding fan-out gate; failed or missing 
 Negative findings with a working evaluator do not trigger repair loops.
 The same technical failure gets at most two targeted repair attempts before the project records a diagnosis and waits for a scope/environment decision.
 
-Reservations are atomic across all workers, retries, evaluator/candidate compute and independent checks.
+The following monetary policy applies to explicitly selected API-key mode; subscription admission uses run limits and does not require a key or USD cap. Reservations are atomic across workers, retries, evaluator/candidate compute and independent checks.
 Use `spent + reserved + new upper bound <= cap`, plus project time and attempt limits, before dispatch and before each paid request.
 Adapters reserve bounded input/output/tool charges against a versioned price sheet; unknown or unbounded paid services are refused.
 Use SDK token/turn/budget controls as secondary checks, not the shared ledger.
 An interrupted call with unknown usage keeps its worst-case reservation; do not refund it as zero.
 Reconcile provider-reported cost or explicit estimates later, retaining the basis and discrepancies.
 Local admission limits cannot promise that delayed third-party invoices never exceed an estimate; checkpoint B must choose a priceable model, headroom and an enforceable call envelope.
-No API key means no live test; a key alone never authorizes spending.
+An API key alone never authorizes an API-key run. Subscription tokens also require explicit checkpoint-B model/auth/run-limit approval.
 
 Timeout/cancellation first requests graceful shutdown, then terminates the entire registered process tree after a fixed grace period.
 On Linux use a process group; on Windows use a kill-on-close Job Object, with a containment test before allowing generated subprocesses.
@@ -370,7 +370,7 @@ No section-4 constraint is waived. Checkpoint A is approved in [DECISIONS.md](DE
 1. Phase 1: scaffold, lockfile, licenses, agent instructions and Windows/Linux CI.
 2. Phase 2a: thin offline slice (`uv run rloop run examples/planted-signal`): registration, fake direct tools, outbox/import, protected evaluator subprocess, verdict, report/export. Use only required tables.
 3. Phase 2b: integrity mechanisms individually, each with a test; migrations grow with working features. No speculative tables.
-4. The current delivery is authorized through Phase 3 (MCP and both SDK adapters) and Phase 3b (OCI isolation). Stop before Phase 4 and checkpoint-B provider calls. Optional CLI adapters remain deferred.
+4. Phase 3 (MCP and both SDK adapters) and Phase 3b (OCI isolation) are complete. Current delivery prepares checkpoint B offline; stop before real sign-in, provider requests, creating project approval and Phase 4. Optional CLI adapters remain deferred.
 5. Phase 4 skills use source `rloop-` names; Phase 5 extends proof across funded providers.
 
 B remains pending: exact provider/model/auth-mode/run-limit approval. USD cap and charge-envelope decisions apply only to explicitly chosen API-key mode. C remains pending: public files and publication. The owner authorized ordinary pushes to the existing private origin/main; no provider requests, real sign-in, force pushes, releases or public publication are authorized in checkpoint-B preparation.
@@ -429,7 +429,7 @@ Claude uses the SDK public Transport interface with the pinned SDK command build
 
 OpenAI follows the supplied [OSS token-sharing documentation](https://developers.openai.com/siwc/token-sharing-open-source). [Sign-in](https://developers.openai.com/siwc/token-sharing-open-source/sign-in) binds random state, nonce and S256 PKCE to a listening loopback callback. Initial dynamic registration supplies a stable UUID host ID and app name. The issued client ID is bound to a verified ID-token subject; returning sign-in must preserve that identity. Separate opaque labels support account selection. Tokens live outside repo/project in the user's application configuration directory, atomically written with Unix 0600/0700 permissions or a protected Windows owner-only DACL. No URLs, tokens or credential bodies are logged. PyJWT/cryptography validates the published JWKS signature, issuer, audience, expiry and nonce.
 
-[Session renewal](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions) is serialized by thread and OS locks, occurs near expiry, respects `earliest_refresh_at` and atomically replaces rotating tokens. Terminal invalid-refresh errors clear unusable tokens while retaining the registration. The direct-usage scope is required before models/inference. The access token is an explicit async `api_key` provider on the OpenAI client; it never enters environment variables or MCP. Discovery preserves server order and exposes only `visibility=list` model slugs.
+[Session renewal](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions) is serialized by thread and OS locks, occurs near expiry, respects `earliest_refresh_at` and atomically replaces rotating tokens. Terminal invalid-refresh errors clear unusable tokens while retaining the registration. The direct-usage scope is required before models/inference. The access token is an explicit async `api_key` provider on the OpenAI client; it never enters environment variables or MCP. Discovery preserves server order and exposes only `visibility=list` model slugs. Each worker pins its registration across discovery and all turns, even if another user command switches the active account. Admission limits before streaming also stop without retry.
 
 [Preview constraints](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations): HTTP Responses stream with storage disabled and full input history. System-role input, HTTP previous-response references and documented unsupported sampling/output/background/conversation/metadata fields are omitted. Function tools use one local MCP namespace. Hosted MCP, tool search, code interpreter, native computer use and image generation are unavailable; audio/video, Files upload and transcription are unsupported. Persistent server conversations are not assumed. The SDK model wrapper enforces these constraints. The Agents SDK Codex extension is not used: its app-server built-in shell/tools would violate MCP-only isolation.
 
