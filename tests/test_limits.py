@@ -78,3 +78,47 @@ def test_amendment_is_explicit_and_retains_history(example):
         assert "comparisons_flagged" in repo.db.execute("SELECT payload FROM events WHERE kind='amendment'").fetchone()[0]
     finally:
         repo.close()
+
+
+def test_control_attempt_allowance_has_specific_message(example):
+    repo, _, _ = prepare(example)
+    try:
+        with repo.db:
+            repo.db.execute("UPDATE project SET max_attempts=1")
+        repo.reserve_control()
+        with pytest.raises(IntegrityError, match="^control attempt allowance exhausted$"):
+            repo.reserve_control()
+        assert repo.db.execute("SELECT control_attempts FROM project").fetchone()[0] == 1
+    finally:
+        repo.close()
+
+
+def test_control_deadline_survives_longer_registration_amendment(example, monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr("research_loops.storage.time.time", lambda: clock[0])
+    data = json.loads((example / "contract.json").read_text())
+    data.setdefault("limits", {})["project_seconds"] = 300
+    (example / "contract.json").write_text(json.dumps(data))
+    repo, _, key = prepare(example)
+    try:
+        repo.reserve_control()
+        deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
+        assert deadline == 1300.0
+    finally:
+        repo.close()
+    clock[0] = 1301.0
+    data["limits"]["project_seconds"] = 3600
+    (example / "contract.json").write_text(json.dumps(data))
+    repo, _, amended_key = prepare(example, amendment_reason="owner increased registered project seconds")
+    try:
+        assert amended_key != key
+        assert repo.db.execute("SELECT deadline FROM project").fetchone()[0] == deadline
+        with pytest.raises(IntegrityError, match="^project deadline reached$"):
+            repo.reserve_control()
+        with pytest.raises(IntegrityError, match="^project deadline reached$"):
+            repo.dispatch(task(amended_key, "late"))
+        state = repo.db.execute("SELECT deadline,control_attempts FROM project").fetchone()
+        assert tuple(state) == (deadline, 1)
+        assert repo.runs() == []
+    finally:
+        repo.close()

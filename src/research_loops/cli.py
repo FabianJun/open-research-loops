@@ -17,17 +17,26 @@ def main() -> None:
     """Bounded offline research loops."""
 
 
+def failure_message(exc: Exception) -> str:
+    from research_loops.domain import IntegrityError
+    if isinstance(exc, ExceptionGroup):
+        return "\n".join(failure_message(child) for child in exc.exceptions)
+    if isinstance(exc, IntegrityError):
+        return f"{type(exc).__name__}: {exc}"[:300]
+    return f"{type(exc).__name__}: SDK failure (details suppressed)"
+
+
 @app.command()
 def run(example: Path, backend: str = "fake", final: bool = False) -> None:
     """Run the offline planted-signal example."""
     from research_loops.execution import load_backend
+    from research_loops.coordinator import run as execute
     from research_loops.domain import IntegrityError
     try:
         selected = load_backend(backend, example)
-    except IntegrityError as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    from research_loops.coordinator import run as execute
-    asyncio.run(execute(example, final=final, backend=selected))
+        asyncio.run(execute(example, final=final, backend=selected))
+    except (IntegrityError, ExceptionGroup) as exc:
+        raise typer.BadParameter(failure_message(exc)) from None
     typer.echo(str(example / ".rloop" / "report.md"))
 
 
@@ -40,7 +49,7 @@ def pilot(example: Path, backend: str = typer.Option(...), workers: int = 8) -> 
     try:
         asyncio.run(execute(example, backend=load_backend(backend, example), worker_runs=workers))
     except (IntegrityError, ExceptionGroup) as exc:
-        raise typer.BadParameter(str(exc)) from None
+        raise typer.BadParameter(failure_message(exc)) from None
     typer.echo(str(example / ".rloop" / "report.md"))
 
 

@@ -250,8 +250,10 @@ class Repository:
             count = self.db.execute("SELECT count(*) FROM runs").fetchone()[0] + state["control_attempts"]
             registration = json.loads(self.db.execute("SELECT payload FROM registrations WHERE hash=?", (state["current_registration"],)).fetchone()[0])
             deadline = state["deadline"] or time.time() + registration["limits"]["project_seconds"]
-            if count >= state["max_attempts"] or time.time() >= deadline:
-                raise IntegrityError("control attempt/time allowance exhausted")
+            if count >= state["max_attempts"]:
+                raise IntegrityError("control attempt allowance exhausted")
+            if time.time() >= deadline:
+                raise IntegrityError("project deadline reached")
             self.db.execute("UPDATE project SET control_attempts=control_attempts+1,deadline=?", (deadline,))
             self.event("control_start", str(count + 1), {"counted": True})
 

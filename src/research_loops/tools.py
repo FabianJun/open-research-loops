@@ -78,8 +78,9 @@ class ToolService:
     def submit_result(self, report: WorkerReport) -> WorkerReport:
         if self.sealed():
             raise IntegrityError("outbox is sealed")
-        if not self.registered or report.run_id != self.contract.run_id or report.contract_hash != self.contract.registration_hash:
-            raise IntegrityError("report scope differs from assignment")
+        if (not self.registered or report.run_id != self.contract.run_id
+                or report.report_id != self.contract.run_id or report.contract_hash != self.contract.registration_hash):
+            raise IntegrityError("report scope differs from assignment: run_id and report_id must equal the assigned run_id; contract_hash must equal registration_hash")
         for artifact in (report.candidate, report.transcript):
             data = self.read_artifact(artifact.path)
             if digest(data) != artifact.sha256 or len(data) != artifact.size:

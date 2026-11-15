@@ -29,6 +29,7 @@ def instructions(contract: WorkerContract) -> str:
         "Infer the signal from those samples; no development/final labels are available. "
         "Register one prediction, propose one bounded JSON expression candidate, "
         "write candidate.json and transcript.json, then submit_result once. "
+        "report_id and run_id must both be exactly the run_id from the public JSON; contract_hash must be its registration_hash. "
         "The transcript JSON must contain prompt (the exact public JSON string below) and response (the candidate tree). "
         "Artifact tools return path, sha256, size descriptors. Return no scientific verdict. "
         "The host supplies trusted provider/cost metadata after completion. Public JSON: " + canonical(contract)

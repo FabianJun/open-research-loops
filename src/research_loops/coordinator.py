@@ -167,6 +167,7 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         if requested > approval.run_limits.max_worker_runs:
             raise LimitReached("requested worker runs exceed checkpoint B allowance")
     stopped = False
+    technical_failure = False
     if not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         evaluator = SubprocessEvaluator()
         dev = private(repo, key, "development")
@@ -192,7 +193,7 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         assignments = assignments[:worker_runs]
 
     async def execute(assignment):
-        nonlocal stopped
+        nonlocal stopped, technical_failure
         if stopped:
             raise LimitReached("pilot stopped after provider limit")
         public_context(assignment.model_dump(mode="json"))
@@ -232,9 +233,13 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             repo.fail(assignment.run_id, "timed_out", "worker deadline")
             raise
         except asyncio.CancelledError:
-            repo.fail(assignment.run_id, "cancelled" if stopped else "timed_out", "worker deadline or batch cancellation")
+            if technical_failure:
+                repo.fail(assignment.run_id, "cancelled", "batch cancelled after a sibling run failed")
+            else:
+                repo.fail(assignment.run_id, "cancelled" if stopped else "timed_out", "worker deadline or batch cancellation")
             raise
         except Exception as exc:
+            technical_failure = True
             if isinstance(exc, IntegrityError):
                 reason = f"IntegrityError: {exc}"[:300]
             elif approval:
