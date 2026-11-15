@@ -311,9 +311,9 @@ Hash the injected skill bundle and references in each run.
 Every source skill folder and frontmatter `name` uses its `rloop-` prefix. There is no alias or wrapper mechanism.
 The installer refuses an existing different target.
 
-Planned CLI: `init`, `plan`, `run`, `status`, `resume`, `report`, `export`, plus `self-assess` as the runtime entry point for its skill.
+CLI: `init`, `plan`, `run`, `status`, `resume`, `report`, `export`, `skills list/show/install`, plus `self-assess` as the runtime entry point for its skill.
 `run --final` owns the one-use hold-out gate; protected-spec authorization is an explicit human decision import, never a worker action.
-`docs/GUIDE.md` will show a scientist/engineer path from question to contract, one complete pilot, bounded investigation, independent check, report and publication.
+`docs/GUIDE.md` shows the offline planted-signal path through bounded investigation, independent check and review; a real problem and its evaluator require Phase 4b.
 Target first setup within an hour with the example; measure that claim only after a fresh-clone exercise.
 Offline default has a zero external-spend policy.
 Linux and Windows CI will cover ordinary directories, paths with spaces/non-ASCII, traversal/junction rejection, worktrees, subprocess cleanup and restart.

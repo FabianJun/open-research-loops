@@ -8,6 +8,8 @@ from pathlib import Path
 import research_loops
 from research_loops.coordinator import run
 from research_loops.storage import Repository
+from research_loops.skills import NAMES, skill_path
+from research_loops.assessment import assess
 
 
 assert "site-packages" in Path(research_loops.__file__).parts, "expected an isolated installed wheel"
@@ -22,4 +24,11 @@ with tempfile.TemporaryDirectory(prefix="rloop-wheel-") as folder:
     assert all(row["execution_status"] == "completed" for row in repo.runs())
     assert json.loads(repo.db.execute("SELECT final_ticket FROM project").fetchone()[0])["state"] == "completed"
     repo.close()
+    for name in NAMES:
+        path = skill_path(name) / "SKILL.md"
+        assert "site-packages" in path.parts
+        assert f"name: {name}" in path.read_text(encoding="utf-8")
+        for document in ("DESIGN", "GUIDE", "LESSONS"):
+            assert (path.parent / f"../../docs/{document}.md").is_file()
+    assert "public-ready: needs human review" in assess(root)
 print("installed wheel: offline run, migrations, evaluator, report/export and final passed")

@@ -10,6 +10,8 @@ from research_loops import __version__
 app = typer.Typer(no_args_is_help=True)
 from research_loops.auth_cli import app as auth_app
 app.add_typer(auth_app, name="auth")
+from research_loops.skills import app as skills_app
+app.add_typer(skills_app, name="skills")
 
 
 @app.callback()
@@ -124,6 +126,21 @@ def export(example: Path) -> None:
         typer.echo(str(generate(repo)))
     finally:
         repo.close()
+
+
+@app.command()
+def self_assess(project: Path, write: bool = False) -> None:
+    """Print an offline evidence review; optionally save self-assessment.md."""
+    from research_loops.assessment import assess
+    from research_loops.paths import atomic_write
+    from research_loops.domain import IntegrityError
+    try:
+        value = assess(project)
+        if write:
+            atomic_write(project / ".rloop" / "self-assessment.md", value.encode())
+    except (IntegrityError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from None
+    typer.echo(value, nl=False)
 
 
 @app.command()

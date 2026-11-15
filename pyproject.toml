@@ -25,6 +25,14 @@ rloop = "research_loops.cli:app"
 [tool.hatch.build.targets.wheel]
 packages = ["src/research_loops"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "research_loops/skills"
+"docs/DESIGN.md" = "research_loops/docs/DESIGN.md"
+"docs/GUIDE.md" = "research_loops/docs/GUIDE.md"
+"docs/LESSONS.md" = "research_loops/docs/LESSONS.md"
+"LICENSE" = "research_loops/LICENSE"
+"LICENSE-CC-BY-4.0" = "research_loops/LICENSE-CC-BY-4.0"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"

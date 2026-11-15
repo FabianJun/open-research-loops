@@ -8,5 +8,5 @@ Other design ideas and source licenses are listed in docs/PRIOR-ART.md.
 No third-party framework or AGPL source code is incorporated.
 
 Source code is licensed under LICENSE (Apache-2.0).
-Documentation, including README.md and docs/, is licensed under
+Documentation, including README.md, docs/ and skills/*/SKILL.md, is licensed under
 LICENSE-CC-BY-4.0. License texts retain their original terms.
