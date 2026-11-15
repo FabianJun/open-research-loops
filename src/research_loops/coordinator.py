@@ -235,7 +235,13 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             repo.fail(assignment.run_id, "cancelled" if stopped else "timed_out", "worker deadline or batch cancellation")
             raise
         except Exception as exc:
-            repo.fail(assignment.run_id, "technical_error", f"{type(exc).__name__}: SDK failure (details suppressed)" if approval else f"{type(exc).__name__}: {exc}")
+            if isinstance(exc, IntegrityError):
+                reason = f"IntegrityError: {exc}"[:300]
+            elif approval:
+                reason = f"{type(exc).__name__}: SDK failure (details suppressed)"
+            else:
+                reason = f"{type(exc).__name__}: {exc}"
+            repo.fail(assignment.run_id, "technical_error", reason)
             raise
     pending = [item for item in assignments if item.run_id not in existing]
     if pending:

@@ -3,6 +3,7 @@
 from dataclasses import asdict
 from importlib.metadata import version
 import json
+from typing import get_args
 
 from research_loops.adapters.common import SDKBackend, instructions, micro_usd, cleanup_worker
 from research_loops.domain import IntegrityError
@@ -24,6 +25,7 @@ class ClaudeBackend(SDKBackend):
         approval = self.check_authorization()
         cap = approval.cap_micro_usd if approval else None
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, PermissionResultAllow, PermissionResultDeny, ResultMessage, SystemMessage
+        from claude_agent_sdk.types import AssistantMessageError
         launch = await self.launch(contract, workspace)
         allowed = {"mcp__rloop__" + name for name in TOOL_NAMES}
         async def permission(name, arguments, context):
@@ -49,6 +51,16 @@ class ClaudeBackend(SDKBackend):
             await client.query("Execute the assigned public contract.")
             async for message in client.receive_response():
                 messages.append(asdict(message))
+                # SDK reports these as protocol fields; never retry or change auth.
+                if limit_message(asdict(message)):
+                    raise LimitReached("Claude subscription or rate limit reached")
+                if error := getattr(message, "error", None):
+                    if error == "authentication_failed":
+                        raise IntegrityError("Claude Code is not logged in for this worker (authentication_failed); run `claude` and /login in a terminal, then start a new pilot. No API-key fallback.")
+                    # The SDK parser does not validate its Literal field. Record only enum values.
+                    if error not in get_args(AssistantMessageError):
+                        error = "unknown"
+                    raise IntegrityError(f"Claude CLI reported error: {error}")
                 if isinstance(message, SystemMessage) and message.subtype == "init":
                     if set(message.data.get("tools", [])) != allowed:
                         raise IntegrityError("Claude effective tool list includes missing or unauthorized tools")
@@ -59,9 +71,6 @@ class ClaudeBackend(SDKBackend):
                     raise IntegrityError("Claude response model differs from authorization")
                 if isinstance(message, ResultMessage):
                     result = message
-                # SDK reports these as protocol fields; never retry or change auth.
-                if limit_message(asdict(message)):
-                    raise LimitReached("Claude subscription or rate limit reached")
         if not init_seen or result is None or result.is_error:
             raise IntegrityError("Claude failed or omitted effective tool list/result")
         return self.finish(contract, workspace, launch, sdk_version=version("claude-agent-sdk"),

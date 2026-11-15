@@ -72,6 +72,36 @@ def test_claude_rejects_effective_builtin(tmp_path):
         asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
 
 
+@pytest.mark.parametrize("error, expected", [
+    ("authentication_failed", "Claude Code is not logged in for this worker (authentication_failed); run `claude` and /login in a terminal, then start a new pilot. No API-key fallback."),
+    ("invalid_request", "Claude CLI reported error: invalid_request"),
+    ("server_error", "Claude CLI reported error: server_error"),
+    ("unknown", "Claude CLI reported error: unknown"),
+    ("private provider text or path", "Claude CLI reported error: unknown"),
+])
+def test_claude_synthetic_error_precedes_model_check(tmp_path, error, expected):
+    pytest.importorskip("claude_agent_sdk")
+    from research_loops.adapters.claude_agent import ClaudeBackend
+    adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options:
+        claude_transport(options, assistant_error=error))
+    with pytest.raises(IntegrityError) as caught:
+        asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+    assert str(caught.value) == expected
+    assert not (tmp_path / "outbox" / "report.json").exists()
+
+
+@pytest.mark.parametrize("error", ["rate_limit", "billing_error"])
+def test_claude_synthetic_limit_precedes_model_check(tmp_path, error):
+    pytest.importorskip("claude_agent_sdk")
+    from research_loops.adapters.claude_agent import ClaudeBackend
+    from research_loops.authorization import LimitReached
+    adapter = ClaudeBackend("offline-stub", offline_transport_factory=lambda options:
+        claude_transport(options, assistant_error=error))
+    with pytest.raises(LimitReached, match="Claude subscription or rate limit reached"):
+        asyncio.run(adapter.run(task(), Workspace(root=tmp_path / "outbox"), Limits()))
+    assert not (tmp_path / "outbox" / "report.json").exists()
+
+
 def test_sdk_cost_unknown_is_not_zero():
     from research_loops.adapters.common import micro_usd
     assert micro_usd(None) is None

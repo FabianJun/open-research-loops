@@ -57,13 +57,19 @@ def test_run_and_parallel_limits_survive_restart(example):
         repo.close()
 
 
-def test_claude_child_env_has_no_overriding_credentials(tmp_path):
+@pytest.mark.parametrize("host_managed", [False, True])
+def test_claude_child_env_has_no_overriding_credentials(tmp_path, host_managed):
     pytest.importorskip("claude_agent_sdk")
     from research_loops.adapters.claude_transport import child_environment
     secrets = {name: "sentinel-not-a-real-secret" for name in ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
         "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_PROFILE", "ANTHROPIC_FEDERATION_RULE_ID", "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CONFIG_DIR", "AWS_ACCESS_KEY_ID", "GOOGLE_APPLICATION_CREDENTIALS"]}
-    env = child_environment({**os.environ, **secrets}, "claude_code")
+    source = {**os.environ, **secrets}
+    source.pop("CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST", None)
+    if host_managed:
+        source["CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST"] = "1"
+    env = child_environment(source, "claude_code")
+    assert "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST" not in env
     result = subprocess.run([sys.executable, "-I", "-c", "import os,json;print(json.dumps(sorted(os.environ)))"],
         env=env, capture_output=True, check=True, text=True)
     assert not set(json.loads(result.stdout)) & set(secrets)
@@ -104,6 +110,37 @@ def test_claude_limit_protocol():
     assert not limit_message({"rate_limit_info": {"status": "allowed_warning"}})
     assert limit_message({"error": "rate_limit"})
     assert not limit_message({"error": {"unrelated": "failure"}})
+
+
+@pytest.mark.parametrize("error, expected", [
+    (IntegrityError("Claude response model differs from authorization"),
+        "IntegrityError: Claude response model differs from authorization"),
+    (IntegrityError("x" * 400), ("IntegrityError: " + "x" * 400)[:300]),
+    (RuntimeError("private SDK text or local path"), "RuntimeError: SDK failure (details suppressed)"),
+])
+def test_approved_worker_records_only_rloop_error_details(example, error, expected):
+    from research_loops.authorization import Authorization
+    from research_loops.coordinator import run
+    from research_loops.storage import Repository
+    policy = Authorization.model_validate(approval())
+    class Failed:
+        name, provider, model = "fake", "openai", "offline-stub"
+        def check_authorization(self):
+            return policy
+        async def run(self, *args):
+            raise error
+    with pytest.raises(ExceptionGroup):
+        asyncio.run(run(example, backend=Failed(), worker_runs=1))
+    repo = Repository(example / ".rloop")
+    try:
+        rows = repo.runs()
+        assert len(rows) == 1
+        assert rows[0]["execution_status"] == "technical_error"
+        assert rows[0]["error"] == expected
+        event = repo.db.execute("SELECT payload FROM events WHERE kind='technical_error'").fetchone()
+        assert json.loads(event[0])["reason"] == expected
+    finally:
+        repo.close()
 
 
 def test_actual_claude_sdk_child_transport_strips_credentials_and_stops(tmp_path, monkeypatch):

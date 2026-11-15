@@ -74,7 +74,7 @@ def openai_model():
     return Stub()
 
 
-def claude_transport(options, *, extra_tool=False, cost=None):
+def claude_transport(options, *, extra_tool=False, cost=None, assistant_error=None):
     from claude_agent_sdk._internal.transport import Transport
     from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
     from claude_agent_sdk import PermissionResultDeny
@@ -107,6 +107,11 @@ def claude_transport(options, *, extra_tool=False, cost=None):
             elif message["type"] == "user":
                 names = ["mcp__rloop__" + name for name in TOOL_NAMES]
                 await self.queue.put({"type": "system", "subtype": "init", "tools": names + (["Bash"] if extra_tool else [])})
+                if assistant_error:
+                    await self.queue.put({"type": "assistant", "error": assistant_error,
+                        "message": {"model": "<synthetic>", "content": [
+                            {"type": "text", "text": "private SDK text must not be recorded"}]}})
+                    return
                 if not extra_tool:
                     config = options.mcp_servers["rloop"]
                     async with session(Launch(command=config["command"], args=config["args"], env=config["env"])) as client:

@@ -26,9 +26,9 @@ def child_environment(source, mode):
         result["ANTHROPIC_API_KEY"] = key
     elif mode != "claude_code":
         raise IntegrityError("unknown Claude auth mode")
+    # Do not set CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST: it disables subscription login.
     result.update(CLAUDE_CODE_ENTRYPOINT="sdk-py", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1",
-        CLAUDE_CODE_MAX_RETRIES="0", CLAUDE_CODE_RETRY_WATCHDOG="0", CLAUDE_CODE_DISABLE_BACKGROUND_TASKS="1",
-        CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST="1")
+        CLAUDE_CODE_MAX_RETRIES="0", CLAUDE_CODE_RETRY_WATCHDOG="0", CLAUDE_CODE_DISABLE_BACKGROUND_TASKS="1")
     return result
 
 
