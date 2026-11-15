@@ -54,3 +54,19 @@ Proposed next: eight workers per backend first, 48 later, and cross-vendor reche
 ## Project-owner identity follow-up (2026-11-15)
 
 The owner requested replacing person-specific authority checks before public publication. Init records the project owner in host configuration (explicit option, Git name, OS login), and checkpoint-B approval matches that identity. Protected amendments must use the owner in the trusted base, with a regression test for simultaneous owner substitution. This request authorizes the protection-policy change; it does not authorize provider calls or publication. Land the owner and hash-bound amendment record before changing the anchored policy, so CI can check a prior trusted decision.
+
+## Checkpoint B — live pilot, 2026-11-15
+
+The project owner approved the first live pilot and chose the cheaper models of both vendors to save cost: `claude-sonnet-5-5` with Claude Code sign-in and `gpt-6.1-terra` with Sign in with ChatGPT, effort high, 8 worker runs per backend, 1 in parallel, 32 turns and 300 s per worker. No API key, no fallback, no retry until a positive result; every restart in a fresh directory.
+
+Result: after six attempts that failed for technical reasons, C5 and O2 completed 8/8 supported on worker protocol v2. The record is [CHECKPOINT-B-PILOT](CHECKPOINT-B-PILOT.md). Scaling beyond 8 worker runs, other models or another problem need a new go.
+
+## Checkpoint C — publication, 2026-11-15
+
+The project owner approved publication. The repository was recreated with only `main` and set public on 2026-11-15 after green CI.
+
+## Phase 4a authorization — 2026-11-15
+
+The project owner authorized autonomous completion of the low-effort Phase 4a items, offline only: the seven `rloop-` skills (A6), their installer, `docs/GUIDE.md`, the `self-assess` entry point, and report wording that names the backend that actually ran. No provider calls, sign-in, new project authorization or live pilot.
+
+Phase 4b, one licensed real problem from question to pilot, needs the owner's choice of problem and data, and a new go for its live pilot. Phase 5, the provider comparison on real work, follows 4b.

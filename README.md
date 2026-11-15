@@ -93,7 +93,7 @@ uv run pytest
 Repeating `run` or `resume` reconciles saved work and never reruns a completed candidate. `uv run python scripts/measure_init.py` reproduces the timing above on your machine.
 
 > [!NOTE]
-> The planted-signal example is **simulated**. Its fake workers know the answer on purpose, so it shows that the machinery works, not that agents can do research. A real question still needs its own data, contract and evaluator.
+> The planted-signal example is **simulated**. Its fake workers know the answer on purpose, so it shows that the machinery works, not that agents can do research. In the [live pilot](docs/CHECKPOINT-B-PILOT.md), real models from both vendors found the same planted answer from the public training samples. That shows the path works with real models, not research ability. A real question still needs its own data, contract and evaluator.
 
 ## How one loop runs
 
@@ -180,8 +180,8 @@ flowchart TB
 | Backend | Install | Signs in with | Status |
 |---|---|---|---|
 | `fake` | base package | nothing; deterministic and offline | Default. Drives the example and CI |
-| `claude_agent` | `uv sync --extra claude` (Claude Agent SDK) | your own Claude Code login | Built and tested offline. Live runs gated |
-| `openai_agents` | `uv sync --extra openai` (OpenAI Agents SDK) | Sign in with ChatGPT for open-source apps (preview): `rloop auth login-openai` | Built and tested offline. Live runs gated |
+| `claude_agent` | `uv sync --extra claude` (Claude Agent SDK) | your own Claude Code login | Live pilot passed: 8/8 supported ([record](docs/CHECKPOINT-B-PILOT.md)) |
+| `openai_agents` | `uv sync --extra openai` (OpenAI Agents SDK) | Sign in with ChatGPT for open-source apps (preview): `rloop auth login-openai` | Live pilot passed: 8/8 supported ([record](docs/CHECKPOINT-B-PILOT.md)) |
 
 Subscription sign-in is the default. An API key in the environment **never** authorizes a call; API-key mode has to be chosen explicitly. A live run needs an authorization in the project config that names the approving owner, the provider, the exact model, the auth mode, the effort and four run limits: worker runs, parallel workers, turns per worker and wall time per worker. The coordinator checks it before it imports any SDK or starts any tool. A rate or usage limit stops the pilot and cancels its siblings. There is no retry and no silent fallback to another model, account or auth mode. Token usage is recorded, and cost is recorded as an estimate; an unknown cost stays unknown and is never written as zero.
 
@@ -199,10 +199,11 @@ Without an authorization in `project.json`, `rloop pilot` refuses before any SDK
 | What | Result |
 |---|---|
 | Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
-| Test suite | **144 passed** locally on Windows, offline, network blocked in the test process; real worker and evaluator containers included. CI: 144 on Ubuntu, 138 plus 6 container skips on Windows |
+| Test suite | **226 passed** locally on Windows, offline, network blocked in the test process; real worker and evaluator containers included. CI: 226 on Ubuntu, 220 plus 6 container skips on Windows |
+| First live pilot, planted-signal, 8 worker runs per backend | `claude-sonnet-5-5`: **8/8 supported** in 2 min 11 s, estimated USD 0.32 in total. `gpt-6.1-terra`: **8/8 supported** in 2 min 01 s, about 72k tokens, cost not reported under ChatGPT sign-in. Every first submission was valid |
 | SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
 
-Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). What has **not** happened yet: no live provider run, no real scientific problem run end to end, no PyPI release.
+Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). The [pilot record](docs/CHECKPOINT-B-PILOT.md) keeps every live attempt, including the six that failed before the worker protocol was fixed. What has **not** happened yet: no real scientific problem run end to end, no PyPI release. The live pilot ran a known-answer sanity task, so it proves the path, not research ability.
 
 ## Roadmap
 
@@ -212,7 +213,7 @@ Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](d
 | Phase 1–2 | Offline vertical slice and the integrity gates | ✅ done |
 | Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | ✅ done |
 | Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`: built and tested offline | ✅ built |
-| First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ⏳ waiting for the owner's go |
+| First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ✅ done: 8/8 supported on both ([record](docs/CHECKPOINT-B-PILOT.md)) |
 | Phase 4 | Portable `rloop-*` agent skills, a short guide, one licensed real problem from question to pilot | ⏳ next |
 | Phase 5 | Provider comparison on real work | ⏳ later |
 
@@ -243,6 +244,7 @@ tests/                                            offline tests, incl. container
 | [REQUIREMENTS](docs/REQUIREMENTS.md) | Every requirement traced to a design section and an acceptance check |
 | [DECISIONS](docs/DECISIONS.md) | Owner decisions per checkpoint |
 | [CHECKPOINT-B-PREP](docs/CHECKPOINT-B-PREP.md) | Sign-in, authorization config and pilot commands for the first live run |
+| [CHECKPOINT-B-PILOT](docs/CHECKPOINT-B-PILOT.md) | Every live attempt on both vendors, what failed, why, and what fixed it |
 | [PRIOR-ART](docs/PRIOR-ART.md) | Credited sources, SDK references, pinned versions |
 
 ## Names and licenses

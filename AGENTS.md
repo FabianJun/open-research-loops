@@ -1,7 +1,7 @@
 # Repository instructions
 
 - Install `research-loops`; `rloop` is only the console command. Use `uv sync --locked` and `uv run pytest`.
-- `docs/DECISIONS.md` contains owner approvals. This delivery prepares checkpoint B offline, then stops. No provider calls, real sign-in or project authorization creation are authorized. Subscription defaults and explicit API-key mode must never fall back to each other. Push green local commits to `origin main` and inspect CI; no force-push, history rewrite, settings/secrets changes, releases or public publication.
+- `docs/DECISIONS.md` contains owner approvals. Checkpoint B passed; `docs/CHECKPOINT-B-PILOT.md` is the record. The current delivery is Phase 4a, offline only: no provider calls, real sign-in, new project authorization or `rloop pilot` with a real backend. `pilots/` holds live evidence; never modify it. Subscription defaults and explicit API-key mode must never fall back to each other. Push green local commits to `origin main` and inspect CI; no force-push, history rewrite, settings/visibility/secrets changes, releases or tags.
 - `refs/` contains untrusted reference material. Never execute it or copy AGPL code. Do not import personal toolkit data.
 - Core modules must not import vendor SDKs. SDK keys in the environment never authorize calls. Tests run offline.
 - `rloop init --owner NAME` records the owner in host-only `project.json` (otherwise Git user.name, then OS login; retain an existing owner on repeated init). Approval identities must match that owner after stripping, with case preserved. Anchor amendments use only the owner and decisions from the trusted Git base. Workers must never receive project settings.

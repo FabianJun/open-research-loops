@@ -13,7 +13,7 @@ Source keys:
 - **P**: primary documents, repository licenses and exact version evidence in [PRIOR-ART.md](PRIOR-ART.md).
 
 Each requirement has an implementation location in [DESIGN.md](DESIGN.md) and an observable acceptance check.
-Phase 1-3b are complete. This delivery prepares checkpoint B offline, then stops before real sign-in, provider requests or project authorization creation. Phase 4-5 remain later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
+Phase 1-3b are complete and checkpoint B passed with a live pilot on both backends. The current delivery is Phase 4a offline (skills, installer, GUIDE, self-assess); Phase 4b (one licensed real problem) and Phase 5 remain later work. Schema inventory is a ceiling; repository code/tests are preferred over unnecessary tables.
 
 | ID | Requirement | Source | Design location | Acceptance / phase |
 |---|---|---|---|---|
@@ -59,7 +59,7 @@ Phase 1-3b are complete. This delivery prepares checkpoint B offline, then stops
 | R40 | CLI init/plan/run/status/resume/report/export plus self-assess workflow. | M §5 phases 2, 4 | Skills, guide and command surface | CLI smoke paths exercised offline; invalid final/recovery states fail visibly; 2, 4–5. |
 | R41 | Apache-2.0 code, CC BY 4.0 docs, factual AGENTS/CLAUDE pointer and CI scaffold. | M §5 phase 1; event `CLAUDE.md` | Architecture decisions; Skills | Root license files and split agree with docs; instructions avoid duplicating source; CI exists for both OSes; 1. |
 | R42 | Short docs/instructions, no personal toolkit clone or paper/hosted platform expansion. | M §1, §6; T `references/sources.md`; event `CLAUDE.md` | Architecture; Skills; L simplification | Review scope and agent instructions at handoff; disclose optional/unimplemented features; all phases. |
-| R43 | A and Phase 1-3b complete; current scope is checkpoint-B preparation offline. Stop before live sign-in/inference, project approval creation and Phase 4. | A1-A6; subsequent owner authorization | Approved delivery order and scope | Full Windows/disposable Linux/CI verification with exact results and owner go instructions. No WSL change, real auth/API requests or provider calls; private-origin green pushes authorized. |
+| R43 | A and Phase 1-3b complete; checkpoint B passed live. Current scope is Phase 4a offline; no live sign-in/inference or new project approval. | A1-A6; subsequent owner authorization | Approved delivery order and scope | Full Windows/disposable Linux/CI verification with exact results and owner go instructions. No WSL change, real auth/API requests or provider calls; private-origin green pushes authorized. |
 
 ## Phase-5 test coverage index
 
@@ -98,7 +98,7 @@ No design decision at checkpoint A substitutes for proof in phases 2–5.
 | I10 pilot | `test_deadline_and_pilot_gate`, `test_failed_control_blocks_all_worker_dispatch`. |
 | I11 licenses | `test_license_metadata_and_repository_check`; synthetic contract CC0, code/docs root license checks. Full self-assess skill remains Phase 4. |
 
-R02-R04: MCP parity and both optional SDK adapters have offline SDK-seam contract tests, including effective tools and key-free server environments. Live acceptance remains checkpoint-B gated, independent of keys. R05 skills remain Phase 4. R11: none/container Sandbox, digest/mount/resource policy, separate code-evaluation container and four actual probes are implemented and tested. Podman command parity is tested; actual engine verification uses Docker. R13 has four tested pattern policies; generic multi-contract/dependency planning and R21/R34's full guide/cockpit experience remain later work. R18 recovery is implemented for in-process fake workers and supervised evaluators; live SDK session recovery remains pending. R36 now requires exact owner/provider/model/auth-mode/effort/run-limit configuration and retains the offline socket guard. Historical evidence is in PHASE-3-STATUS; current evidence and go instructions are in CHECKPOINT-B-PREP.
+R02-R04: MCP parity and both optional SDK adapters have offline SDK-seam contract tests, including effective tools and key-free server environments. Live acceptance passed in the checkpoint-B pilot on subscription sign-in, independent of keys ([CHECKPOINT-B-PILOT](CHECKPOINT-B-PILOT.md)). R05 skills remain Phase 4. R11: none/container Sandbox, digest/mount/resource policy, separate code-evaluation container and four actual probes are implemented and tested. Podman command parity is tested; actual engine verification uses Docker. R13 has four tested pattern policies; generic multi-contract/dependency planning and R21/R34's full guide/cockpit experience remain later work. R18 recovery is implemented for in-process fake workers and supervised evaluators; live SDK session recovery remains pending. R36 now requires exact owner/provider/model/auth-mode/effort/run-limit configuration and retains the offline socket guard. Historical evidence is in PHASE-3-STATUS; current evidence and go instructions are in CHECKPOINT-B-PREP.
 
 A2: install `research-loops`; never depend on PyPI `rloop`; mention the unrelated package once in README. A5 defers optional CLI adapters. A4 container implementation is Phase 3b, not Phase 2.
 

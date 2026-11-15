@@ -370,10 +370,10 @@ No section-4 constraint is waived. Checkpoint A is approved in [DECISIONS.md](DE
 1. Phase 1: scaffold, lockfile, licenses, agent instructions and Windows/Linux CI.
 2. Phase 2a: thin offline slice (`uv run rloop run examples/planted-signal`): registration, fake direct tools, outbox/import, protected evaluator subprocess, verdict, report/export. Use only required tables.
 3. Phase 2b: integrity mechanisms individually, each with a test; migrations grow with working features. No speculative tables.
-4. Phase 3 (MCP and both SDK adapters) and Phase 3b (OCI isolation) are complete. Current delivery prepares checkpoint B offline; stop before real sign-in, provider requests, creating project approval and Phase 4. Optional CLI adapters remain deferred.
-5. Phase 4 skills use source `rloop-` names; Phase 5 extends proof across funded providers.
+4. Phase 3 (MCP and both SDK adapters) and Phase 3b (OCI isolation) are complete. Checkpoint B passed with a live pilot on both backends ([CHECKPOINT-B-PILOT](CHECKPOINT-B-PILOT.md)). Optional CLI adapters remain deferred.
+5. Phase 4a, the current offline delivery: the seven `rloop-` skills, their installer, GUIDE and the self-assess entry point. Phase 4b adds one licensed real problem after the owner chooses it; its live pilot needs a new go. Phase 5 extends proof across funded providers on that real work.
 
-B remains pending: exact provider/model/auth-mode/run-limit approval. USD cap and charge-envelope decisions apply only to explicitly chosen API-key mode. C remains pending: public files and publication. The owner authorized ordinary pushes to the existing private origin/main; no provider requests, real sign-in, force pushes, releases or public publication are authorized in checkpoint-B preparation.
+B passed on 2026-11-15 with the provider, model, auth mode and run limits recorded in DECISIONS. USD cap and charge-envelope decisions apply only to explicitly chosen API-key mode. C: the owner approved publication and the repository is public. Ordinary pushes to origin/main are authorized; force pushes, releases and tags are not.
 
 ## Phase 3 transport and execution evidence
 
