@@ -25,7 +25,7 @@ Publish only what the saved evidence supports, negative results included.
 
 ## Why this exists
 
-This repository carries lessons from the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* hackathon (Berlin, 7 November 2026). Thirteen submissions pointed agent loops at open science problems. The published assessments show the same failure modes again and again, and they are rarely about the science. They are about the loop: a threshold that moved mid-run, a prompt that leaked test scores, a headline result whose artifacts were never saved.
+This repository carries lessons from the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* hackathon (Berlin, November 2026). Thirteen submissions pointed agent loops at open science problems. The published assessments show the same failure modes again and again, and they are rarely about the science. They are about the loop: a threshold that moved mid-run, a prompt that leaked test scores, a headline result whose artifacts were never saved.
 
 The method was already written down. What was missing was a **runtime that enforces it**. `rloop` is that runtime, and its headline goal is simple: **get from a question to the first running experiment fast**, then iterate without losing the evidence trail.
 
