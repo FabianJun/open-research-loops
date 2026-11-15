@@ -36,9 +36,9 @@ strictly-smaller `min_size` behavior is needed for source compatibility.
 
 The archive has PNG and JPEG images with PNG masks. A PNG-only extraction rule
 would omit 26 of the 40 validation images and cannot reproduce the benchmark.
-The implementation's narrow JPEG image allowlist is pending clarification of
-that conflict with the initial PNG-only requirement. No real fetch/download was
-run. Synthetic fixtures cover extraction, final consumption and tool isolation.
+The narrow JPEG image allowlist was accepted, since the PNG-only rule in the
+delivery prompt did not match the archive. The implementation ran no real
+fetch; the archive was fetched separately for the live pilot ([record](PHASE-4B-PILOT.md)). Synthetic fixtures cover extraction, final consumption and tool isolation.
 The minimal OCI image remains for planted-signal; grain uses the host declarative
 tool service and never executes candidate code.
 
@@ -53,7 +53,7 @@ The protected hash moves from
 `9c1a922e6006f18059367ade09c49733ebb430507337af960bef394ef8766d7e` to
 `574d2edbce7a6211f57ef0ab8f4392f8cd86329fc2940fa53b2899c0d8edb945`.
 `check_protected.py --base origin/main` passes against that trusted authorization.
-The implementation has not been pushed while the JPEG allowlist clarification
-is pending; no implementation CI success is claimed.
+The implementation `c059223` was pushed after that; CI run `43673161341`
+passed on Ubuntu and Windows.
 
 Documentation licensed CC BY 4.0.

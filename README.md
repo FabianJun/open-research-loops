@@ -201,9 +201,10 @@ Without an authorization in `project.json`, `rloop pilot` refuses before any SDK
 | Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
 | Test suite | **226 passed** locally on Windows, offline, network blocked in the test process; real worker and evaluator containers included. CI: 226 on Ubuntu, 220 plus 6 container skips on Windows |
 | First live pilot, planted-signal, 8 worker runs per backend | `claude-sonnet-5-5`: **8/8 supported** in 2 min 11 s, estimated USD 0.32 in total. `gpt-6.1-terra`: **8/8 supported** in 2 min 01 s, about 72k tokens, cost not reported under ChatGPT sign-in. Every first submission was valid |
+| First real problem, grain counting on 316L micrographs, 4 worker runs per backend | Controls reproduced to 1e-9; 8/8 completed and re-checked on the first attempt. Best development `max_rel_error`: Terra **0.126**, the published baseline resubmitted; Sonnet **0.141**. Pre-registered target 0.10 **not reached**. Holdout: 0.176 and 0.182 |
 | SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
 
-Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). The [pilot record](docs/CHECKPOINT-B-PILOT.md) keeps every live attempt, including the six that failed before the worker protocol was fixed. What has **not** happened yet: no real scientific problem run end to end, no PyPI release. The live pilot ran a known-answer sanity task, so it proves the path, not research ability.
+Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). The [pilot record](docs/CHECKPOINT-B-PILOT.md) keeps every live attempt, including the six that failed before the worker protocol was fixed. The first pilot ran a known-answer sanity task. The [Phase 4b record](docs/PHASE-4B-PILOT.md) then ran a real problem end to end and reports its negative result. What has **not** happened yet: a positive scientific result, a PyPI release.
 
 ## Roadmap
 
@@ -215,7 +216,7 @@ Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](d
 | Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`: built and tested offline | ✅ built |
 | First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ✅ done: 8/8 supported on both ([record](docs/CHECKPOINT-B-PILOT.md)) |
 | Phase 4a | Seven portable `rloop-*` agent skills with an installer, a short [guide](docs/GUIDE.md), `rloop self-assess` | ✅ done |
-| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs, a hackathon benchmark | 🔧 in progress |
+| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs, a hackathon benchmark | ✅ done: 8/8 completed, target not reached ([record](docs/PHASE-4B-PILOT.md)) |
 | Phase 5 | Provider comparison on real work | ⏳ later |
 
 ## Repository map

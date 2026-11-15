@@ -85,4 +85,6 @@ The project owner chose autonomous mode as an end-to-end test of the framework: 
   - no API key, no fallback, no retry until a positive result, restarts only in fresh directories.
 - **Final holdout:** the selected candidate per backend is evaluated on it once. A negative result is reported as such.
 
+Result: both backends completed 4/4 on the first attempt, all `not supported`. The best development `max_rel_error` was 0.1259 (Terra, the published baseline) and 0.1414 (Sonnet). The holdout gave 0.1765 and 0.1818 against the cited 0.1739. The record is [PHASE-4B-PILOT](PHASE-4B-PILOT.md).
+
 Scaling beyond this pilot and Phase 5 still need a new go.
