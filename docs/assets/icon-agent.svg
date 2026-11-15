@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-labelledby="title">
+  <title id="title">Your agent: checkbox</title>
+  <rect x="1" y="1" width="14" height="14" rx="3" fill="none" stroke="#2f5bea" stroke-width="2"/>
+  <path d="M4,8 l2.5,2.5 l5,-5" fill="none" stroke="#2f5bea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

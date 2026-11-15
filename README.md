@@ -8,10 +8,10 @@ Lock the question before anyone looks at results. Fan out agent workers. Score e
 Publish only what the saved evidence supports, negative results included.
 
 [![tests](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml/badge.svg)](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml)
-[![Licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-2f5bea)](LICENSE)
-![For researchers and students](https://img.shields.io/badge/for-researchers_and_students-0e7c7b)
-![No coding needed](https://img.shields.io/badge/coding-not_needed-c4432b)
-[![Works with any capable coding agent](https://img.shields.io/badge/works_with-any_capable_coding_agent-59636e)](#backends)
+[![Licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](LICENSE)
+![For researchers and students](https://img.shields.io/badge/for-researchers_and_students-c4432b)
+![No coding needed](https://img.shields.io/badge/coding-not_needed-0e7c7b)
+[![Works with any capable coding agent](https://img.shields.io/badge/works_with-any_capable_coding_agent-2f5bea)](#backends)
 ![Status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-bc4c00)
 
 [Start here](#two-ways-to-work) · [How it works](#how-one-loop-runs) · [Quickstart](#quickstart) · [Backends](#backends) · [Results](#measured-not-promised) · [Learn more](#documentation)
@@ -20,7 +20,7 @@ Publish only what the saved evidence supports, negative results included.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/loop-dark.svg">
-  <img alt="The loop: register a locked contract, fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does." src="docs/assets/loop-light.svg" width="100%">
+  <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for agent work, check for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
 </picture>
 
 </div>
@@ -72,7 +72,7 @@ points before the run, names the methods (**smoke test**, **fair comparison**, *
 and intervals**: the U-Net's 95% interval is 0.119 to 0.231), and records your
 prediction first. [What happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result).
 
-| Step | Agent's work | Your part / what you learn |
+| Step | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt="Checkbox"> Agent's work | <img src="docs/assets/icon-you.svg" width="16" height="16" alt="Person"> Your part / what you learn |
 |---|---|---|
 | 1. Question and rights 🗣️ | Check licences, data rights, privacy and your academic rules where applicable. | Your question and disproof; a testable claim. |
 | 2. Metric, target, falsifier | Make the rule executable. | Decide what the score means. |
@@ -93,7 +93,7 @@ your academic rules still apply.
 
 **Say what you noticed; the agent finds the cause.**
 
-| You notice | The agent looks at |
+| <img src="docs/assets/icon-you.svg" width="16" height="16" alt="Person"> You notice | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt="Checkbox"> The agent looks at |
 |---|---|
 | “Too good to be true.” | Leakage, the holdout barrier, double scoring. |
 | “Isn't the other number adapted to these images?” | Fair comparison: same tuning data and budget for every method. |
@@ -179,12 +179,20 @@ Repeating `run` or `resume` reconciles saved work and never reruns a completed c
 ```mermaid
 sequenceDiagram
     autonumber
-    actor S as Scientist
-    participant C as Coordinator
-    participant DB as SQLite (single writer)
-    participant W as Worker (Claude, OpenAI or fake)
-    participant T as MCP tools
-    participant E as Protected evaluator
+    box rgba(196,67,43,0.08) You decide
+        actor S as Scientist
+    end
+    box rgba(89,99,110,0.08) Infrastructure
+        participant C as Coordinator
+        participant DB as SQLite (single writer)
+    end
+    box rgba(47,91,234,0.08) Your agent
+        participant W as Worker (Claude, OpenAI or fake)
+        participant T as MCP tools
+    end
+    box rgba(14,124,123,0.08) Route and evidence
+        participant E as Protected evaluator
+    end
     S->>C: question and contract
     C->>DB: register goal, falsifier, thresholds, evaluator hash
     C->>E: run controls first
@@ -217,6 +225,12 @@ flowchart LR
     V --> D{"Independent re-check<br/>second code path"}
     D -- failed --> F["verification failed<br/>shown as such"]
     D -- checked --> R["Report entry<br/>evidence ID and provenance tag"]
+    classDef agent stroke:#2f5bea,stroke-width:2px
+    classDef evidence stroke:#0e7c7b,stroke-width:2px
+    classDef neutral stroke:#59636e,stroke-width:2px
+    class A agent
+    class C,V,D,F,R evidence
+    class B,X neutral
 ```
 
 Execution status, scientific outcome and verification are three separate fields. A run that finished is not a finding, a negative result is checked evidence, and an interrupted worker can never turn into a positive result. Every report statement is tagged `measured`, `simulated`, `cited`, `assumed`, `interpretation` or `hypothesis`.
@@ -247,6 +261,12 @@ flowchart TB
     MCP --- WS
     MCP --- PUB
     WS -.->|"validated, hashed import"| C
+    classDef agent stroke:#2f5bea,stroke-width:2px
+    classDef evidence stroke:#0e7c7b,stroke-width:2px
+    classDef neutral stroke:#59636e,stroke-width:2px
+    class SDK,MCP agent
+    class EV evidence
+    class LLM,C,DB,WS,PUB neutral
 ```
 
 - **Never reaches a worker:** evaluator code, holdout and final data, the database, credentials, final scores.

@@ -1,23 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 136" width="1100" height="136" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 128" width="1100" height="128" role="img" aria-labelledby="title desc">
   <title id="title">Competence-enhancing AI makes you more capable, not more dependent: it explains, you decide, and you keep what you learn.</title>
   <desc id="desc">Competence-enhancing AI makes you more capable, not more dependent: it explains, you decide, and you keep what you learn.</desc>
-  <rect x="20" y="8" width="1060" height="120" rx="16" fill="#eef8f7" stroke="#0e7c7b" stroke-width="1.6" />
-  <rect x="20" y="24" width="6" height="88" rx="3" fill="#0e7c7b" />
-  <circle cx="66" cy="68" r="26" fill="#0e7c7b" />
-  <path d="M54,80 L66,68 L74,68 L80,56 M69,56 H80 V67" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="110" y="33" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#0e7c7b" font-weight="700" letter-spacing="1.5">COMPETENCE-ENHANCING AI</text>
-  <text x="110" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="24" fill="#1f2328" font-weight="700">makes you <tspan fill="#0e7c7b">more capable</tspan>, not more dependent.</text>
-  <rect x="110" y="80" width="146" height="32" rx="16" fill="#ffffff" stroke="#2f5bea" stroke-width="1.3" />
-  <text x="148" y="101" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#1f2328">it explains</text>
-  <rect x="300" y="80" width="158" height="32" rx="16" fill="#ffffff" stroke="#c4432b" stroke-width="1.3" />
-  <text x="338" y="101" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#1f2328">you decide</text>
-  <rect x="502" y="80" width="277" height="32" rx="16" fill="#ffffff" stroke="#0e7c7b" stroke-width="1.3" />
-  <text x="540" y="101" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#1f2328">you keep what you learn</text>
-  <circle cx="27" cy="57" r="4.5" fill="#c4432b" transform="translate(291 34)" />
-  <path d="M20,68 a7,7 0 0 1 14,0 z" fill="#c4432b" transform="translate(291 34)" />
-  <rect x="20" y="273" width="14" height="14" rx="3" fill="none" stroke="#2f5bea" stroke-width="2" transform="translate(108 -184)" />
-  <path d="M23.5,280 l2.5,2.5 l4.5,-5" fill="none" stroke="#2f5bea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(108 -184)" />
-  <path d="M520,89 H532 V104 L526,100 L520,104 Z" fill="none" stroke="#0e7c7b" stroke-width="1.8" stroke-linejoin="round" />
-  <path d="M270,96 h16 m-5,-4 l5,4 l-5,4" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M472,96 h16 m-5,-4 l5,4 l-5,4" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="20" y="8" width="1060" height="112" rx="12" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" />
+  <rect x="20" y="20" width="4" height="88" rx="2" fill="#0e7c7b" />
+  <circle cx="66" cy="64" r="24" fill="#0e7c7b" />
+  <path d="M54,76 L66,64 L74,64 L80,52 M69,52 H80 V63" fill="none" stroke="#f6f8fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="110" y="32" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#59636e" font-weight="700" letter-spacing="1.5">COMPETENCE-ENHANCING AI</text>
+  <text x="110" y="61" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="24" fill="#1f2328" font-weight="700">makes you <tspan fill="#0e7c7b">more capable</tspan>, not more dependent.</text>
+  <rect x="110" y="77" width="128.531" height="32" rx="16" fill="#ffffff" stroke="#2f5bea" stroke-width="1.5" />
+  <rect x="126" y="86" width="14" height="14" rx="3" fill="none" stroke="#2f5bea" stroke-width="2" />
+  <path d="M129.5,93 l2.5,2.5 l4.5,-5" fill="none" stroke="#2f5bea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="152" y="98" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#1f2328">it explains</text>
+  <path d="M250.531,93 h16 m-5,-4 l5,4 l-5,4" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="278.531" y="77" width="135.398" height="32" rx="16" fill="#ffffff" stroke="#c4432b" stroke-width="1.5" />
+  <circle cx="301.531" cy="88" r="4.5" fill="#c4432b" />
+  <path d="M294.531,99 a7,7 0 0 1 14,0 z" fill="#c4432b" />
+  <text x="320.531" y="98" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#1f2328">you decide</text>
+  <path d="M425.929,93 h16 m-5,-4 l5,4 l-5,4" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="453.929" y="77" width="231.148" height="32" rx="16" fill="#ffffff" stroke="#0e7c7b" stroke-width="1.5" />
+  <path d="M470.929,85.5 h12 v15 l-6,-4 l-6,4 Z" fill="none" stroke="#0e7c7b" stroke-width="1.8" stroke-linejoin="round" />
+  <text x="495.929" y="98" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#1f2328">you keep what you learn</text>
 </svg>
