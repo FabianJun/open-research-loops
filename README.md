@@ -4,17 +4,17 @@
 
 **Parallel AI research loops that keep their evidence honest.**
 
-Lock the question before anyone looks at results. Fan out agent workers. Score every candidate with protected, plain-code evaluation.<br/>
-Publish only what the saved evidence supports, negative results included.
+For researchers and students working with a coding agent. No coding needed.
 
 [![tests](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml/badge.svg)](https://github.com/scaled-thinking/open-research-loops/actions/workflows/tests.yml)
-[![Licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](LICENSE)
-![For researchers and students](https://img.shields.io/badge/for-researchers_and_students-c4432b)
-![No coding needed](https://img.shields.io/badge/coding-not_needed-0e7c7b)
-[![Works with any capable coding agent](https://img.shields.io/badge/works_with-any_capable_coding_agent-2f5bea)](#backends)
-![Status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-bc4c00)
+[![you decide: question and verdict](https://img.shields.io/badge/you_decide-question_and_verdict-c4432b)](#two-ways-to-work)
+[![your agent: any capable coding agent](https://img.shields.io/badge/your_agent-any_capable_coding_agent-2f5bea)](#backends)
+[![evidence: checked, negatives kept](https://img.shields.io/badge/evidence-checked%2C_negatives_kept-0e7c7b)](#measured-not-promised)
+![python 3.12+](https://img.shields.io/badge/python-3.12%2B-59636e)
+[![licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](#names-and-licences)
+![status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-59636e)
 
-[Start here](#two-ways-to-work) · [How it works](#how-one-loop-runs) · [Quickstart](#quickstart) · [Backends](#backends) · [Results](#measured-not-promised) · [Learn more](#documentation)
+[Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How one loop runs](#how-one-loop-runs) · [What a worker can see](#what-a-worker-can-see) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
 
 <br/>
 
@@ -25,17 +25,18 @@ Publish only what the saved evidence supports, negative results included.
 
 </div>
 
+You set the question and what would disprove it, before any result exists. Your agent writes the
+code and runs the workers in parallel. Every thread then passes the same needle, a protected
+evaluator: what holds joins the report, and what fails stays in it as a negative result.
+
 ## Two ways to work
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/competence-dark.svg">
-  <img alt="Competence-enhancing AI makes you more capable, not more dependent: it explains, you decide, and you keep what you learn." src="docs/assets/competence-light.svg" width="100%">
-</picture>
+Your own coding agent handles code, evaluators, compute and CI. Pick a mode and paste its starter
+into your agent.
 
-Your own coding agent handles code, evaluators, compute, Kaggle and CI. Choose
-**autonomous** for delegated work, or **coached** to learn research design along
-the way: the agent explains and suggests; you decide on the research method.
-Paste either starter into your agent:
+### Autonomous
+
+You delegate. The agent proposes a bounded plan and works within your permissions.
 
 ```text
 Mode: autonomous
@@ -44,6 +45,16 @@ propose a bounded research plan and work within my permissions.
 My question: …
 ```
 
+### Coached
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/competence-dark.svg">
+  <img alt="Competence-enhancing AI makes you more capable, not more dependent: it explains, you decide, and you keep what you learn." src="docs/assets/competence-light.svg" width="100%">
+</picture>
+
+You learn research design while the experiment gets done. The agent explains and suggests; you
+decide on the method.
+
 ```text
 Mode: coached
 Use open-research-loops and skills/rloop-coach/SKILL.md. Coach me on research
@@ -51,78 +62,45 @@ design and do the technical work. Explain the methods; let me decide.
 Reply in my language. My question: …
 ```
 
-In coached mode, the agent uses `rloop init PROJECT --mode coached`, agrees
-the contract, then plans and records your number with `rloop predict` before
-running. Default autonomous init still completes its offline fake pilot.
+The agent starts with `rloop init PROJECT --mode coached`, agrees the contract with you and records
+your predicted number with `rloop predict` before anything is scored.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/route-dark.svg">
   <img alt="One route, two roles. Five stages: your question (step 1), a fair test (steps 2–3), plan and predict (steps 4–5), run once (steps 6–7), reflect (step 8). At each stage you decide: your question and what disproves it, what the score means and what counts as fair, your idea and choice and predicted number, the budget then your verdict before the agent interprets, and your method card in your own words. Your agent does the technical work: it checks licences, data rights, privacy and your academic rules where applicable first, makes the rule executable and prepares fair baselines, offers safe, unusual and no-GPU options, states cost first and tests before scoring the frozen candidate once with a protected evaluator, then asks short questions and drafts your method card. You leave with a checked result, a research brief and your own method card." src="docs/assets/route-light.svg" width="100%">
 </picture>
 
-**One example from this repository.** A small U-Net was meant to beat a
-team's grain-counting pipeline. The agent set the rule, ran it once and
-reported honestly: val error **0.1639** against the team's **0.1259**, no win.
-Two things went wrong on the way. The smoke test held one of three image
-formats, so the first full run failed in the loader. And the bar was unfair:
-the team's number was tuned on the same 40 val images the U-Net never saw. The
-owner identified both problems in review: a bar tuned on the scoring images,
-and a sample of 40 that leaves a wide interval. A coached agent raises these
-points before the run, names the methods (**smoke test**, **fair comparison**, **sample size
-and intervals**: the U-Net's 95% interval is 0.119 to 0.231), and records your
-prediction first. [What happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result).
-
-| Step | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt="Checkbox"> Agent's work | <img src="docs/assets/icon-you.svg" width="16" height="16" alt="Person"> Your part / what you learn |
+| Step | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt=""> What your agent does | <img src="docs/assets/icon-you.svg" width="16" height="16" alt=""> Your part and what you learn |
 |---|---|---|
-| 1. Question and rights 🗣️ | Check licences, data rights, privacy and your academic rules where applicable. | Your question and disproof; a testable claim. |
-| 2. Metric, target, falsifier | Make the rule executable. | Decide what the score means. |
-| 3. Baselines and controls | Prepare defaults, team comparison, random or negative control; check each was tuned on the same data. | Recognise a fair test. |
-| 4. Approach 🗣️ | Offer safe, unusual and cheap no-GPU options; recommend one. | Your first idea, then your choice. |
-| 5. Pre-register 🗣️ | Record rule, budget, stop rule and prediction before scoring. | Your number and reason. |
-| 6. Compute and cost | Choose a host; cost first; representative smoke test. | Approve resources; learn what the test covers. |
-| 7. Evaluate once 🗣️ | Show the result, uncertainty and limits. | Your verdict before the agent's. |
-| 8. Reflect | Short questions, method card, proposed profile updates. | Keep the method in your words. |
+| 1. Question and rights <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Checks licences, data rights, privacy and your academic rules where applicable. | Your question and what would disprove it. |
+| 2. Metric, target, falsifier | Makes the rule executable. | What the score means. |
+| 3. Baselines and controls | Prepares defaults, a team comparison and a random or negative control; checks each was tuned on the same data. | How to spot an unfair test. |
+| 4. Approach <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Offers safe, unusual and cheap no-GPU options; recommends one. | Your first idea, then your choice. |
+| 5. Pre-register <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Records rule, budget, stop rule and prediction before scoring. | Your number and your reason. |
+| 6. Compute and cost | Picks a host, states the cost first, runs a representative smoke test. | Approve resources; what a small test covers. |
+| 7. Evaluate once <img src="docs/assets/icon-you.svg" width="14" height="14" alt="your view first"> | Shows the result, its uncertainty and limits. | Your verdict, before the agent's. |
+| 8. Reflect | Asks short questions, drafts a method card, proposes profile updates. | The method in your own words. |
 
-🗣️ marks the four moments for your view first, one question per reply.
-Otherwise the agent gets on with the work and names the step. **Every method
-has a name**, a reason, instructions and limits in its [card](skills/rloop-coach/references/methods.md).
-You get a checked result, a project `BRIEF.md`, a personal method card and an
-optional **private competence profile**, kept outside the repository and adapted
-per area as you learn. Say “shorter”, “explain more” or “just do it” at any time;
-your academic rules still apply.
+The coral person icon <img src="docs/assets/icon-you.svg" width="14" height="14" alt=""> marks the
+four moments where your view comes first, one question per reply. Elsewhere the agent gets on with the work and names the
+step. Say “shorter”, “explain more” or “just do it” at any time.
 
-**Say what you noticed; the agent finds the cause.**
+The brief is the project's `BRIEF.md`; an optional competence profile stays on your machine. Every
+method has a [card](skills/rloop-coach/references/methods.md) with its reason, steps and limits.
 
-| <img src="docs/assets/icon-you.svg" width="16" height="16" alt="Person"> You notice | <img src="docs/assets/icon-agent.svg" width="16" height="16" alt="Checkbox"> The agent looks at |
-|---|---|
-| “Too good to be true.” | Leakage, the holdout barrier, double scoring. |
-| “Isn't the other number adapted to these images?” | Fair comparison: same tuning data and budget for every method. |
-| “Can we still adjust it?” | Yes, on training data with grouped cross-validation, under a new plan; the scored images stay untouched. |
-| “Are these images enough?” | A bootstrap interval and a paired comparison, image by image. |
+**A real example, negative result included.** A small U-Net was scored once against a team's
+grain-counting pipeline: val error **0.1639** against **0.1259**, lower is better, so no win. In
+review, the owner identified two problems: the team's number was tuned on the same 40 val images,
+and 40 images leave a wide 95% interval of 0.119 to 0.231. A coached agent raises a **fair
+comparison** and **sample size and intervals** before the run
+([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)).
 
-[How coached mode works](docs/COACHED.md).
-
-## Why this exists
-
-This repository carries lessons from the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open Science Problems* hackathon (Berlin, November 2026). Thirteen submissions pointed agent loops at open science problems. The published assessments show the same failure modes again and again, and they are rarely about the science. They are about the loop: a threshold that moved mid-run, a prompt that leaked test scores, a headline result whose artifacts were never saved.
-
-The method was already written down. What was missing was a **runtime that enforces it**. `rloop` is that runtime, and its headline goal is simple: **get from a question to the first running experiment fast**, then iterate without losing the evidence trail.
-
-| What the assessments found | What `rloop` enforces |
-|---|---|
-| A planner loosened its own success threshold | Goal, falsifier, thresholds, seeds and evaluator hash are registered and immutable before the first dispatch |
-| A later prompt included test scores; truth files sat in public view | Workers see an allowlisted public projection. Evaluator, holdout and database never enter their view. The final evaluation is a one-use ticket |
-| A stale verdict was picked by file modification time | Imports are hash-checked and content-addressed; selection uses immutable IDs, never mtimes |
-| Planted defects were too easy to catch; a review target was constant | Controls run first. A failed or uninformative control blocks the pilot |
-| Variants went uncommitted; single seeds; intervals dropped | Every proposal, variant and retry gets a durable attempt ID. Seeds, keep margin and intervals appear in the report |
-| An orchestrator changed a protected spec together with its hash | Hash anchors sit outside worker authority. A change needs a recorded human decision and creates a new version |
-| Headline numbers had no saved artifacts behind them | Reports render from the database, every statement carries a provenance tag, and CI fails when a committed report drifts |
-
-Details, with links to each assessment: [docs/LESSONS.md](docs/LESSONS.md).
+More in [how coached mode works](docs/COACHED.md).
 
 ## Quickstart
 
-You need [uv](https://docs.astral.sh/uv/) and Python 3.12+ on Windows or Linux. Nothing here calls a model provider.
+You need [uv](https://docs.astral.sh/uv/) and Python 3.12+ on Windows or Linux. Nothing here calls a
+model provider.
 
 ```console
 git clone https://github.com/scaled-thinking/open-research-loops
@@ -131,21 +109,16 @@ uv sync --locked
 uv run rloop init my-pilot --question "Can we recover a planted nonlinear signal?"
 ```
 
-Add `--owner "Your Name"` to choose the project owner. Otherwise init records Git's `user.name`, falling back to the OS login. The identity and its source stay in host-only `project.json`; later approvals must match it exactly after stripping whitespace.
-
 ```text
 Simulated fake pilot complete: my-pilot/.rloop/report.md
 ```
 
-`init` registers a contract, runs the controls, dispatches two deterministic candidates, imports their outputs, evaluates them in a protected subprocess and writes the report. The measured median from command start to finished pilot is **1.15 s on Windows and 1.41 s on Linux**, excluding installation.
+`init` registers a contract, runs the controls, dispatches two deterministic candidates, evaluates
+them in a protected subprocess and writes the report. Median from command start to finished pilot:
+**1.15 s** on Windows, **1.41 s** on Linux, excluding installation.
 
-```console
-$ uv run rloop status my-pilot
-46d657d8-agent-7-00: completed / negative
-46d657d8-agent-7-01: completed / supported
-```
-
-The report is rendered from the database. Each run links its evidence object, and every statement carries a provenance tag:
+The report is rendered from the database. Each run links its evidence, and every statement carries a
+provenance tag:
 
 ```text
 | Run                 | Execution | Scientific outcome | Verification | Development MSE         |
@@ -159,7 +132,8 @@ The report is rendered from the database. Each run links its evidence object, an
 [cited] Synthetic dataset license: CC0-1.0.
 ```
 
-The full example campaign runs 48 variants, an agent arm against a random baseline, eight per seed across three registered seeds, dispatched best-of-N under the concurrency limit:
+The full example campaign runs 48 variants: an agent arm against a random baseline, eight per seed
+across three registered seeds.
 
 ```console
 uv run rloop run examples/planted-signal            # dispatch, import, evaluate; safe to repeat
@@ -169,10 +143,14 @@ uv run rloop run examples/planted-signal --final    # seal the campaign; allowed
 uv run pytest
 ```
 
-Repeating `run` or `resume` reconciles saved work and never reruns a completed candidate. `uv run python scripts/measure_init.py` reproduces the timing above on your machine.
+Repeating `run` or `resume` never reruns a completed candidate. `uv run python scripts/measure_init.py`
+reproduces the timing on your machine.
 
 > [!NOTE]
-> The planted-signal example is **simulated**. Its fake workers know the answer on purpose, so it shows that the machinery works, not that agents can do research. In the [live pilot](docs/CHECKPOINT-B-PILOT.md), real models from both vendors found the same planted answer from the public training samples. That shows the path works with real models, not research ability. A real question still needs its own data, contract and evaluator.
+> The planted-signal example is **simulated**: its fake workers know the answer on purpose, so it
+> shows that the machinery works, not that agents can do research. In the
+> [live pilot](docs/CHECKPOINT-B-PILOT.md), real models from two vendors found the same planted
+> answer from the public training samples. A real question needs its own data, contract and evaluator.
 
 ## How one loop runs
 
@@ -180,7 +158,7 @@ Repeating `run` or `resume` reconciles saved work and never reruns a completed c
 sequenceDiagram
     autonumber
     box rgba(196,67,43,0.08) You decide
-        actor S as Scientist
+        actor S as You
     end
     box rgba(89,99,110,0.08) Infrastructure
         participant C as Coordinator
@@ -210,11 +188,13 @@ sequenceDiagram
     C-->>S: report rendered from the database
 ```
 
-Workers never write to the database. They write to a private outbox that the coordinator treats as untrusted input. One coordinator per project holds the lock; reports and the append-only JSONL export are read from the database, so the Git history stays reviewable while SQLite stays authoritative.
+Workers never write to the database. They write to a private outbox that the coordinator treats as
+untrusted input. One coordinator per project holds the lock; SQLite stays authoritative, and reports
+and the append-only JSONL export are read from it.
 
 ### The evidence gate
 
-A candidate becomes a reportable result only through the same gate, whatever its outcome:
+Every candidate passes the same gate, whatever its outcome:
 
 ```mermaid
 flowchart LR
@@ -233,11 +213,15 @@ flowchart LR
     class B,X neutral
 ```
 
-Execution status, scientific outcome and verification are three separate fields. A run that finished is not a finding, a negative result is checked evidence, and an interrupted worker can never turn into a positive result. Every report statement is tagged `measured`, `simulated`, `cited`, `assumed`, `interpretation` or `hypothesis`.
+Execution status, scientific outcome and verification are separate fields: a finished run is not a
+finding, a negative result is checked evidence, and an interrupted worker never becomes a positive
+one. Every report statement is tagged `measured`, `simulated`, `cited`, `assumed`, `interpretation`
+or `hypothesis`.
 
 ## What a worker can see
 
-Isolation does not depend on which LLM SDK runs the worker. Every backend gets the same six MCP tools and nothing else. The SDKs' built-in tools are switched off, and the tests check the effective tool list for each backend.
+Isolation does not depend on which agent SDK runs the worker. Every backend gets the same six MCP
+tools and nothing else; the tests check the effective tool list for each backend.
 
 ```mermaid
 flowchart TB
@@ -269,10 +253,35 @@ flowchart TB
     class LLM,C,DB,WS,PUB neutral
 ```
 
-- **Never reaches a worker:** evaluator code, holdout and final data, the database, credentials, final scores.
-- **Two sandbox modes.** `none` serves declarative MCP tools and refuses to execute candidate code. `container` runs the tools in an OCI container through Docker or Podman, with no network, a read-only root, a non-root user, all capabilities dropped and limits on processes, memory, CPU and wall time. Images are pinned by digest.
-- **Fail closed.** Before a container worker starts, four probes have to pass: private paths are absent, writes outside the workspace fail, the network is unreachable, and a child-spawning timeout cleans up the whole process tree. A missing runtime or a failed probe blocks the task.
-- **Honest limits.** Containers share the host kernel. They protect against mistaken or opportunistic worker actions, not a determined kernel exploit. The threat model is in [docs/DESIGN.md](docs/DESIGN.md#phase-3b-sandbox-policy-and-threat-model).
+- **Never reaches a worker:** evaluator code, holdout and final data, the database, credentials,
+  final scores.
+- **Two sandbox modes.** `none` serves declarative tools and refuses candidate code. `container`
+  runs the tools in an OCI container (Docker or Podman, pinned by digest): no network, read-only
+  root, non-root user, no capabilities, limits on processes, memory, CPU and wall time.
+- **Fail closed.** Four probes must pass before a container worker starts: private paths absent,
+  writes outside the workspace fail, network unreachable, timeouts clean up the whole process tree.
+- **Honest limits.** Containers share the host kernel: they stop mistaken or opportunistic worker
+  actions, not a determined kernel exploit. See the
+  [threat model](docs/DESIGN.md#phase-3b-sandbox-policy-and-threat-model).
+
+## Why this exists
+
+Thirteen submissions to the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open
+Science Problems* hackathon (Berlin, November 2026) pointed agent loops at open science problems.
+Their published assessments show the same failures again and again, and those failures are about
+the loop, not the science. `rloop` turns each one into a rule the runtime enforces.
+
+| What the assessments found | What `rloop` enforces |
+|---|---|
+| A planner loosened its own success threshold | Goal, falsifier, thresholds, seeds and evaluator hash are registered and immutable before the first dispatch |
+| A later prompt included test scores; truth files sat in public view | Workers see an allowlisted public projection. Evaluator, holdout and database never enter their view. The final evaluation is a one-use ticket |
+| A stale verdict was picked by file modification time | Imports are hash-checked and content-addressed; selection uses immutable IDs, never mtimes |
+| Planted defects were too easy to catch; a review target was constant | Controls run first. A failed or uninformative control blocks the pilot |
+| Variants went uncommitted; single seeds; intervals dropped | Every proposal, variant and retry gets a durable attempt ID. Seeds, keep margin and intervals appear in the report |
+| An orchestrator changed a protected spec together with its hash | Hash anchors sit outside worker authority. A change needs a recorded human decision and creates a new version |
+| Headline numbers had no saved artifacts behind them | Reports render from the database, every statement carries a provenance tag, and CI fails when a committed report drifts |
+
+Each lesson with a link to its assessment: [LESSONS](docs/LESSONS.md).
 
 ## Backends
 
@@ -282,7 +291,16 @@ flowchart TB
 | `claude_agent` | `uv sync --extra claude` (Claude Agent SDK) | your own Claude Code login | Live pilot passed: 8/8 supported ([record](docs/CHECKPOINT-B-PILOT.md)) |
 | `openai_agents` | `uv sync --extra openai` (OpenAI Agents SDK) | Sign in with ChatGPT for open-source apps (preview): `rloop auth login-openai` | Live pilot passed: 8/8 supported ([record](docs/CHECKPOINT-B-PILOT.md)) |
 
-Subscription sign-in is the default. An API key in the environment **never** authorizes a call; API-key mode has to be chosen explicitly. A live run needs an authorization in the project config that names the approving owner, the provider, the exact model, the auth mode, the effort and four run limits: worker runs, parallel workers, turns per worker and wall time per worker. The coordinator checks it before it imports any SDK or starts any tool. A rate or usage limit stops the pilot and cancels its siblings. There is no retry and no silent fallback to another model, account or auth mode. Token usage is recorded, and cost is recorded as an estimate; an unknown cost stays unknown and is never written as zero.
+- **Subscription sign-in by default.** An API key in the environment never authorizes a call;
+  API-key mode is an explicit choice.
+- **The owner approves each live run.** The authorization in `project.json` names the owner,
+  provider, exact model, auth mode, effort and four run limits. `rloop init --owner NAME` sets the
+  owner (default: Git `user.name`, then the OS login). Without an authorization, `rloop pilot`
+  refuses before any SDK or tool starts.
+- **No silent fallback.** A rate or usage limit stops the pilot and cancels its siblings: no retry,
+  no switch to another model, account or auth mode.
+- **Honest cost.** Token usage is recorded and cost is estimated; an unknown cost stays unknown,
+  never zero.
 
 ```console
 $ uv run rloop auth preflight --backend claude_agent        # offline check, reads no credentials
@@ -291,32 +309,38 @@ $ uv run rloop auth models                                  # models your accoun
 $ uv run rloop pilot pilots/claude --backend claude_agent --workers 8
 ```
 
-Without an authorization in `project.json`, `rloop pilot` refuses before any SDK or tool starts. The step-by-step handoff, with example configs, is in [docs/CHECKPOINT-B-PREP.md](docs/CHECKPOINT-B-PREP.md).
+Step-by-step handoff with example configs: [CHECKPOINT-B-PREP](docs/CHECKPOINT-B-PREP.md). Training
+jobs run separately through `rloop compute` on a local, Kaggle, manual (for example Colab) or
+command-configured host: [COMPUTE](docs/COMPUTE.md).
 
 ## Measured, not promised
 
 | What | Result |
 |---|---|
 | Command start to completed simulated pilot, three runs each | Windows median **1.152 s**; Linux median **1.408 s** |
-| Test suite | **226 passed** locally on Windows, offline, network blocked in the test process; real worker and evaluator containers included. CI: 226 on Ubuntu, 220 plus 6 container skips on Windows |
+| Test suite, offline, network blocked in the test process | CI: Ubuntu **463 passed, 1 skipped**; Windows **457 passed, 7 skipped** (container tests skip there). Real worker and evaluator containers included |
 | First live pilot, planted-signal, 8 worker runs per backend | `claude-sonnet-5-5`: **8/8 supported** in 2 min 11 s, estimated USD 0.32 in total. `gpt-6.1-terra`: **8/8 supported** in 2 min 01 s, about 72k tokens, cost not reported under ChatGPT sign-in. Every first submission was valid |
 | First real problem, grain counting on 316L micrographs, 4 worker runs per backend | Controls reproduced to 1e-9; 8/8 completed and re-checked on the first attempt. Best development `max_rel_error`: Terra **0.126**, the published baseline resubmitted; Sonnet **0.141**. Pre-registered target 0.10 **not reached**. Holdout: 0.176 and 0.182 |
+| Grain U-Net, one pre-registered training run | Val `max_rel_error` **0.1639**, scored once; team pipeline 0.1259. **No win** ([record](experiments/grain-cnn/README.md)) |
 | SDK adapters | Real SDK orchestration against a stub CLI and a stub streaming endpoint, with real MCP subprocesses; no provider runner mocked out |
 
-Exact commands and results are in [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md) and the [checkpoint-B handoff](docs/CHECKPOINT-B-PREP.md). The [pilot record](docs/CHECKPOINT-B-PILOT.md) keeps every live attempt, including the six that failed before the worker protocol was fixed. The first pilot ran a known-answer sanity task. The [Phase 4b record](docs/PHASE-4B-PILOT.md) then ran a real problem end to end and reports its negative result. What has **not** happened yet: a positive scientific result, a PyPI release.
+Commands and raw results: [Phase 2](docs/PHASE-2-STATUS.md), [Phase 3](docs/PHASE-3-STATUS.md), the
+[pilot record](docs/CHECKPOINT-B-PILOT.md) with every live attempt (six failed before the worker
+protocol fix) and the [Phase 4b record](docs/PHASE-4B-PILOT.md). Not yet done: a positive scientific
+result, a PyPI release.
 
 ## Roadmap
 
 | Stage | Scope | Status |
 |---|---|---|
-| Phase 0 | Lessons, prior art, design, requirements | ✅ done |
-| Phase 1–2 | Offline vertical slice and the integrity gates | ✅ done |
-| Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | ✅ done |
-| Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`: built and tested offline | ✅ built |
-| First live pilot | Eight workers per backend on the planted-signal example, under explicit run limits | ✅ done: 8/8 supported on both ([record](docs/CHECKPOINT-B-PILOT.md)) |
-| Phase 4a | Seven portable `rloop-*` agent skills with an installer, a short [guide](docs/GUIDE.md), `rloop self-assess` | ✅ done |
-| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs, a hackathon benchmark | ✅ done: 8/8 completed, target not reached ([record](docs/PHASE-4B-PILOT.md)) |
-| Phase 5 | Provider comparison on real work | ⏳ later |
+| Phase 0 | Lessons, prior art, design, requirements | Done |
+| Phase 1–2 | Offline vertical slice and the integrity gates | Done |
+| Phase 3 / 3b | MCP over stdio, Claude and OpenAI adapters, OCI sandbox | Done |
+| Checkpoint B | Subscription sign-in, run-limit gate, `rloop pilot`, then eight live workers per backend | Done: 8/8 supported on both |
+| Phase 4a | Seven portable `rloop-*` agent skills with an installer, a short [guide](docs/GUIDE.md), `rloop self-assess` | Done |
+| Phase 4b | One licensed real problem from question to pilot: grain counting on 316L steel micrographs | Done: target not reached ([record](docs/PHASE-4B-PILOT.md)) |
+| Compute and coaching | `rloop compute` hosts, a U-Net feasibility run, coached mode with `rloop predict` | Done |
+| Phase 5 | Provider comparison on real work | Later |
 
 ## Repository map
 
@@ -330,8 +354,11 @@ src/research_loops/
 ├── openai_auth.py, auth_cli.py                   Sign in with ChatGPT, protected token store
 ├── sandbox.py, container_stdio.py                OCI isolation and preflight probes
 ├── verification.py, grounding.py, reporting.py   re-checks, provenance, reports
+├── compute/                                      vendor-neutral training jobs
 └── migrations/                                   numbered SQLite migrations
 examples/planted-signal/                          the simulated first example
+experiments/grain-cnn/                            the U-Net feasibility run
+skills/                                           portable agent skills, incl. rloop-coach
 docs/                                             lessons, design, decisions, status
 tests/                                            offline tests, incl. container isolation
 ```
@@ -340,16 +367,22 @@ tests/                                            offline tests, incl. container
 
 | Document | Read it for |
 |---|---|
+| [GUIDE](docs/GUIDE.md) | Offline commands from install to the grain benchmark |
+| [COACHED](docs/COACHED.md) | Coached mode: the route, levels, competence profile |
 | [LESSONS](docs/LESSONS.md) | What the thirteen assessments showed, and the rule each lesson became |
 | [DESIGN](docs/DESIGN.md) | Architecture, contracts, information flow, database, threat model |
 | [REQUIREMENTS](docs/REQUIREMENTS.md) | Every requirement traced to a design section and an acceptance check |
 | [DECISIONS](docs/DECISIONS.md) | Owner decisions per checkpoint |
-| [CHECKPOINT-B-PREP](docs/CHECKPOINT-B-PREP.md) | Sign-in, authorization config and pilot commands for the first live run |
 | [CHECKPOINT-B-PILOT](docs/CHECKPOINT-B-PILOT.md) | Every live attempt on both vendors, what failed, why, and what fixed it |
+| [COMPUTE](docs/COMPUTE.md) | Training jobs on local and hosted compute |
 | [PRIOR-ART](docs/PRIOR-ART.md) | Credited sources, SDK references, pinned versions |
 
-## Names and licenses
+## Names and licences
 
-The distribution is `research-loops`, the import is `research_loops`, the command is `rloop`. It is not on PyPI yet; install from source as shown above. The unrelated PyPI package `rloop`, a Rust asyncio event loop, is never a dependency.
+The distribution is `research-loops`, the import is `research_loops`, the command is `rloop`. It is
+not on PyPI yet; install from source as shown above. The unrelated PyPI package `rloop`, a Rust
+asyncio event loop, is never a dependency.
 
-Code is licensed under [Apache-2.0](LICENSE), documentation under [CC BY 4.0](LICENSE-CC-BY-4.0); see [NOTICE](NOTICE). The core is an independent implementation. Ideas from the event's material and other projects are credited in [PRIOR-ART](docs/PRIOR-ART.md); no AGPL code is included.
+Code is licensed under [Apache-2.0](LICENSE), documentation under [CC BY 4.0](LICENSE-CC-BY-4.0); see
+[NOTICE](NOTICE). The core is an independent implementation. Ideas from the event's material and
+other projects are credited in [PRIOR-ART](docs/PRIOR-ART.md); no AGPL code is included.

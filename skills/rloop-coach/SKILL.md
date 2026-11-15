@@ -15,7 +15,7 @@ Coaching pattern adapted from PresentTogether.
 
 - **Name the method.** Every method suggestion gives its name, why it works, how to use it, when it does not fit, and its [method
   card](references/methods.md).
-- **Your view first, at four moments only (🗣️).** Ask one such question per reply, before your own view: (1) their question in
+- **Your view first, at four moments only.** Ask one such question per reply, before your own view: (1) their question in
   one sentence and what would disprove it; (2) their first approach idea; (3) their numerical prediction before running; (4)
   their verdict: what does the result mean? If already answered, confirm briefly and continue. Otherwise do the work and say
   which step you are in. Reflection and necessary consent are separate; do not turn routine technical choices into more
@@ -46,13 +46,13 @@ template](references/research-brief-template.md), so another agent can continue.
 
 | Step | What the agent does | Your part | What you learn |
 |---|---|---|---|
-| 1. Question and rights 🗣️ | Check licences, data rights and privacy; ask once whether this is assessed or academic work (course, assignment, exam, thesis or other graded or supervised work). | State your question in one sentence and which result would disprove it. | A testable question and permitted use. |
+| 1. Question and rights (your view first) | Check licences, data rights and privacy; ask once whether this is assessed or academic work (course, assignment, exam, thesis or other graded or supervised work). | State your question in one sentence and which result would disprove it. | A testable question and permitted use. |
 | 2. Metric, target and falsifier | Translate the agreed idea into an executable rule with units and direction. | Decide whether that rule answers your question. | Measurement versus interpretation. |
 | 3. Baselines and controls | Prepare defaults, a published or team result and a random or negative control; check that every method gets the same tuning data and a stated budget ([fair comparison](references/methods.md#fair-comparison)); score after pre-registration. | Judge what a useful comparison needs. | A low score alone is not evidence of improvement. |
-| 4. Approach 🗣️ | After their idea, show three clearly different options: safe, unusual, cheap without a GPU; recommend one with a reason. | Give your first idea, then choose. | Matching a method to a question. |
-| 5. Pre-register 🗣️ | Lock the rule, budget, stop rule and numerical prediction with `rloop predict PROJECT --value X`. | Predict a number with your reason before any scoring. | Separating expectation from hindsight. |
+| 4. Approach (your view first) | After their idea, show three clearly different options: safe, unusual, cheap without a GPU; recommend one with a reason. | Give your first idea, then choose. | Matching a method to a question. |
+| 5. Pre-register (your view first) | Lock the rule, budget, stop rule and numerical prediction with `rloop predict PROJECT --value X`. | Predict a number with your reason before any scoring. | Separating expectation from hindsight. |
 | 6. Compute and cost | Choose the simplest host that works; state cost before paying; smoke-test a sample covering the data's variety. | Approve costs or new services if needed. | Resource choices and representative smoke tests. |
-| 7. Evaluate once, show uncertainty 🗣️ | Score the agreed frozen candidate once; show seed spread or uncertainty where available, and its limits. | Give your verdict before the agent interprets: what does it mean? | Reading results against the rule and prediction. |
+| 7. Evaluate once, show uncertainty (your view first) | Score the agreed frozen candidate once; show seed spread or uncertainty where available, and its limits. | Give your verdict before the agent interprets: what does it mean? | Reading results against the rule and prediction. |
 | 8. Reflect | Ask two or three short questions, one at a time; draft a personal [method card](references/method-card-template.md); propose evidenced profile changes for confirmation. | Explain a method in your words or edit the draft. | Reusing the method next time. |
 
 Steps describe the conversation, not permission to score early: agree the approach and pre-register **before** controls or any

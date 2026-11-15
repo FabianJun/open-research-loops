@@ -1,8 +1,8 @@
 # Work with a coach who also builds
 
 Choose coached mode when you want to learn research design while getting the
-experiment done. Your own coding agent handles code, evaluators, compute,
-Kaggle and CI. On research method it explains and suggests; you decide. Your
+experiment done. Your own coding agent handles code, evaluators, compute
+and CI. On research method it explains and suggests; you decide. Your
 question, hypothesis and conclusions stay yours.
 
 Coaching pattern adapted from PresentTogether.
@@ -55,19 +55,20 @@ provider, compute, publication or holdout permission.
 
 ## The route
 
-🗣️ marks the four moments where your view comes before the agent's. There is
-one such question per reply. Elsewhere it does the work and names the current
-step. If you already gave an answer, it confirms it and moves on.
+The coral person icon <img src="assets/icon-you.svg" width="14" height="14" alt=""> marks the
+four moments where your view comes before the agent's, one question per reply.
+Elsewhere the agent does the work and names the current step. If you already
+gave an answer, it confirms it and moves on.
 
 | Step | What the agent does | Your part | What you learn |
 |---|---|---|---|
-| 1. Question and rights 🗣️ | Checks licences, data rights and privacy; asks once whether this is assessed or academic work (course, assignment, exam, thesis or other graded or supervised work). | Your question in one sentence, and what would disprove it. | A question you can test. |
+| 1. Question and rights <img src="assets/icon-you.svg" width="14" height="14" alt="your view first"> | Checks licences, data rights and privacy; asks once whether this is assessed or academic work (course, assignment, exam, thesis or other graded or supervised work). | Your question in one sentence, and what would disprove it. | A question you can test. |
 | 2. Metric, target and falsifier | Makes the agreed rule executable. | Decide if it answers your question. | What a score can establish. |
 | 3. Baselines and controls | Prepares defaults, published/team comparison and random or negative control; checks each was tuned on the same data. | Judge a fair comparison. | Detecting an uninformative test. |
-| 4. Approach 🗣️ | After your idea, offers safe, unusual and cheap no-GPU options; recommends one. | Your first idea, then your choice. | Choosing an approach for a reason. |
-| 5. Pre-register 🗣️ | Records rule, budget, stop rule and your number before scoring. | Predict a number and explain why. | Expectation versus hindsight. |
+| 4. Approach <img src="assets/icon-you.svg" width="14" height="14" alt="your view first"> | After your idea, offers safe, unusual and cheap no-GPU options; recommends one. | Your first idea, then your choice. | Choosing an approach for a reason. |
+| 5. Pre-register <img src="assets/icon-you.svg" width="14" height="14" alt="your view first"> | Records rule, budget, stop rule and your number before scoring. | Predict a number and explain why. | Expectation versus hindsight. |
 | 6. Compute and cost | Picks the simplest host; states cost first; smoke-tests the data's variety. | Approve costs or new services when needed. | What a small test covers. |
-| 7. Evaluate once 🗣️ | Scores the frozen candidate, shows uncertainty and limits. | Your verdict: what does it mean? | Weighing evidence against the rule. |
+| 7. Evaluate once <img src="assets/icon-you.svg" width="14" height="14" alt="your view first"> | Scores the frozen candidate, shows uncertainty and limits. | Your verdict: what does it mean? | Weighing evidence against the rule. |
 | 8. Reflect | Two or three questions, one at a time; a personal method card; proposed profile updates. | Explain the method in your words. | Reusing it next time. |
 
 Controls are prepared at step 3 and scored only after pre-registration. Once
@@ -115,7 +116,7 @@ evaluation, ML training, Agent orchestration, Reproducibility and Compute.
 | 4 Applies and judges | Uses it independently and can explain it | Method name only; you lead and may challenge it. |
 
 Support adapts separately for each area and fades with understanding. No
-rating starts at level 1. All four 🗣️ moments remain at every level.
+rating starts at level 1. All four your-view-first moments remain at every level.
 “Shorter”, “explain more” and “just do it” override for this session. For
 “just do it”, the agent acts and gives a one-sentence reason, within permissions.
 

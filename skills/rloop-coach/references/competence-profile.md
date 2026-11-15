@@ -35,7 +35,7 @@ understanding. “Shorter”, “explain more” and “just do it” override t
 for the current session. Without a profile or an area's rating, start at level
 1 for the first explanation, then fade as usual.
 
-The four 🗣️ moments happen at every level. Give a starting hint at level 1;
+The four your-view-first moments happen at every level. Give a starting hint at level 1;
 ask openly at level 4. Keep level 1 understanding checks and level 3 calls
 within those moments or reflection; do not add more “your view first” stops.
 Ask at most one question per reply, including profile creation and reflection.
@@ -84,7 +84,7 @@ In the first session without a profile, offer it once in one short question:
 “Rate Research design, Statistics and evaluation, ML training, Agent
 orchestration, Reproducibility and Compute each 1–4 (New, Knows the terms,
 Applies with support, Applies and judges), or say skip?” Use a separate reply
-from a 🗣️ question. Skipping never blocks work. A self-rating is a starting
+from a your-view-first question. Skipping never blocks work. A self-rating is a starting
 point, not a test.
 
 Use only evidence the person actually showed: a decision and its reason, a
