@@ -1,6 +1,6 @@
 <div align="center">
 
-# open-research-loops
+<img src="docs/assets/social-preview.jpg" width="100%" alt="open-research-loops: parallel AI research loops that keep their evidence honest. Risograph print in red, teal and blue: eight thin threads loop through separate experiments side by side, the ones that hold pass through the eye of a red needle and leave as one tidy blue braid, two stop short in tied-off knots.">
 
 **Parallel AI research loops that keep their evidence honest.**
 
