@@ -126,3 +126,12 @@ owner's instruction, earlier entries were reworded and the published history
 from the Phase 4a record onward was rewritten; those commits have new hashes,
 and hash references in these documents were updated. CI run numbers cited
 elsewhere refer to the commits before the rewrite.
+
+## Process identity race repair — 2026-11-15
+
+The owner approved treating a process that vanishes during its identity read as
+gone, including `ProcessLookupError`, while retaining integrity errors for other
+read failures. The hash-bound authorization in `project.json` covers this process
+supervision change and its manifest update. Numerical evaluation and the
+planted-signal compatibility identity remain unchanged. The authorization must
+be committed before the protected change; this grants no live-run permission.
