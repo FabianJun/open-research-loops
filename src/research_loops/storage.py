@@ -7,6 +7,7 @@ import sqlite3
 import time
 import sys
 import os
+import struct
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,102 @@ from research_loops.locking import ProjectLock
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _wal_image(database: bytes, wal: bytes) -> bytes:
+    """Replay only checksum-verified committed WAL frames into a memory image."""
+    if len(wal) < 32:
+        return database
+    magic, version, page_size = struct.unpack(">III", wal[:12])
+    if magic not in (0x377F0682, 0x377F0683) or version != 3007000:
+        raise IntegrityError("unsupported SQLite WAL")
+    if page_size < 512 or page_size > 65536 or page_size & (page_size - 1):
+        raise IntegrityError("invalid SQLite WAL page size")
+    endian = "<" if magic == 0x377F0682 else ">"
+
+    def checksum(data, seed=(0, 0)):
+        a, b = seed
+        words = struct.unpack(endian + "I" * (len(data) // 4), data)
+        for index in range(0, len(words), 2):
+            a = (a + words[index] + b) & 0xFFFFFFFF
+            b = (b + words[index + 1] + a) & 0xFFFFFFFF
+        return a, b
+
+    seed = checksum(wal[:24])
+    if seed != struct.unpack(">II", wal[24:32]):
+        raise IntegrityError("invalid SQLite WAL header checksum")
+    frames, committed, size = [], 0, 0
+    for offset in range(32, len(wal) - page_size - 23, page_size + 24):
+        frame = wal[offset:offset + page_size + 24]
+        page, pages = struct.unpack(">II", frame[:8])
+        if not page or frame[8:16] != wal[16:24]:
+            break  # An unused tail can remain after a WAL reset.
+        seed = checksum(frame[:8] + frame[24:], seed)
+        if seed != struct.unpack(">II", frame[16:24]):
+            break  # An incomplete transaction is never visible to readers.
+        frames.append((page, frame[24:]))
+        if pages:
+            committed, size = len(frames), pages
+    if not committed:
+        return database
+    image = bytearray(database[:size * page_size])
+    image.extend(b"\0" * (size * page_size - len(image)))
+    for page, data in frames[:committed]:
+        if page <= size:
+            image[(page - 1) * page_size:page * page_size] = data
+    return bytes(image)
+
+
+class ReadOnlyRepository:
+    """Lock-free memory snapshot; never map or create the project's WAL index.
+
+    Opening WAL directly with mode=ro can still write read marks in -shm.
+    Two matching DB/WAL reads detect checkpoints and concurrent commits; SQLite
+    reads the resulting committed image, with query_only enforcing SELECTs.
+    """
+
+    def __init__(self, root: Path):
+        self.root = root
+        path = (root / "state.sqlite").resolve()
+        if not path.is_file():
+            raise FileNotFoundError("project has no database")
+        wal_path = path.with_name(path.name + "-wal")
+
+        def capture():
+            database = path.read_bytes()
+            try:
+                wal = wal_path.read_bytes()
+            except FileNotFoundError:
+                wal = b""
+            return database, wal
+
+        for _ in range(5):
+            first = capture()
+            if first == capture():
+                break
+        else:
+            raise IntegrityError("database changed during snapshot; poll again")
+        # immutable prevents SQLite from touching journal/-shm files at open.
+        # WAL is applied above, rather than silently ignored by immutable mode.
+        self.db = sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True)
+        try:
+            image = bytearray(_wal_image(*first))
+            # An in-memory database has no WAL VFS; its committed pages are
+            # already materialised, so use the rollback-format header there.
+            image[18:20] = b"\x01\x01"
+            self.db.deserialize(bytes(image))
+            self.db.row_factory = sqlite3.Row
+            self.db.execute("PRAGMA query_only=ON")
+            self.db.execute("BEGIN")
+        except BaseException:
+            self.db.close()
+            raise
+
+    def runs(self) -> list[dict]:
+        return [dict(row) for row in self.db.execute("SELECT * FROM runs ORDER BY id")]
+
+    def close(self) -> None:
+        self.db.close()
 
 
 class Repository:

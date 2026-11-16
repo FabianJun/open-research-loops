@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+import uuid
 from pathlib import Path
 
 from research_loops.data import datasets
@@ -21,6 +22,7 @@ from research_loops.storage import Repository
 from research_loops.authorization import LimitReached
 from research_loops.contracts import GrainWorkerContract, is_grain, parse_contract
 from research_loops.grain_evaluator import parse_verdict
+from research_loops.cancellation import Cancellation, RunCancelled
 
 
 def load_contract(example: Path) -> Contract:
@@ -122,7 +124,7 @@ def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, se
     return verdict
 
 
-def reconcile(repo: Repository, contract: Contract, key: str) -> None:
+def reconcile(repo: Repository, contract: Contract, key: str, cancellation=None) -> None:
     # The project lock proves the previous in-process fake workers are gone.
     # An evaluator can outlive its parent on Linux; check creation identity first.
     ticket_text = repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]
@@ -135,6 +137,8 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
                 raise IntegrityError("final recovery receipt differs from consumed ticket")
             repo.final_result(ticket, parse_verdict(saved["verdict"]))
     for row in repo.runs():
+        if cancellation:
+            cancellation.check()
         if row["execution_status"] != "running":
             continue
         if row["registration_hash"] != key:
@@ -161,6 +165,8 @@ def reconcile(repo: Repository, contract: Contract, key: str) -> None:
                     raise IntegrityError("prior evaluator is still alive; recovery blocked")
                 repo.fail(row["id"], "interrupted", "evaluator died without a sealed receipt")
                 continue
+        if cancellation:
+            cancellation.check()
         verdict = evaluate_saved(repo.root, row["id"], repo.artifact(row["id"], "candidate"), private(repo, key, "development"), contract.limits.evaluator_seconds, data_root=data_root(repo, contract, "development"))
         repo.verdict(row["id"], verdict)
         repo.promote_claim(row["id"])
@@ -170,23 +176,62 @@ async def run(example: Path, *, final: bool = False, resume_only: bool = False, 
     if backend is not None and hasattr(backend, "check_authorization"):
         backend.check_authorization()
     repo, contract, key = prepare(example)
+    job_id = uuid.uuid4().hex
+    cancellation = Cancellation(repo.root, job_id)
+    job_status = "completed"
     try:
-        reconcile(repo, contract, key)
+        with repo.db:
+            repo.event("job_started", job_id, {})
+        cancellation.check()
+        reconcile(repo, contract, key, cancellation)
+        cancellation.check()
         if final:
-            final_evaluation(repo, contract, key)
+            final_evaluation(repo, contract, key, cancellation)
         elif not resume_only:
             if repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]:
                 raise IntegrityError("campaign sealed; no more worker dispatch")
-            await campaign(repo, contract, key, backend or FakeBackend(), pilot_only=pilot_only, worker_runs=worker_runs)
+            task = asyncio.create_task(campaign(repo, contract, key, backend or FakeBackend(),
+                pilot_only=pilot_only, worker_runs=worker_runs, cancellation=cancellation))
+            try:
+                while not task.done():
+                    await asyncio.wait({task}, timeout=0.05)
+                    cancellation.check()
+                await task
+            finally:
+                if not task.done():
+                    task.cancel()
+                # Await worker cleanup and any evaluator that already started.
+                # A cancelled thread await must not close the ledger underneath it.
+                try:
+                    await task
+                except (asyncio.CancelledError, RunCancelled):
+                    pass
+    except RunCancelled:
+        job_status = "cancelled"
+        for row in repo.runs():
+            if row["execution_status"] == "running":
+                repo.fail(row["id"], "cancelled", "job cancellation requested")
+    except asyncio.CancelledError:
+        job_status = "cancelled"
+        raise
+    except BaseException:
+        job_status = "technical_error"
+        raise
     finally:
         try:
+            with repo.db:
+                repo.event("job_finished", job_id, {"execution_status": job_status})
             report(repo)
             export(repo)
         finally:
             repo.close()
 
 
-async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False, worker_runs: int | None = None) -> None:
+async def campaign(repo: Repository, contract: Contract, key: str, backend, *, pilot_only: bool = False, worker_runs: int | None = None, cancellation=None) -> None:
+    def check_cancel():
+        if cancellation:
+            cancellation.check()
+    check_cancel()
     if is_grain(contract) and type(backend) is FakeBackend:
         from research_loops.grain_worker import GrainFakeBackend
         backend = GrainFakeBackend()
@@ -204,16 +249,20 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             raise LimitReached("requested worker runs exceed checkpoint B allowance")
     stopped = False
     technical_failure = False
+    deadline_failure = False
     if is_grain(contract) and not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         from research_loops.grain_worker import controls
         controls(repo, contract, key)
+        check_cancel()
     if not repo.db.execute("SELECT pilot FROM project").fetchone()[0]:
         evaluator = SubprocessEvaluator()
         dev = private(repo, key, "development")
         repo.reserve_control()
         positive = evaluator.evaluate(canonical(oracle()).encode(), dev, contract.limits.evaluator_seconds)
+        check_cancel()
         repo.reserve_control()
         negative = evaluator.evaluate(b'{"constant":0}', dev, contract.limits.evaluator_seconds)
+        check_cancel()
         rows = json.loads(dev)["rows"]
         repo.pilot({"positive_control": positive.supported, "negative_control": not negative.supported,
             "nonconstant": len({row["y"] for row in rows}) > 1, "baseline": positive.baseline_mse > 0})
@@ -233,7 +282,8 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         assignments = assignments[:worker_runs]
 
     async def execute(assignment):
-        nonlocal stopped, technical_failure
+        nonlocal stopped, technical_failure, deadline_failure
+        check_cancel()
         if stopped:
             raise LimitReached("pilot stopped after provider limit")
         public_context(assignment.model_dump(mode="json"))
@@ -258,10 +308,17 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
             remaining = max(0.001, deadline - time.time())
             result = await asyncio.wait_for(backend.run(assignment, Workspace(root=root), limits), min(remaining, limits.worker_seconds))
+            check_cancel()
             repo.import_report(result, Workspace(root=root))
+            check_cancel()
             remaining = max(0.001, deadline - time.time())
             candidate, dataset = repo.artifact(assignment.run_id, "candidate"), private(repo, key, "development")
-            verdict = await asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds), data_root=data_root(repo, contract, "development"))
+            evaluation = asyncio.create_task(asyncio.to_thread(evaluate_saved, repo.root, assignment.run_id, candidate, dataset, min(remaining, contract.limits.evaluator_seconds), data_root=data_root(repo, contract, "development")))
+            try:
+                verdict = await asyncio.shield(evaluation)
+            except asyncio.CancelledError:
+                await evaluation
+                raise
             repo.verdict(assignment.run_id, verdict)
             repo.promote_claim(assignment.run_id)
         except LimitReached:
@@ -269,17 +326,21 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             repo.fail(assignment.run_id, "limit_reached", "provider or worker allowance reached; no retry or fallback")
             raise
         except asyncio.TimeoutError:
+            deadline_failure = True
             if approval:
                 stopped = True
                 repo.fail(assignment.run_id, "limit_reached", "worker/project wall-time allowance reached")
                 raise LimitReached("worker/project wall-time allowance reached") from None
             repo.fail(assignment.run_id, "timed_out", "worker deadline")
             raise
+        except RunCancelled:
+            repo.fail(assignment.run_id, "cancelled", "job cancellation requested")
+            raise
         except asyncio.CancelledError:
             if technical_failure:
                 repo.fail(assignment.run_id, "cancelled", "batch cancelled after a sibling run failed")
             else:
-                repo.fail(assignment.run_id, "cancelled" if stopped else "timed_out", "worker deadline or batch cancellation")
+                repo.fail(assignment.run_id, "timed_out" if deadline_failure else "cancelled", "worker deadline" if deadline_failure else "job cancellation requested" if cancellation and cancellation.requested() else "batch cancellation")
             raise
         except Exception as exc:
             technical_failure = True
@@ -297,14 +358,19 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
             await fanout("best_of_n", pending, execute, limits.concurrency, pilot_ready=True)
         except* LimitReached:
             raise LimitReached("pilot stopped at a run/provider limit; review saved report") from None
+        except* RunCancelled:
+            raise RunCancelled() from None
+    check_cancel()
     if not pilot_only and worker_runs is None:
         from research_loops.selection import select
         select(repo, contract, key)
 
 
-def final_evaluation(repo: Repository, contract: Contract, key: str) -> None:
+def final_evaluation(repo: Repository, contract: Contract, key: str, cancellation=None) -> None:
     from research_loops.selection import select
     selection = select(repo, contract, key)
+    if cancellation:
+        cancellation.check()
     ticket = repo.consume_final(selection["winner"])
     deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
     seconds = min(contract.limits.evaluator_seconds, max(0.001, deadline - time.time()))

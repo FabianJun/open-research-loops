@@ -113,6 +113,7 @@ provenance tag such as `[measured]` or `[simulated]`.
 > answer from the public training samples. A real question needs its own data, contract and evaluator.
 
 The full example campaign, the report format and every offline command: [GUIDE](docs/GUIDE.md).
+For local jobs: `rloop status PROJECT --json`, `rloop report PROJECT --json` and `rloop cancel PROJECT` ([machine interface](docs/GUIDE.md#machine-interface)).
 
 ## How it works
 

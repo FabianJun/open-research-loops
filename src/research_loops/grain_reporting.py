@@ -7,6 +7,7 @@ from research_loops.grain_data import LICENSE_CAVEAT, TEAM_SOURCE
 
 
 def render(repo):
+    from research_loops.reporting import run_summaries
     rows = repo.runs()
     metadata = [json.loads(r["execution_metadata"]) for r in rows]
     live = any(m["backend"] != "fake" for m in metadata)
@@ -15,7 +16,7 @@ def render(repo):
         "Supported iff development max_rel_error <= 0.10.", "",
         "| Run | Backend | Execution | Outcome | Verification | Development max_rel_error | Count | Size | Improvement vs cited team development |",
         "|---|---|---|---|---|---|---|---|---|"]
-    for row, meta in zip(rows, metadata, strict=True):
+    for row, meta, summary in zip(rows, metadata, run_summaries(repo), strict=True):
         verdict = json.loads(row["verdict"]) if row["verdict"] else None
         if verdict:
             if repo.artifact(row["id"], "evaluation") != canonical(verdict).encode():
@@ -23,7 +24,8 @@ def render(repo):
             repo.artifact(row["id"], "candidate")
             repo.artifact(row["id"], "transcript")
         def metric(key):
-            return format(verdict[key], ".12g") if verdict and verdict[key] is not None else "undefined"
+            value = summary["development_metrics"].get(key)
+            return format(value, ".12g") if value is not None else "undefined"
         evidence = f"[evidence](objects/{content_hash(verdict)})" if verdict else "none"
         improvement = format(.12586301151517196 - verdict["max_rel_error"], ".12g") if verdict else "unavailable"
         outcome = ("supported" if verdict["supported"] else "not supported") if verdict else "unevaluated"

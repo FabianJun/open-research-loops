@@ -85,6 +85,72 @@ uv run pytest
 
 Repeating `run` or `resume` never reruns a completed candidate.
 
+## Machine interface
+
+A local job runner can poll without taking the coordinator lock:
+
+```console
+rloop status PROJECT --json
+rloop report PROJECT --json
+rloop cancel PROJECT
+```
+
+Each command prints one JSON object. Status and JSON report are read-only:
+no initialisation, migrations, report rewrites or project-file changes, including
+SQLite WAL/shared-memory files. They read a stable committed snapshot in memory;
+poll again if a concurrent update prevents a snapshot. Plain `status` uses the
+same reader and retains its text format; plain `report` still generates files.
+
+`rloop.status/1` fields:
+
+| Field | Meaning |
+|---|---|
+| `schema` | `rloop.status/1` |
+| `project_state` | `running` for an active coordinator job or running worker; otherwise `sealed` after final-ticket consumption, the latest job's terminal state (`completed`, `cancelled`, `technical_error`), or `completed`, `ready`, `unregistered` from saved runs/registration |
+| `cancel_requested` | Whether the active coordinator job has a matching pending request |
+| `runs` | All saved worker attempts, ordered by ID |
+| `runs[].id` | Immutable worker attempt ID |
+| `runs[].execution_status` | Saved execution state: `running`, `completed`, `technical_error`, `timed_out`, `interrupted`, `cancelled` or `limit_reached` |
+| `runs[].scientific_outcome` | Saved `supported` or `negative`; `null` when unevaluated |
+| `runs[].started_at` | Stored dispatch timestamp, ISO 8601 UTC |
+| `runs[].finished_at` | Terminal ledger-event timestamp, ISO 8601 UTC, or `null` if absent |
+| `runs[].prediction_registered` | Whether a numerical project prediction was registered for this attempt's registration; excludes worker prediction prose |
+| `runs[].report_paths` | Existing project report paths, relative to PROJECT: `markdown` and/or `html`; `null` if absent. A saved report may predate an active run. |
+
+`rloop.report/1` returns the same `project_state` and `cancel_requested`, plus
+the shared Markdown run-table summary. Each `runs[]` entry has `id`,
+`execution_status`, `scientific_outcome`, `started_at`, `finished_at` and
+`prediction_registered` as above; `verification_status` is the saved check
+state, `backend` is the dispatch backend, and `development_metrics` holds only
+stored development `mse` or grain `max_rel_error`, `median_count_rel_error` and
+`median_size_rel_error` (empty before evaluation; undefined values are `null`).
+`attempted_variants` counts attempts; `control_final_evaluation_starts` counts
+control/final starts; `spent_micro_usd` and `reserved_micro_usd` are ledger totals;
+`selected_run_id` is the saved selection or `null`. No raw evaluations, holdout
+data, worker prose, owner settings or absolute paths are exposed.
+
+Errors use the command's schema and `error: {code, message}`, with exit code 2:
+`no_database` before initialisation, `not_ready` for a report without any finished
+worker attempt, or `unreadable_project` when the snapshot cannot be read.
+Successful commands exit 0. JSON report never rewrites Markdown or HTML.
+
+`cancel` atomically writes `.rloop/cancel.json` without taking the project lock.
+Its `rloop.cancel/1` confirmation contains `job_id` (the active coordinator
+invocation's ledger ID, distinct from worker attempt IDs, or `null`) and
+`cancel_requested`. Repeated requests for the same job leave the file unchanged.
+An idle request has `cancel_requested: false`; it does not cancel the next job.
+Requests remain bound to their job ID, so a stale file is ignored by later jobs.
+An abrupt coordinator exit can leave a job marked active until the next run or
+resume; polling reports saved state, not an operating-system liveness probe.
+
+Cancellation is checked before dispatch, while waiting, and before evaluation.
+Workers are cancelled through existing process-tree cleanup; an evaluator that
+already started is awaited before the ledger closes. Dispatched unfinished
+attempts and the job finish as `cancelled`, and reports and the event hash chain
+are exported. Undispatched assignments are not fabricated as attempts.
+`resume` reconciles saved work without dispatching or re-evaluating cancelled
+attempts; a later `run` may dispatch assignments that never started.
+
 ## Grain 316L benchmark
 
 Install the optional `grain` extra (`uv sync --locked --all-extras` includes it).

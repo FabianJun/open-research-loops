@@ -135,3 +135,9 @@ read failures. The hash-bound authorization in `project.json` covers this proces
 supervision change and its manifest update. Numerical evaluation and the
 planted-signal compatibility identity remain unchanged. The authorization must
 be committed before the protected change; this grants no live-run permission.
+
+## Local job interface — 2026-11-16
+
+The owner approved read-only JSON status and report commands and a cancel
+command so that a local module gateway can run `rloop` as a background job.
+This offline interface grants no live-provider, pilot or holdout authorisation.

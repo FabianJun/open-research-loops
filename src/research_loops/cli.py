@@ -147,21 +147,57 @@ def resume(example: Path) -> None:
     typer.echo("Reconciled; completed work was not rerun.")
 
 
-@app.command()
-def status(example: Path) -> None:
-    """Show saved run states."""
-    from research_loops.storage import Repository
-    repo = Repository(example / ".rloop")
+def machine_read(example: Path, kind: str) -> dict:
+    import sqlite3
+    from research_loops import machine
+    from research_loops.domain import IntegrityError, canonical
+    from research_loops.storage import ReadOnlyRepository
     try:
-        for row in repo.runs():
-            typer.echo(f"{row['id']}: {row['execution_status']} / {row['scientific_outcome']}")
-    finally:
-        repo.close()
+        repo = ReadOnlyRepository(example / ".rloop")
+        try:
+            if kind == "cancel":
+                from research_loops.cancellation import request
+                value = request(repo)
+            else:
+                value = getattr(machine, kind)(repo)
+        finally:
+            repo.close()
+    except FileNotFoundError:
+        value = {"schema": f"rloop.{kind}/1", "error": {"code": "no_database", "message": "Project has no database yet."}}
+    except (OSError, sqlite3.Error, IntegrityError, ValueError, KeyError, TypeError):
+        value = {"schema": f"rloop.{kind}/1", "error": {"code": "unreadable_project", "message": "Cannot read project state; poll again or check the database."}}
+    if "error" in value:
+        typer.echo(canonical(value))
+        raise typer.Exit(2)
+    return value
 
 
 @app.command()
-def report(example: Path, check: bool = False) -> None:
+def status(example: Path, json_output: bool = typer.Option(False, "--json")) -> None:
+    """Show saved run states."""
+    from research_loops.domain import canonical
+    value = machine_read(example, "status")
+    if json_output:
+        typer.echo(canonical(value))
+    else:
+        for row in value["runs"]:
+            typer.echo(f"{row['id']}: {row['execution_status']} / {row['scientific_outcome']}")
+
+
+@app.command()
+def cancel(example: Path) -> None:
+    """Request cancellation of the active job without taking its lock."""
+    from research_loops.domain import canonical
+    typer.echo(canonical(machine_read(example, "cancel")))
+
+
+@app.command()
+def report(example: Path, check: bool = False, json_output: bool = typer.Option(False, "--json")) -> None:
     """Regenerate a report, or check the saved copy."""
+    if json_output:
+        from research_loops.domain import canonical
+        typer.echo(canonical(machine_read(example, "report")))
+        return
     from research_loops.reporting import report as generate
     from research_loops.storage import Repository
     repo = Repository(example / ".rloop")

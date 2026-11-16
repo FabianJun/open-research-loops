@@ -10,6 +10,27 @@ from research_loops.paths import atomic_write
 from research_loops.storage import Repository
 
 
+def run_summaries(repo) -> list[dict]:
+    """Facts shared by the Markdown run table and the machine report."""
+    predictions = {json.loads(row[0])["registration_hash"] for row in
+        repo.db.execute("SELECT payload FROM events WHERE kind='prediction'")}
+    finished = {row["record_id"]: row["created"] for row in repo.db.execute(
+        "SELECT record_id,created FROM events WHERE kind IN "
+        "('verdict','technical_error','timed_out','interrupted','cancelled','limit_reached') ORDER BY seq")}
+    summaries = []
+    for row in repo.runs():
+        verdict = json.loads(row["verdict"]) if row["verdict"] else {}
+        metric = "max_rel_error" if "max_rel_error" in verdict else "mse"
+        summaries.append({"id": row["id"], "execution_status": row["execution_status"],
+            "scientific_outcome": row["scientific_outcome"], "verification_status": row["verification_status"],
+            "started_at": row["created"], "finished_at": finished.get(row["id"]),
+            "prediction_registered": row["registration_hash"] in predictions,
+            "backend": json.loads(row["execution_metadata"])["backend"],
+            "development_metrics": {name: verdict[name] for name in
+                (metric, "median_count_rel_error", "median_size_rel_error") if name in verdict}})
+    return summaries
+
+
 def render(repo: Repository) -> str:
     from research_loops.prediction import section
     from research_loops.settings import working_mode
@@ -27,14 +48,14 @@ def render(repo: Repository) -> str:
         if live else "Fake proposals demonstrate execution and evidence handling, not new scientific discovery.")
     lines = [title, "", scope, "",
         "| Run | Execution | Scientific outcome | Verification | Development MSE |", "|---|---|---|---|---|"]
-    for row in repo.runs():
+    for row, summary in zip(repo.runs(), run_summaries(repo), strict=True):
         verdict = json.loads(row["verdict"]) if row["verdict"] else None
         if verdict:
             if repo.artifact(row["id"], "evaluation") != canonical(verdict).encode():
                 raise IntegrityError("database verdict differs from sealed raw evaluation")
             repo.artifact(row["id"], "candidate")
             repo.artifact(row["id"], "transcript")
-        score = format(verdict["mse"], ".12g") if verdict else "unavailable"
+        score = format(summary["development_metrics"]["mse"], ".12g") if verdict else "unavailable"
         if verdict:
             number(verdict["mse"], score)
         evidence = f"[evidence](objects/{content_hash(verdict)})" if verdict else "none"
