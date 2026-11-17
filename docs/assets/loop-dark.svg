@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 404" width="1100" height="404" role="img" aria-labelledby="title desc">
 <title id="title">The open-research-loops cycle</title>
-<desc id="desc">Start with your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, check for route and evidence; infrastructure is neutral.</desc>
+<desc id="desc">Start with your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, knotted thread for route and evidence; infrastructure is neutral.</desc>
 <defs>
 <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9198a1"/></marker>
-<marker id="arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2fb8b0"/></marker>
 </defs>
 <rect x="20" y="56" width="184" height="248" rx="14" fill="#161b22" stroke="#ff6470" stroke-width="1.5"/>
 <circle cx="48" cy="90" r="14" fill="#ff6470"/>
@@ -22,14 +21,17 @@
 <line x1="255" y1="258" x2="407" y2="258" stroke="#3d444d" stroke-width="1"/>
 <text x="257" y="284" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" font-style="italic" fill="#9198a1">parallel, MCP tools only</text>
 <rect x="253" y="120" width="156" height="36" rx="18" fill="#0d1117" stroke="#7c9cff" stroke-width="1.75"/>
-<circle cx="268" cy="138" r="4.5" fill="#7c9cff"/>
-<text x="279" y="143" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">Claude Agent SDK</text>
+<rect x="261" y="131" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
+<path d="M264.5,138 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="282" y="143" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">Claude Agent SDK</text>
 <rect x="253" y="166" width="156" height="36" rx="18" fill="#0d1117" stroke="#7c9cff" stroke-width="1.75"/>
-<circle cx="268" cy="184" r="4.5" fill="#7c9cff"/>
-<text x="279" y="189" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">OpenAI Agents SDK</text>
+<rect x="261" y="177" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
+<path d="M264.5,184 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="282" y="189" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">OpenAI Agents SDK</text>
 <rect x="253" y="212" width="156" height="36" rx="18" fill="#0d1117" stroke="#7c9cff" stroke-width="1.75"/>
-<circle cx="268" cy="230" r="4.5" fill="#7c9cff"/>
-<text x="279" y="235" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">deterministic fake</text>
+<rect x="261" y="223" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
+<path d="M264.5,230 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="282" y="235" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="13.5" fill="#f0f6fc">deterministic fake</text>
 <rect x="458" y="56" width="184" height="248" rx="14" fill="#161b22" stroke="#9198a1" stroke-width="1.5"/>
 <circle cx="486" cy="90" r="14" fill="#9198a1"/>
 <text x="486" y="95.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1117">3</text>
@@ -50,8 +52,8 @@
 <text x="695" y="228" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="16" fill="#f0f6fc">one-use final ticket</text>
 <line x1="693" y1="258" x2="845" y2="258" stroke="#3d444d" stroke-width="1"/>
 <text x="695" y="284" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" font-style="italic" fill="#9198a1">holdout stays sealed</text>
-<path d="M825,86 v-5 a6,6 0 0 1 12,0 v5" fill="none" stroke="#2fb8b0" stroke-width="2.5"/>
-<rect x="822" y="86" width="18" height="14" rx="3" fill="#2fb8b0"/>
+<path d="M825,86 v-5 a6,6 0 0 1 12,0 v5" fill="none" stroke="#9198a1" stroke-width="2.5"/>
+<rect x="822" y="86" width="18" height="14" rx="3" fill="#9198a1"/>
 <rect x="896" y="56" width="184" height="248" rx="14" fill="#161b22" stroke="#2fb8b0" stroke-width="1.5"/>
 <circle cx="924" cy="90" r="14" fill="#2fb8b0"/>
 <text x="924" y="95.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1117">5</text>
@@ -70,7 +72,7 @@
 <line x1="427" y1="180" x2="453" y2="180" stroke="#9198a1" stroke-width="2" marker-end="url(#arrow)"/>
 <line x1="646" y1="180" x2="672" y2="180" stroke="#9198a1" stroke-width="2" marker-end="url(#arrow)"/>
 <line x1="865" y1="180" x2="891" y2="180" stroke="#9198a1" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M988,308 V334 Q988,350 972,350 H347 Q331,350 331,334 V314" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-accent)"/>
+<path d="M988,308 V334 Q988,350 972,350 H347 Q331,350 331,334 V314" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
 <rect x="437.5" y="336" width="444" height="28" rx="14" fill="#161b22" stroke="#3d444d" stroke-width="1"/>
 <text x="659.5" y="355.5" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" fill="#f0f6fc">findings feed the next round · the holdout never does</text>
 <text x="20" y="32" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="15" font-weight="600" letter-spacing="1.5" fill="#9198a1">ONE RESEARCH LOOP</text>
@@ -81,7 +83,7 @@
 <rect x="239" y="376" width="14" height="14" rx="3" fill="none" stroke="#7c9cff" stroke-width="2"/>
 <path d="M242.5,383 l2.5,2.5 l4.5,-5" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="261" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#7c9cff">Your agent and its workers</text>
-<path d="M502,383 l4,4 l7,-8" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M499,389 h3.42 a2,2 0 0 0 1.41,-0.59 l4.71,-4.71 a3.6,3.6 0 1 0 -5.09,0 l4.71,4.71 a2,2 0 0 0 1.41,0.59 h3.42" fill="none" stroke="#2fb8b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="521" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#2fb8b0">Route and evidence</text>
 <text x="896" y="388" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" font-size="14" fill="#9198a1">Infrastructure</text>
 </svg>

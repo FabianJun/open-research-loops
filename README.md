@@ -20,7 +20,7 @@ For researchers and students working with a coding agent. No coding needed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/loop-dark.svg">
-  <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, check for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
+  <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, knotted thread for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
 </picture>
 
 </div>

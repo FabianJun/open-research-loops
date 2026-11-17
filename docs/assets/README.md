@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | You decide | `#b51f33` | `#ff6470` | person | Your question, choices, prediction, verdict and own words |
 | Your agent | `#2f5bea` | `#7c9cff` | checkbox | Technical work: code, workers, tools and compute |
-| Route and evidence | `#0e7c7b` | `#2fb8b0` | arrow or check | The route, protected evaluator, checked evidence, report and what you keep |
+| Route and evidence | `#0e7c7b` | `#2fb8b0` | knotted thread | The route, protected evaluator, checked evidence, report and what you keep |
 | Neutral | `#59636e` | `#9198a1` | none | Infrastructure, notes and facts |
 
 Where each role appears:
