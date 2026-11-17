@@ -22,7 +22,7 @@ Preflight probes must demonstrate inaccessible evaluator/holdout paths, no write
 
 Phase 3b container tests run on Linux CI and locally. Skip on GitHub Windows runners with an explicit reason (Linux containers unavailable). The project owner reports Docker Desktop 29.8.1 with WSL2 Linux engine locally; daemon availability must still be checked. A code-changing example is deferred.
 
-### Authorized scope of this session
+### Authorized scope of Phases 1-2
 
 Phase 1: scaffold and `uv.lock`, Apache-2.0 code / CC BY 4.0 docs, factual AGENTS plus CLAUDE pointer, Linux/Windows CI.
 Phase 2: offline vertical slice followed by core integrity checks without real SDKs. Stop before Phase 3. DESIGN is internal; README/GUIDE stay short.

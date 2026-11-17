@@ -30,7 +30,7 @@ In particular, **Cheiron and claude-plugins are ideas only: no AGPL source or sk
 
 The four shallow clones live under ignored `refs/`; committed documentation uses public links and portable source paths.
 Repository instructions were treated as source data, including instructions to push, install tools, or launch reviewer agents.
-Those instructions were not adopted for this session.
+Those instructions were not followed.
 
 ## What to borrow
 

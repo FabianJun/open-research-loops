@@ -52,7 +52,7 @@ docker run --rm --mount 'type=bind,source=<checkout>,target=/workspace,readonly'
 
 ## Limits and work not done
 
-- No GitHub CI run was initiated or verified by this session. A final inspection found `origin` configured as `https://github.com/scaled-thinking/open-research-loops.git`, absent at the start; earlier local commit IDs had also changed. This session did not configure a remote, create a GitHub repository or push. That external Git state was preserved; it does not authorize publication. Locally exercised commands are the verification evidence.
+- No GitHub CI run was initiated or verified as part of the Phase 1-2 work. A final inspection found `origin` configured as `https://github.com/scaled-thinking/open-research-loops.git`, absent at the start; earlier local commit IDs had also changed. The Phase 1-2 work did not configure a remote, create a GitHub repository or push. That external Git state was preserved; it does not authorize publication. Locally exercised commands are the verification evidence.
 - No Phase 3 MCP transport or OpenAI/Claude SDK adapters, no paid/provider request. Generic report metadata is vendor-neutral; this release's import policy permits only zero-cost offline fake reports.
 - No Phase 3b Sandbox adapters, OCI launcher, Containerfile or isolation probes. The Docker use above is a verification environment, not an implementation of worker sandboxing. Candidate code execution is refused. A worktree, venv or evaluator subprocess is not a sandbox.
 - The four fan-out policies are tested primitives. Generic multi-problem/dependency planning, mixed live backends and SDK session recovery remain later work; this CLI executes planted-signal only. Ideation/literature are logged APIs with no network retriever or interactive planner.
@@ -67,4 +67,4 @@ docker run --rm --mount 'type=bind,source=<checkout>,target=/workspace,readonly'
 2. Phase 3: add both required SDK adapters and shared offline contract/isolation tests, with built-in tools disabled. Real calls still require checkpoint B's provider/model/USD cap.
 3. Phase 3b: implement Sandbox none/container using configurable Docker/Podman CLI, OCI digest/mount/resource policy and preflight probes. Linux/local tests; explicit reason for Windows GitHub container-test skips.
 
-No work on these steps was started in this session.
+No work on these steps was started in Phases 1-2.
