@@ -57,9 +57,11 @@ You need uv and Python 3.12 or newer, on Windows or Linux.
 - **Cost:** the module is free. The AI runs on your own subscription or your own API access. In
   coached mode, the agent states the cost first; usage is recorded and the cost estimated, and an
   unknown cost stays unknown, never zero. scaled-thinking hosts nothing and runs nothing commercially.
-- **Your data** goes to the AI provider of your coding agent; the demo itself calls no model
-  provider. A live run goes only to the provider and model you authorise, and training jobs run on
-  your computer or on a host you set up. scaled-thinking has no server that sees it.
+- **Your data** stays on your computer unless a step needs it elsewhere: it goes to the AI provider
+  of your coding agent (the demo itself calls no model provider), a live run only to the provider
+  and model you authorise, and training jobs to your computer or a host you set up. In coached mode
+  the agent asks you first before data goes to a service it has not used before; in autonomous mode
+  it works within the permissions you give it. scaled-thinking has no server that sees it.
 
 ### Autonomous
 
