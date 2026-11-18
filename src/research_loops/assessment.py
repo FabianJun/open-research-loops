@@ -16,6 +16,7 @@ from research_loops.verification import check
 from research_loops.contracts import is_grain, parse_contract
 from research_loops.grain_evaluator import parse_verdict
 
+# Adapted rubric wording, CC BY 4.0, see NOTICE
 QUESTIONS = {
     "Problem": "Is the intended problem worth solving, and what would refute the scientific claim?",
     "Loop": "Is the evaluator valid for that claim, and are the controls and search budget appropriate?",

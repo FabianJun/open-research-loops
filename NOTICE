@@ -34,6 +34,12 @@ attribution:
     under LICENSE-CC-BY-4.0; the rest of the file is under LICENSE
     (Apache-2.0).
 
+  src/research_loops/assessment.py
+    The rubric question strings (QUESTIONS) are adapted from the same
+    judge-submissions skill, same commit and URL (text under CC BY 4.0).
+    Changes: rephrased as review questions in our own words. These strings
+    keep CC BY 4.0; the rest of the file is under LICENSE (Apache-2.0).
+
 Up to commit a21c598 of the public main branch, this NOTICE listed
 skills/*/SKILL.md as documentation under CC BY 4.0, and six files under
 skills/ carried a CC BY 4.0 footer. Those published versions stay available
