@@ -128,7 +128,7 @@ The full sequence, the evidence gate, worker isolation and the code map:
 
 Thirteen submissions to the *Claude Impact Lab x Foresight Institute — AI Research Loops for Open
 Science Problems* hackathon (Berlin, November 2026) pointed agent loops at open science problems.
-Their published assessments show the same failures again and again, and those failures are about
+Their published assessments show the same kinds of failures again and again, and those failures are about
 the loop, not the science. `rloop` turns each one into a rule the runtime enforces.
 
 | What the assessments found | What `rloop` enforces |
@@ -141,7 +141,7 @@ the loop, not the science. `rloop` turns each one into a rule the runtime enforc
 | An orchestrator changed a protected spec together with its hash | Hash anchors sit outside worker authority. A change needs a recorded human decision and creates a new version |
 | Headline numbers had no saved artifacts behind them | Reports render from the database, every statement carries a provenance tag, and CI fails when a committed report drifts |
 
-Each lesson with a link to its assessment: [LESSONS](docs/LESSONS.md).
+The patterns behind each rule, with counts across the thirteen assessments: [LESSONS](docs/LESSONS.md).
 
 ## Backends
 

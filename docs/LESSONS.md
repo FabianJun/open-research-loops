@@ -9,44 +9,67 @@ These are conclusions from the event's published assessments, not a fresh audit 
 All thirteen assessments were read at event commit `8d8a24a3215c8900906dd5d665f04d8abde6377e`.
 The assessor inspected artifacts and independently recomputed selected results without running submission code.
 We likewise executed no organizer or submission code.
-References below identify the assessment file; their **Claims checked**, **Strengths**, and **What would make it stronger** sections supply the detail.
+This page turns those assessments into general patterns. It names no team or project; "n of 13" counts the assessments that showed a pattern.
+The source is the event's [assessment index][INDEX] at that commit; each assessment's **Claims checked**, **Strengths**, and **What would make it stronger** sections supply the detail.
+A reader of those assessments can still trace a single finding back to its submission; this page only avoids naming or describing one.
+The event is named in the README section [Why this exists](../README.md#why-this-exists).
 
-## What the teams built
+## What the submissions built
 
-| Assessment | Work demonstrated | Finding or limitation that matters to this framework |
+| Shape of the work | n of 13 |
+|---|---|
+| One agent loop with separate roles or stages, for example planning and review, or ideation and experiment stages | 4 |
+| Two or more loops or approaches in one submission, not connected to each other or not all published | 3 |
+| Methods or pipelines checked against held-out labels, positive controls, a validator, a second harness or a published tool | 4 |
+| Tools or specifications without a full agent loop: deterministic tools with a language layer, or a specified pipeline without an end-to-end run | 2 |
+
+## What held up
+
+| Pattern | n of 13 | What it means for this framework |
 |---|---|---|
-| [3-chainsentinel.md][E03] | Explainable transfer-graph rules to recover held-out laundering addresses. | Strong offline evidence and label separation; an unreachable goal was diagnosed, but eleven development variants had no committed producing script. |
-| [4-plov.md][E04] | Agent-built SSH mapping and a published-mapper comparison, with live witness replay. | A second harness exposed errors; choosing verdicts by modification time admitted stale results, and the orchestrator changed both a protected spec and its hash. |
-| [5-micrograph.md][E05] | A planner/reviewer loop tuning classical grain segmentation. | The real-data target was missed honestly; the planner loosened a threshold, medians hid failing images, and literature retrieval quietly became model memory. |
-| [6-meowlignment.md][E06] | Experiment and ideation loops for executable reward-hacking testbeds. | Raw samples, controls, and fixed criteria supported the repository's cautious verdict; the submission dropped intervals and overstated point estimates. |
-| [7-baucode.md][E07] | Construction-material rankings and a separate wall-calculation regression harness. | Assumptions were labelled and totals checked, but the issue quoted an obsolete moisture number; the two loops were unconnected. |
-| [8-shift-happens.md][E08] | Calcium-reactivation methods gated by synthetic and real positive controls. | Locked answer rules and predictions preceded relevant runs; failed controls stayed failed. Verdict-rule precedence and an uncommitted verdict invocation remained gaps. |
-| [9-dr-drerio.md][E09] | Supervisor/researcher cycles auditing cell-state markers, with planted-defect checks. | Separate supervisor code changed conclusions; easy defects tested wiring rather than sensitivity, and the registered configuration diverged from implementation. |
-| [10-kaanom.md][E10] | A grounded interview-profiling loop alongside two other, unpublished approaches. | Verbatim quote checks and evidence tags worked; missing run/cost files and partial coverage limited reproducibility and comparison. |
-| [11-metabolite-sensor-finder.md][E11] | A prompt specifying a staged protein–metabolite screening funnel. | Thoughtful pilot and recording rules were specifications without an end-to-end run; simulated workers on another branch were not a scientific result. |
-| [12-science-resocialized.md][E12] | Masked psychology-replication agents and hashed reviewer handoffs. | Review panels had not run; attached agents had prompt-only isolation, truth files were public, and the intended review target was constant. |
-| [13-do-llms-argue-like-humans.md][E13] | Reasoning-graph extraction, validation, and a documented extraction-method study. | The method study was supported; the submission's headline comparison pilot had no saved artifacts. Failed extraction outputs were correctly retained. |
-| [15-llm-lying-detection.md][E15] | Probe-code search and a separate probe-weight-editing loop. | Family splits and keep margins were useful; raw evidence stayed in Colab, a second loop included test scores in its prompt, and one seed limited inference. Issue 14 is the same team. |
-| [16-predictive-lens.md][E16] | Reproducible forecasting/backtest tools plus a checked language explanation. | CI regenerated committed backtests; other tool outputs were missing, and deterministic tools alone did not establish an agentic loop. |
+| Answer rules, thresholds or predictions were locked before the relevant runs. Seen: a locked answer key and pre-run predictions; fixed thresholds with an interval rule. | 2 | Lock the rule before any result exists. |
+| Evaluation inputs or labels were kept apart from development; one submission also used grouped splits and a keep margin. | 3 | Separation works when it is enforced, not only described. |
+| One submission diagnosed why a goal was unreachable; another documented a method study that held up. | 2 | Explaining why a target fails, or how a method behaves, is a result too. |
+| The raw record was kept. Seen: raw samples, controls and fixed criteria behind a cautious verdict; complete query logs. | 2 | Keep the raw record; it is what makes a verdict checkable. |
+| Negative results were kept. Seen: a missed target reported honestly; failed controls kept as failed; failed outputs retained. | 3 | Negative results belong in the record and the report. |
+| Verbatim quote checks, evidence tags, a shared validator, number checks, labelled assumptions and checked totals kept language grounded. | 4 | Ground every statement in a checked source or a typed result. |
+| A separate computation changed or confirmed conclusions: separate review code, a second harness, or CI that regenerated committed outputs. | 3 | Independent verification finds errors the producing loop misses. |
+
+## What broke
+
+| Pattern | n of 13 | What it means for this framework |
+|---|---|---|
+| Results had no committed producing script or no saved artifacts: development variants, run and cost files, a headline pilot, raw evidence left in a hosted notebook, other tool outputs. | 5 | A result without its artifacts cannot be promoted. |
+| The agent changed its own guardrails: a planner loosened a threshold, an orchestrator changed a protected spec together with its hash. | 2 | Guardrails sit outside the worker's authority. |
+| Information reached the worker's view: a later prompt included test scores; truth files were public and isolation was prompt-only. | 2 | Isolation must be enforced by the runtime, not by a prompt. |
+| A verdict was chosen by file modification time and admitted stale results. | 1 | Select by immutable IDs, never by mutable file state. |
+| Even with locked rules, the precedence between verdict rules was open and the verdict invocation was not committed. | 1 | The verdict step itself must be specified and recorded. |
+| Checks were too weak: planted defects tested wiring rather than sensitivity, a review target was constant, medians hid failing cases, and a registered configuration diverged from the implementation. | 3 | A control must be able to fail, and the run must match what was registered. |
+| Selection and uncertainty were under-reported: a single seed, dropped intervals, overstated point estimates. | 2 | Report seeds, denominators and intervals with every number. |
+| The submission text drifted from the repository: an obsolete number was quoted, intervals were dropped, a headline comparison had no saved artifacts. | 3 | Render reports from the record, so text cannot drift from evidence. |
+| The documented run command wrote its cache to a hard-coded, machine-specific path and would fail on another machine; the tests bypassed the cache, so CI did not catch it. | 1 | Default to paths inside the run folder or the temp folder, and test the documented command as written. |
+| Literature retrieval quietly became model memory. | 1 | A failed retrieval is a recorded failure, not a citation. |
+| Plans or simulations stood in for runs: careful pilot and recording rules without an end-to-end run, simulated workers on another branch, review panels that had not run, deterministic tools without an agentic loop. | 3 | Good rules are a start; only an executed run counts as a result. |
+| Several loops in one submission did not work as one. Seen: loops left unconnected; loops that covered only part of the cases, which limited comparison. | 2 | One contract per question; compare only like with like. |
 
 ## Patterns and failure modes
 
-The following table verifies **each of the eleven integrity mechanisms** in the start prompt against the named assessments.
+The following table verifies **each of the eleven integrity mechanisms** in the start prompt against the assessments.
 The proposed enforcement is a design requirement, not behavior already implemented here.
 
-| ID / mechanism | Assessment evidence | Reusable rule |
+| ID / mechanism | What the assessments showed | Reusable rule |
 |---|---|---|
-| L01 — Pre-registration | [E08][E08]: locked answer key and pre-run prediction commits; [E05][E05]: planner-set looser target; [E06][E06]: fixed thresholds and interval rule. | Store immutable, timestamped versions of the goal, executable rule, thresholds, and each prediction before execution; link amendments and flag comparisons. |
-| L02 — Information barriers | [E03][E03], [E05][E05], [E15][E15]: separated evaluation inputs; E15's later prompt leaked test scores; [E12][E12]: attached mode did not enforce the seal. | Give workers an allowlisted view. Keep final inputs and scores outside that view, spend a one-use final ticket, and scan recorded context for leaks. |
-| L03 — Complete records | [E06][E06] and [E04][E04]: raw sample/query logs; [E10][E10], [E11][E11], [E13][E13], [E15][E15], [E16][E16]: absent runs or outputs; E04: stale mtime-selected verdict. | Save manifests and content hashes, including failures; select by immutable IDs. Missing artifacts block promotion. |
-| L04 — Controls and baselines | [E06][E06], [E08][E08], [E04][E04], [E16][E16]: diagnostic controls; [E09][E09]: defects too easy; [E12][E12]: constant target. | Require declared baseline/control cases and base rates; fail a pilot with a degenerate target or uninformative control. |
-| L05 — Selection accounting | [E03][E03]: uncommitted variants; [E15][E15]: single seed and keep margin; [E06][E06]: intervals omitted from the issue. | Count proposals, variants, retries, and abandoned attempts; report the selection protocol, seeds, keep margin, denominator, and intervals. |
-| L06 — Independent verification and report gate | [E09][E09]: supervisor recomputation; [E04][E04]: second harness; [E07][E07]: stale headline; [E13][E13]: unsupported pilot; [E16][E16]: regeneration in CI. | Verify through a separate computation and render reports from database references; CI must fail on a changed committed report. |
-| L07 — Grounded language | [E10][E10]: exact source substrings and labelled statements; [E13][E13]: shared validator, retries, failures counted; [E16][E16]: number checking; [E07][E07]: assumptions explicit. | Validate quotes and structured results. Render numeric assertions from typed database bindings; require a provenance tag on each report statement. |
-| L08 — Logged ideation and literature | [E06][E06]: fifteen setups, ten rejected before measurement; [E05][E05]: URLs did not make memory-based notes retrieved evidence. | Persist proposals/rankings/rejections. Failed retrieval is a recorded failure; uncited ideas remain hypotheses. |
-| L09 — Protected specifications | [E04][E04]: spec and protecting hash changed together. | Anchor hashes outside the worker's authority. Spec changes need a separately recorded human authorization and a new version. |
-| L10 — Pilot before scale | [E10][E10]: budgeted partial run and selection effects; [E11][E11]: scaling described before a first working pilot. | Reserve a small pilot budget and require evaluator, control, evidence, and cost checks before fan-out. |
-| L11 — Donation readiness | The [assessment index][INDEX] marks only micrograph, BauCode, and Shift Happens **OK**. | Record source/dataset licenses and attribution independently of the repository license; assess the actual public artifact set, including quoted text. |
+| L01 — Pre-registration | A locked answer key and pre-run prediction commits (1 of 13); a planner-set looser target (1 of 13); fixed thresholds and an interval rule (1 of 13). | Store immutable, timestamped versions of the goal, executable rule, thresholds, and each prediction before execution; link amendments and flag comparisons. |
+| L02 — Information barriers | Separated evaluation inputs (3 of 13), one of which later leaked test scores into a prompt; an attached mode that did not enforce the seal (1 of 13). | Give workers an allowlisted view. Keep final inputs and scores outside that view, spend a one-use final ticket, and scan recorded context for leaks. |
+| L03 — Complete records | Raw sample and query logs (2 of 13); absent runs or outputs (5 of 13, not the same five as the first row under "What broke"); a stale verdict selected by modification time (1 of 13). | Save manifests and content hashes, including failures; select by immutable IDs. Missing artifacts block promotion. |
+| L04 — Controls and baselines | Diagnostic controls (4 of 13); planted defects too easy to catch (1 of 13); a constant review target (1 of 13). | Require declared baseline/control cases and base rates; fail a pilot with a degenerate target or uninformative control. |
+| L05 — Selection accounting | Uncommitted variants (1 of 13); a single seed with a keep margin (1 of 13); intervals omitted from the submission text (1 of 13). | Count proposals, variants, retries, and abandoned attempts; report the selection protocol, seeds, keep margin, denominator, and intervals. |
+| L06 — Independent verification and report gate | Recomputation by a separate role, a second harness, and regeneration in CI (1 of 13 each); a stale headline and an unsupported pilot (1 of 13 each). | Verify through a separate computation and render reports from database references; CI must fail on a changed committed report. |
+| L07 — Grounded language | Exact source substrings and labelled statements; a shared validator with retries and counted failures; number checking; explicit assumptions (1 of 13 each). | Validate quotes and structured results. Render numeric assertions from typed database bindings; require a provenance tag on each report statement. |
+| L08 — Logged ideation and literature | Most proposed setups rejected before measurement (1 of 13); URLs that did not make memory-based notes retrieved evidence (1 of 13). | Persist proposals/rankings/rejections. Failed retrieval is a recorded failure; uncited ideas remain hypotheses. |
+| L09 — Protected specifications | A spec and its protecting hash changed together (1 of 13). | Anchor hashes outside the worker's authority. Spec changes need a separately recorded human authorization and a new version. |
+| L10 — Pilot before scale | A budgeted partial run with selection effects (1 of 13); scaling described before a first working pilot (1 of 13). | Reserve a small pilot budget and require evaluator, control, evidence, and cost checks before fan-out. |
+| L11 — Donation readiness | The [assessment index][INDEX] marks three of thirteen submissions **OK**. | Record source/dataset licenses and attribution independently of the repository license; assess the actual public artifact set, including quoted text. |
 
 These examples support engineering choices, not a causal estimate that a database would have improved the teams' science.
 The reviewable files made the assessments possible; a database must preserve that visibility through export.
@@ -76,18 +99,5 @@ Keep domain-specific numerical checks in evaluators rather than requiring the sa
 Do not adopt the organizer's unconditional pushes, per-iteration session endings, or universal test-first policy.
 Use focused regression checks for the integrity boundaries and spend the remaining day on a real, bounded experiment.
 
-[E03]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/3-chainsentinel.md
-[E04]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/4-plov.md
-[E05]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/5-micrograph.md
-[E06]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/6-meowlignment.md
-[E07]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/7-baucode.md
-[E08]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/8-shift-happens.md
-[E09]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/9-dr-drerio.md
-[E10]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/10-kaanom.md
-[E11]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/11-metabolite-sensor-finder.md
-[E12]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/12-science-resocialized.md
-[E13]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/13-do-llms-argue-like-humans.md
-[E15]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/15-llm-lying-detection.md
-[E16]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/16-predictive-lens.md
 [INDEX]: https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/assessments/README.md
 [CH43]: https://github.com/xemantic/plenty-of-room/blob/2fbb80f36c17cf39cfcc933b182861f219076b17/gpd/challenges/CH-0043-a-reproducibility-certificate-that-certifies-the-path.md

@@ -212,58 +212,59 @@
       "source": "https://registry.npmjs.org/@anthropic-ai/claude-code/latest"
     }
   ],
+  "assessments_note": "Neutral ids. Each sha256 is the hash of one assessment file in the assessments/ folder of claude-impact-lab-2026 at the commit listed under repositories; match a file to its id by hashing it. Ids follow sha256 order.",
   "assessments": [
     {
-      "path": "assessments/10-kaanom.md",
-      "sha256": "2ffa9a8a2b614481da6536d8af6b3e7128591b225e11c7f8725f0942bb6466a2"
-    },
-    {
-      "path": "assessments/11-metabolite-sensor-finder.md",
+      "id": "assessment-01",
       "sha256": "2375b42a8f11be76924913c3a9dfc2e6dfb6cbf276ec20685043e2d639390d1d"
     },
     {
-      "path": "assessments/12-science-resocialized.md",
+      "id": "assessment-02",
       "sha256": "25810d1e9459a5e58bf3a1aa2add0acde426261a95899a06b10d2ab106099fe1"
     },
     {
-      "path": "assessments/13-do-llms-argue-like-humans.md",
-      "sha256": "f392784e5b11b856ef5ee386eb1109621ded240945813c66476e25c3a58c18af"
-    },
-    {
-      "path": "assessments/15-llm-lying-detection.md",
-      "sha256": "eae8f1a13f6dcaed1856c08be6a3a76fbceb87ee973c1dbe727278b876ef361a"
-    },
-    {
-      "path": "assessments/16-predictive-lens.md",
-      "sha256": "b74c76f450e2428a04634816e3a52ad7b94827f47c8da890edc965ce1f077961"
-    },
-    {
-      "path": "assessments/3-chainsentinel.md",
-      "sha256": "67a1b80a4b714b47495d903d31a6189c49cbb64511c86896742e07760e31b57c"
-    },
-    {
-      "path": "assessments/4-plov.md",
-      "sha256": "ccc3a9ea3bf6e438ce45252467926add8d54e9df8b96036ec3634b6a514ba418"
-    },
-    {
-      "path": "assessments/5-micrograph.md",
+      "id": "assessment-03",
       "sha256": "2edcd8e35539fcc4d7318b2b11228fbdfa23b99c2398c73edef10028c0421df1"
     },
     {
-      "path": "assessments/6-meowlignment.md",
-      "sha256": "a47ee65fe0eb31ac5c85ae3763e1b9e23480ee533ccaf70e4cce29cc79659b3f"
+      "id": "assessment-04",
+      "sha256": "2ffa9a8a2b614481da6536d8af6b3e7128591b225e11c7f8725f0942bb6466a2"
     },
     {
-      "path": "assessments/7-baucode.md",
-      "sha256": "a6109731e017c58a0d9909caffa89e04f202b1838ec56a4c1b4232f02ce408ec"
+      "id": "assessment-05",
+      "sha256": "67a1b80a4b714b47495d903d31a6189c49cbb64511c86896742e07760e31b57c"
     },
     {
-      "path": "assessments/8-shift-happens.md",
+      "id": "assessment-06",
       "sha256": "934fb8c270b7265feace427ce0ff55f198c0d1b300716b3233ed51861facf0a6"
     },
     {
-      "path": "assessments/9-dr-drerio.md",
+      "id": "assessment-07",
+      "sha256": "a47ee65fe0eb31ac5c85ae3763e1b9e23480ee533ccaf70e4cce29cc79659b3f"
+    },
+    {
+      "id": "assessment-08",
+      "sha256": "a6109731e017c58a0d9909caffa89e04f202b1838ec56a4c1b4232f02ce408ec"
+    },
+    {
+      "id": "assessment-09",
       "sha256": "b0213ba75768d966ac9c388b9e38e75f64d935fd3c8082997cf34239a2406916"
+    },
+    {
+      "id": "assessment-10",
+      "sha256": "b74c76f450e2428a04634816e3a52ad7b94827f47c8da890edc965ce1f077961"
+    },
+    {
+      "id": "assessment-11",
+      "sha256": "ccc3a9ea3bf6e438ce45252467926add8d54e9df8b96036ec3634b6a514ba418"
+    },
+    {
+      "id": "assessment-12",
+      "sha256": "eae8f1a13f6dcaed1856c08be6a3a76fbceb87ee973c1dbe727278b876ef361a"
+    },
+    {
+      "id": "assessment-13",
+      "sha256": "f392784e5b11b856ef5ee386eb1109621ded240945813c66476e25c3a58c18af"
     }
   ],
   "resolution": {
