@@ -55,7 +55,7 @@ flowchart LR
     C --> V["supported, negative<br/>or inconclusive"]
     V --> D{"Independent re-check<br/>second code path"}
     D -- failed --> F["verification failed<br/>shown as such"]
-    D -- checked --> R["Report entry<br/>evidence ID and provenance tag"]
+    D -- checked --> R["Report entry<br/>evidence link"]
     classDef agent stroke:#2f5bea,stroke-width:2px
     classDef evidence stroke:#0e7c7b,stroke-width:2px
     classDef neutral stroke:#59636e,stroke-width:2px
@@ -66,8 +66,8 @@ flowchart LR
 
 Execution status, scientific outcome and verification are separate fields: a finished run is not a
 finding, a negative result is checked evidence, and an interrupted worker never becomes a positive
-one. Every report statement is tagged `measured`, `simulated`, `cited`, `assumed`, `interpretation`
-or `hypothesis`.
+one. Result lines in the report are tagged `measured`, `simulated`, `cited`, `assumed`,
+`interpretation` or `hypothesis`, and each scored run links its evidence.
 
 ## What a worker can see
 

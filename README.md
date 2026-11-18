@@ -167,7 +167,7 @@ the loop, not the science. `rloop` turns each one into a rule the runtime enforc
 | Planted defects were too easy to catch; a review target was constant | Controls run first. A failed or uninformative control blocks the pilot |
 | Variants went uncommitted; single seeds; intervals dropped | Every proposal, variant and retry gets a durable attempt ID. Seeds, keep margin and intervals appear in the report |
 | An orchestrator changed a protected spec together with its hash | Hash anchors sit outside worker authority. A change needs a recorded human decision and creates a new version |
-| Headline numbers had no saved artifacts behind them | Reports render from the database, result lines carry provenance tags, table rows link their evidence, and CI fails when a committed report drifts |
+| Headline numbers had no saved artifacts behind them | Reports render from the database, result lines carry provenance tags, each scored run links its evidence, and CI fails when a committed report drifts |
 
 The patterns behind each rule, with counts across the thirteen assessments: [LESSONS](docs/LESSONS.md).
 
