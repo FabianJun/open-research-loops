@@ -20,8 +20,9 @@ For researchers and students working with a coding agent. No coding needed.
 
 open-research-loops is for people who work with a coding agent: an AI assistant that opens your
 files, runs programs and checks the result. You put in a research question and the data to test it
-on. You get back a report in which every statement carries a tag such as measured or simulated, and
-in coached mode also a research brief and your own method card.
+on. You get back a report whose result lines carry a tag such as measured or simulated and whose
+table rows link their evidence; in coached mode you also get a research brief and your own method
+card.
 
 **A real example, negative result included**
 ([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)):
@@ -130,8 +131,8 @@ uv run rloop init my-pilot --question "Can we recover a planted nonlinear signal
 ```
 
 In under two seconds, `init` registers a contract, runs the controls, scores two simulated candidates
-with the protected evaluator and writes `my-pilot/.rloop/report.md`. Every statement in it carries a
-provenance tag such as `[measured]` or `[simulated]`.
+with the protected evaluator and writes `my-pilot/.rloop/report.md`. Its result lines carry
+provenance tags such as `[measured]` or `[simulated]`, and table rows link their evidence.
 
 > [!NOTE]
 > The planted-signal example is **simulated**: its fake workers know the answer on purpose, so it
@@ -166,7 +167,7 @@ the loop, not the science. `rloop` turns each one into a rule the runtime enforc
 | Planted defects were too easy to catch; a review target was constant | Controls run first. A failed or uninformative control blocks the pilot |
 | Variants went uncommitted; single seeds; intervals dropped | Every proposal, variant and retry gets a durable attempt ID. Seeds, keep margin and intervals appear in the report |
 | An orchestrator changed a protected spec together with its hash | Hash anchors sit outside worker authority. A change needs a recorded human decision and creates a new version |
-| Headline numbers had no saved artifacts behind them | Reports render from the database, every statement carries a provenance tag, and CI fails when a committed report drifts |
+| Headline numbers had no saved artifacts behind them | Reports render from the database, result lines carry provenance tags, table rows link their evidence, and CI fails when a committed report drifts |
 
 The patterns behind each rule, with counts across the thirteen assessments: [LESSONS](docs/LESSONS.md).
 
