@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/social-preview.jpg" width="100%" alt="open-research-loops: parallel AI research loops that keep their evidence honest. Risograph print in red, teal and blue: eight thin threads loop through separate experiments side by side, the ones that hold pass through the eye of a red needle and leave as one tidy blue braid, two stop short in tied-off knots.">
+<img src="docs/assets/social-preview.jpg" width="400" alt="open-research-loops: parallel AI research loops that keep their evidence honest. Risograph print in red, teal and blue: eight thin threads loop through separate experiments side by side, the ones that hold pass through the eye of a red needle and leave as one tidy blue braid, two stop short in tied-off knots.">
 
 **Parallel AI research loops that keep their evidence honest.**
 
@@ -16,14 +16,28 @@ For researchers and students working with a coding agent. No coding needed.
 
 [Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [Why this exists](#why-this-exists) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
 
-<br/>
+</div>
+
+open-research-loops is for people who work with a coding agent: an AI assistant that opens your
+files, runs programs and checks the result. You put in a research question and the data to test it
+on. You get back a report in which every statement carries a tag such as measured or simulated, and
+in coached mode also a research brief and your own method card.
+
+**A real example, negative result included**
+([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)):
+
+- **Question:** does a small trained image model, a U-Net, count and size the grains in microscope
+  images of steel better than a team's existing pipeline?
+- **Result:** A small U-Net was scored once against a team's grain-counting pipeline: val error
+  **0.1639** against **0.1259**, lower is better, so no win.
+- **In plain words:** on the 40 images it was scored on, the new model's error was higher, and the
+  negative result stays on record. The team's number was tuned on those same images, so a fair
+  comparison is still open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/loop-dark.svg">
   <img alt="The loop: your question and locked contract, then fan out agent workers that only use MCP tools, import and hash their outputs, evaluate them with a protected plain-code evaluator, and render an evidence-tagged report. Findings feed the next round; the holdout never does. Legend: person icon for your decisions, checkbox for your agent and the workers it starts, knotted thread for route and evidence; infrastructure is neutral." src="docs/assets/loop-light.svg" width="100%">
 </picture>
-
-</div>
 
 You set the question and what would disprove it, before any result exists. Your agent writes the
 code and runs the workers in parallel. Every thread then passes the same needle, a protected
@@ -35,8 +49,18 @@ assessments of thirteen research-loop projects ([why this exists](#why-this-exis
 ## Two ways to work
 
 Your own coding agent, any capable one, handles code, evaluators, compute and CI. The workers it
-starts are separate sessions on one of the [backends](#backends). Pick a mode and paste its starter
-into your agent.
+starts are separate sessions on one of the [backends](#backends).
+
+Ask your coding agent to get the repository from
+https://github.com/scaled-thinking/open-research-loops; it needs uv and Python 3.12 or newer, on
+Windows or Linux. Then pick a mode and paste its starter into your agent.
+
+- **Cost:** the module is free. The AI runs on your own subscription or your own API access. In
+  coached mode, the agent states the cost first; usage is recorded and the cost estimated, and an
+  unknown cost stays unknown, never zero. scaled-thinking hosts nothing and runs nothing commercially.
+- **Your data** goes to the AI provider of your coding agent; the demo itself calls no model
+  provider. A live run goes only to the provider and model you authorise, and training jobs run on
+  your computer or on a host you set up. scaled-thinking has no server that sees it.
 
 ### Autonomous
 
@@ -81,12 +105,10 @@ or “just do it” at any time.
 The brief is the project's `BRIEF.md`; an optional competence profile stays on your machine. Every
 method has a [card](skills/rloop-coach/references/methods.md) with its reason, steps and limits.
 
-**A real example, negative result included.** A small U-Net was scored once against a team's
-grain-counting pipeline: val error **0.1639** against **0.1259**, lower is better, so no win. In
-review, the owner identified two problems: the team's number was tuned on the same 40 val images,
-and 40 images leave a wide 95% interval of 0.119 to 0.231. A coached agent raises a **fair
-comparison** and **sample size and intervals** before the run
-([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)).
+**What coaching adds.** In the U-Net example above, the owner identified two problems in review:
+the team's number was tuned on the same 40 val images, and 40 images leave a wide 95% interval of
+0.119 to 0.231. A coached agent raises a **fair comparison** and **sample size and intervals** before
+the run ([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)).
 
 All eight steps, the levels and the private profile: [COACHED](docs/COACHED.md).
 
@@ -161,8 +183,7 @@ These backends run the workers, not your own agent.
   refuses before any SDK or tool starts.
 - **No silent fallback.** A rate or usage limit stops the pilot and cancels its siblings: no retry,
   no switch to another model, account or auth mode.
-- **Honest cost.** Token usage is recorded and cost is estimated; an unknown cost stays unknown,
-  never zero.
+- **Honest cost.** Token usage is recorded and cost is estimated ([cost](#two-ways-to-work)).
 
 ```console
 $ uv run rloop auth preflight --backend claude_agent        # offline check, reads no credentials
