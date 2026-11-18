@@ -8,4 +8,4 @@
 - `rloop init --owner NAME` records the owner in host-only `project.json` (otherwise Git user.name, then OS login; retain an existing owner on repeated init). Approval identities must match that owner after stripping, with case preserved. Anchor amendments use only the owner and decisions from the trusted Git base. Workers must never receive project settings.
 - Add migrations only with working consumers. Prefer a repository rule and test over another table.
 - A worker outbox is untrusted. Evaluator/holdout/DB are coordinator-only. The none sandbox refuses candidate code; execution requires the container Sandbox and successful preflight probes. MCP exposes no execution tool.
-- Code is Apache-2.0; docs are CC BY 4.0. Keep public instructions short and record actual verification, not inferred CI success.
+- Code, skills and prompt files are Apache-2.0, docs CC BY 4.0; NOTICE lists the exception. Keep public instructions short and record actual verification, not inferred CI success.

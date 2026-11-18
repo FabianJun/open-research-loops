@@ -14,6 +14,27 @@ src/methods/common.py and src/evaluate.py. Changes: parameter validation,
 lazy imports, statistics-only outputs, and omission of defect detection,
 image output, overlays and unrelated measurements. No dataset pixels included.
 
-Source code is licensed under LICENSE (Apache-2.0).
-Documentation, including README.md, docs/ and skills/*/SKILL.md, is licensed under
-LICENSE-CC-BY-4.0. License texts retain their original terms.
+Source code, skills/*/SKILL.md files and prompt files (AGENTS.md, CLAUDE.md
+and the reference files under skills/) are licensed under LICENSE
+(Apache-2.0). Documentation and images, including README.md and docs/, are
+licensed under LICENSE-CC-BY-4.0. License texts retain their original terms.
+
+Portions adapted from upstream material keep that material's license and
+attribution:
+
+  skills/rloop-self-assess/SKILL.md
+    Its review rubric (problem, loop, evidence, honesty, reproducibility,
+    and separate license and impact review) is adapted in our own words from
+    the judge-submissions skill of the event repository credited above,
+    commit 8d8a24a3215c8900906dd5d665f04d8abde6377e, file
+    .claude/skills/judge-submissions/SKILL.md (text under CC BY 4.0),
+    https://github.com/xemantic/claude-impact-lab-2026/blob/8d8a24a3215c8900906dd5d665f04d8abde6377e/.claude/skills/judge-submissions/SKILL.md
+    That rubric, the lines from "Review five dimensions" through "Keep
+    license review and potential impact as separate discussions.", stays
+    under LICENSE-CC-BY-4.0; the rest of the file is under LICENSE
+    (Apache-2.0).
+
+Up to commit a21c598 of the public main branch, this NOTICE listed
+skills/*/SKILL.md as documentation under CC BY 4.0, and six files under
+skills/ carried a CC BY 4.0 footer. Those published versions stay available
+under CC BY 4.0.

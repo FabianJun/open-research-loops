@@ -244,6 +244,8 @@ The distribution is `research-loops`, the import is `research_loops`, the comman
 not on PyPI yet; install from source as shown above. The unrelated PyPI package `rloop`, a Rust
 asyncio event loop, is never a dependency.
 
-Code is licensed under [Apache-2.0](LICENSE), documentation under [CC BY 4.0](LICENSE-CC-BY-4.0); see
-[NOTICE](NOTICE). The core is an independent implementation. Ideas from the event's material and
-other projects are credited in [PRIOR-ART](docs/PRIOR-ART.md); no AGPL code is included.
+Code, including `SKILL.md` and prompt files (everything under `skills/`, `AGENTS.md`, `CLAUDE.md`),
+is under [Apache-2.0](LICENSE); texts and images are under [CC BY 4.0](LICENSE-CC-BY-4.0). The
+review rubric in the self-assess skill is adapted from the event and keeps CC BY 4.0, as the
+[NOTICE](NOTICE) lists. The core is an independent implementation; ideas from the event's material
+and other projects are credited in [PRIOR-ART](docs/PRIOR-ART.md), and no AGPL code is included.

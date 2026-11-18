@@ -16,4 +16,4 @@ never include or quote the private competence profile or its history.
 - Person's conclusion (their words):
 - Current step, next action, unresolved decisions and permissions:
 
-Documentation licensed CC BY 4.0.
+Licensed under Apache-2.0.

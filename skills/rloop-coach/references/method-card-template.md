@@ -11,4 +11,4 @@
 This card is about the method. Never include competence ratings, profile
 evidence or profile history. Let the person edit the wording.
 
-Documentation licensed CC BY 4.0.
+Licensed under Apache-2.0.

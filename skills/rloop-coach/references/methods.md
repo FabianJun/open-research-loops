@@ -194,4 +194,4 @@ states what the record actually supports; missing evidence stays missing.
   value or diversity. [Phase 4b](../../../docs/PHASE-4B-PILOT.md#what-this-does-not-show)
   also reports limited diversity, not a vendor ranking.
 
-Documentation licensed CC BY 4.0.
+Licensed under Apache-2.0.

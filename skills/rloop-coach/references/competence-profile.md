@@ -102,4 +102,4 @@ as “set by the person”, with self-rating evidence. At session end, show prog
 in one or two conversational lines: which areas moved since creation, using
 the history. Never put this progress into project artifacts.
 
-Documentation licensed CC BY 4.0.
+Licensed under Apache-2.0.

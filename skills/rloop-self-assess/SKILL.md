@@ -30,4 +30,6 @@ identify the pinned source. No assessment bodies are reproduced.
 See [DESIGN](../../docs/DESIGN.md), [GUIDE](../../docs/GUIDE.md)
 and [LESSONS](../../docs/LESSONS.md) for the executable scope.
 
-Skill text is licensed CC BY 4.0.
+The lines from "Review five dimensions" through "Keep license review and
+potential impact as separate discussions." are licensed CC BY 4.0; the rest
+of this file is licensed under Apache-2.0.

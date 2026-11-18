@@ -76,4 +76,4 @@ project, before any scoring, and never reveal the profile. Details: [COACHED](..
 
 Raise these before the run if the person does not; a bar tuned on the scoring set is the record's commonest unfair test.
 
-Documentation licensed CC BY 4.0.
+Licensed under Apache-2.0.
