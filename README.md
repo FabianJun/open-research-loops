@@ -51,9 +51,8 @@ assessments of thirteen research-loop projects ([why this exists](#why-this-exis
 Your own coding agent, any capable one, handles code, evaluators, compute and CI. The workers it
 starts are separate sessions on one of the [backends](#backends).
 
-Ask your coding agent to get the repository from
-https://github.com/scaled-thinking/open-research-loops; it needs uv and Python 3.12 or newer, on
-Windows or Linux. Then pick a mode and paste its starter into your agent.
+Pick a mode and paste its starter into your coding agent.
+You need uv and Python 3.12 or newer, on Windows or Linux.
 
 - **Cost:** the module is free. The AI runs on your own subscription or your own API access. In
   coached mode, the agent states the cost first; usage is recorded and the cost estimated, and an
@@ -68,6 +67,8 @@ You delegate. The agent proposes a bounded plan and works within your permission
 
 ```text
 Mode: autonomous
+Clone https://github.com/scaled-thinking/open-research-loops yourself
+if you have no copy of it yet.
 Use open-research-loops and follow AGENTS.md. Handle the technical work,
 propose a bounded research plan and work within my permissions.
 My question: …
@@ -85,6 +86,8 @@ decide on the method.
 
 ```text
 Mode: coached
+Clone https://github.com/scaled-thinking/open-research-loops yourself
+if you have no copy of it yet.
 Use open-research-loops and skills/rloop-coach/SKILL.md. Coach me on research
 design and do the technical work. Explain the methods; let me decide.
 Reply in my language. My question: …
