@@ -219,7 +219,7 @@ class Repository:
             self.event("dispatch", assignment.run_id, assignment.model_dump(mode="json"))
             self.event("execution", assignment.run_id, execution_metadata or {"backend": "fake", "provider": "offline", "model": "deterministic-v1", "sdk_version": None, "cost_micro_usd": 0})
             folder = Path(__file__).parent
-            self.event("runtime", assignment.run_id, {"framework": "0.1.0", "python": sys.version.split()[0],
+            self.event("runtime", assignment.run_id, {"framework": "0.2.0", "python": sys.version.split()[0],
                 "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
 
     def import_report(self, report: WorkerReport, outbox: Workspace) -> bool:

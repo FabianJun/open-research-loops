@@ -12,7 +12,7 @@ For researchers and students working with a coding agent. No coding needed.
 [![evidence: checked, negatives kept](https://img.shields.io/badge/evidence-checked%2C_negatives_kept-0e7c7b)](#measured-not-promised)
 ![python 3.12+](https://img.shields.io/badge/python-3.12%2B-59636e)
 [![licence: Apache-2.0 · CC BY 4.0](https://img.shields.io/badge/licence-Apache--2.0_%C2%B7_CC_BY_4.0-59636e)](#names-and-licences)
-![status: released v0.1.0](https://img.shields.io/badge/status-released_v0.1.0-59636e)
+![status: released v0.2.0](https://img.shields.io/badge/status-released_v0.2.0-59636e)
 
 [Two ways to work](#two-ways-to-work) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [Why this exists](#why-this-exists) · [Backends](#backends) · [Measured, not promised](#measured-not-promised)
 

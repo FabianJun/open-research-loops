@@ -14,7 +14,7 @@ from research_loops.transports.protocol import Dispatcher
 
 
 def create_server(dispatch: Dispatcher) -> MCPServer:
-    server = MCPServer("rloop", version="0.1.0")
+    server = MCPServer("rloop", version="0.2.0")
 
     @server.tool()
     def read_contract() -> dict:
