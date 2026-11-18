@@ -57,8 +57,8 @@ own agent. Skills are not injected into pilot workers in this delivery.
 start to finished pilot, three runs each and excluding installation: 1.152 s on Windows, 1.408 s on
 Linux. `uv run python scripts/measure_init.py` reproduces it on your machine.
 
-The report is rendered from the database. Each run links its evidence, and every statement carries a
-provenance tag:
+The report is rendered from the database. Each scored run links its evidence, and result lines carry
+a provenance tag. In this excerpt, `(evidence)` stands for that link:
 
 ```text
 | Run                 | Execution | Scientific outcome | Verification | Development MSE         |

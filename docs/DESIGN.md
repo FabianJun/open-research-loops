@@ -277,7 +277,7 @@ A final ticket remains consumed after interruption.
 ## Reports, grounding and export
 
 `report` renders Markdown and static HTML from one database revision, ordered by stable IDs/sequence.
-Each statement carries its provenance tag; experimental numbers use `(evaluation_id, metric_pointer, unit, format)` bindings and evidence links.
+Result lines carry their provenance tag and each scored run links its evidence; experimental numbers use `(evaluation_id, metric_pointer, unit, format)` bindings and evidence links.
 Quote checks compare exact substrings of the hashed source, with source offsets; schema failures and retries remain in denominators.
 Free-form LLM prose is supplementary, validated or rejected; it cannot supply an unbound headline number.
 The report displays baselines, all attempt counts, intervals, selection protocol, limits and unresolved challenges.
