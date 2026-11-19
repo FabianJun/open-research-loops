@@ -109,6 +109,39 @@ def test_long_path():
         assert long_path(unc) is unc
 
 
+def windows_long_paths_enabled():
+    """Read the host's LongPathsEnabled setting (read-only); a missing value counts as off."""
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                            r"SYSTEM\CurrentControlSet\Control\FileSystem") as key:
+            value, _ = winreg.QueryValueEx(key, "LongPathsEnabled")
+    except OSError:
+        return False
+    return value == 1
+
+
+@pytest.mark.parametrize("value, expected", [(0, False), (1, True), (None, False)])
+def test_windows_long_paths_enabled_reads_registry(monkeypatch, value, expected):
+    import sys
+    import types
+    from contextlib import nullcontext
+
+    def query(key, name):
+        assert name == "LongPathsEnabled"
+        if value is None:
+            raise FileNotFoundError(name)
+        return value, 4
+
+    fake = types.SimpleNamespace(
+        HKEY_LOCAL_MACHINE="HKLM",
+        OpenKey=lambda root, path: nullcontext((root, path)),
+        QueryValueEx=query,
+    )
+    monkeypatch.setitem(sys.modules, "winreg", fake)
+    assert windows_long_paths_enabled() is expected
+
+
 @pytest.mark.parametrize("length", [199, 230])
 def test_grain_data_under_deep_root(tmp_path, length):
     pytest.importorskip("skimage")
@@ -124,12 +157,13 @@ def test_grain_data_under_deep_root(tmp_path, length):
     archive = tmp_path / "fixture.zip"
     expected = fixture_zip(archive)
     data_root = project / ".rloop/data/Grain/val"
-    if os.name != "nt" or length < 200:
+    if os.name != "nt" or length < 200 or windows_long_paths_enabled():
         _fetch_verified_archive(project, archive, expected, dict(train=3, val=3, test=3))
         manifest = long_path(project / ".rloop/data/val.json").read_bytes()
         assert SubprocessEvaluator().evaluate(b"{}", manifest, 300, data_root=data_root)
         return
-    # Windows only: the protected evaluator keeps plain paths, so deeper grain data stops with an error.
+    # Windows with long paths off: the protected evaluator keeps plain paths,
+    # so deeper grain data stops with an error.
     with pytest.raises(IntegrityError, match="evaluator process failed"):
         _fetch_verified_archive(project, archive, expected, dict(train=3, val=3, test=3))
     manifest = long_path(project / ".rloop/data/val.json").read_bytes()
