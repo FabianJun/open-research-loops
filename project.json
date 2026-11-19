@@ -21,6 +21,12 @@
       "new": "27531ebc8649437bebe49e5c1e853126ea0f8c9885159c6dee082bf356162c3e",
       "authority": "scaled-thinking",
       "reason": "The owner approved treating ProcessLookupError as a vanished process during identity reads. Only process supervision changes; numerical evaluation and the planted-signal compatibility identity remain unchanged."
+    },
+    {
+      "old": "27531ebc8649437bebe49e5c1e853126ea0f8c9885159c6dee082bf356162c3e",
+      "new": "e0af8b93af05412c95eca835af3da96d1759aa271d64a1fd5a6a66d568289ae5",
+      "authority": "scaled-thinking",
+      "reason": "The owner approved long-path support and the data-root link check in the anchored evaluator files (owner.py, evaluation.py, grain_worker.py, grain_evaluator.py), see docs/DECISIONS.md (Anchored evaluator long paths, 2026-11-19). File access, path checks and the folder used for the Git owner lookup change only; numerical evaluation and the planted-signal compatibility identity remain unchanged."
     }
   ]
 }

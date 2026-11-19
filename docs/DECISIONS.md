@@ -160,3 +160,29 @@ Two related points are recorded for later owner decisions rather than built now:
 - Candidate code execution has no production caller yet, and the owner decides
   when it gets one. Its prerequisites are recorded before a production caller is
   added.
+
+## Anchored evaluator long paths — 2026-11-19
+
+The owner approved changing the anchored evaluator files `owner.py`,
+`evaluation.py`, `grain_worker.py` and `grain_evaluator.py` for two purposes.
+First, they use the same Windows long-path handling as the rest of the package,
+so owner initialization and grain evaluation work in deep project folders.
+Owner initialization asks Git from the nearest existing folder that Git can
+enter on Windows without long-path support. Second, the grain data root is
+checked for links from the project's `.rloop` folder down before it is resolved
+and handed to the evaluator; the earlier check on the already resolved root is
+removed. Links inside a split stay refused per file. The hash-bound
+authorization in `project.json` covers these files and their manifest update.
+File access, path checks and the folder used for the Git owner lookup change
+only; numerical evaluation and the planted-signal compatibility identity remain
+unchanged. The grain evaluator identity changes with the manifest, so an
+existing grain project no longer runs or passes the assessment's evaluator
+check; a new grain run starts in a fresh project folder, and the old project
+stays as evidence. The authorization must be committed before the protected
+change; this grants no live-run permission.
+
+In line with the "Path checks" entry, the assessment re-check and the grain data
+import, which are not anchored, use the same check from `.rloop` down. A
+project below a linked host folder is therefore no longer refused at import.
+The read-only database opens of the assessment and of status snapshots use the
+long-path form as well, so a deep project can also be assessed.
