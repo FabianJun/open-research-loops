@@ -14,7 +14,7 @@ from research_loops.reports import WorkerReport
 from research_loops.evaluation import SubprocessEvaluator, evaluator_hash
 from research_loops.fake import FakeBackend, oracle
 from research_loops.grounding import public_context
-from research_loops.paths import atomic_write, long_path, plain_io_errors
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, refuse_links_below
 from research_loops.processes import process_identity
 from research_loops.reporting import export, report
 from research_loops.scheduler import fanout
@@ -34,10 +34,13 @@ def proposal_method(contract):
     return Path(__file__).with_name("grain_worker.py" if is_grain(contract) else "fake.py")
 
 
+@plain_io_errors()
 def data_root(repo, contract, split):
     if not is_grain(contract):
         return None
-    return repo.root / "data" / "Grain" / {"training": "train", "development": "val", "final": "test"}[split]
+    path = repo.root / "data" / "Grain" / {"training": "train", "development": "val", "final": "test"}[split]
+    refuse_links_below(repo.root, path)
+    return path
 
 
 @plain_io_errors()
@@ -151,14 +154,21 @@ def reconcile(repo: Repository, contract: Contract, key: str, cancellation=None)
             repo.fail(row["id"], "interrupted", "registration superseded; comparison flagged")
             continue
         root = repo.root / "runs" / row["id"] / "outbox"
-        sealed = root / "report.json"
+        refuse_links_below(repo.root, root)
+        sealed = confined(root, "report.json")
         if not row["report_hash"] and long_path(sealed).exists():
             repo.import_report(WorkerReport.model_validate_json(long_path(sealed).read_bytes()), Workspace(root=root))
         elif not row["report_hash"]:
-            journal = root / "journal.jsonl"
+            journal = confined(root, "journal.jsonl")
             if long_path(journal).exists():
+                with long_path(journal).open("rb") as stream:
+                    data = stream.read(1_000_001)
+                truncated = len(data) > 1_000_000
+                data = data[:1_000_000]
+                text = data.decode("utf-8", errors="replace" if truncated else "strict").replace("\r\n", "\n").replace("\r", "\n")
+                payload = {"text": text, "truncated": True} if truncated else {"text": text}
                 with repo.db:
-                    repo.event("partial_outbox", row["id"], {"journal_hash": digest(long_path(journal).read_bytes()), "text": long_path(journal).read_text(encoding="utf-8")})
+                    repo.event("partial_outbox", row["id"], {"journal_hash": digest(data), **payload})
             repo.fail(row["id"], "interrupted", "worker died before sealing a report")
             continue
         receipt = repo.root / "evaluation_receipts" / f"{row['id']}.json"
@@ -295,14 +305,22 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         public_context(assignment.model_dump(mode="json"))
         from research_loops.execution import backend_record
         metadata, reserve = backend_record(backend)
-        repo.dispatch(assignment, reserve, execution_metadata=metadata)
         root = repo.root / "runs" / assignment.run_id / "outbox"
+        public = root.parent / "public"
         try:
-            public = root.parent / "public"
+            # Check before dispatch, so a refused folder does not use up the assignment.
+            with plain_io_errors():
+                refuse_links_below(repo.root, root)
+                refuse_links_below(repo.root, public)
+        except IntegrityError:
+            technical_failure = True
+            raise
+        repo.dispatch(assignment, reserve, execution_metadata=metadata)
+        try:
             with plain_io_errors():
                 long_path(public).mkdir(mode=0o755, parents=True, exist_ok=True)
             data = training_projection(repo, contract, key)
-            training = public / "training.json"
+            training = confined(public, "training.json")
             with plain_io_errors():
                 if long_path(training).exists():
                     if long_path(training).read_bytes() != data:
@@ -379,9 +397,10 @@ def final_evaluation(repo: Repository, contract: Contract, key: str, cancellatio
     selection = select(repo, contract, key)
     if cancellation:
         cancellation.check()
+    final_root = data_root(repo, contract, "final")  # Check the folder before the single final ticket is used.
     ticket = repo.consume_final(selection["winner"])
     deadline = repo.db.execute("SELECT deadline FROM project").fetchone()[0]
     seconds = min(contract.limits.evaluator_seconds, max(0.001, deadline - time.time()))
-    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds, data_root=data_root(repo, contract, "final"))
+    verdict = SubprocessEvaluator().evaluate(repo.artifact(ticket["run_id"], "candidate"), private(repo, key, "final"), seconds, data_root=final_root)
     atomic_write(repo.root / "private" / "final-receipt.json", canonical({"ticket": ticket, "verdict": verdict.model_dump(mode="json")}).encode(), exclusive=True)
     repo.final_result(ticket, verdict)

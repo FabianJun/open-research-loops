@@ -73,7 +73,7 @@ class ToolService:
     @plain_io_errors()
     def journal(self, kind: str, payload: dict) -> None:
         line = canonical({"id": f"{self.contract.run_id}:{kind}", "kind": kind, "payload": payload}) + "\n"
-        with long_path(self.root / "journal.jsonl").open("ab") as stream:
+        with long_path(confined(self.root, "journal.jsonl")).open("ab") as stream:
             stream.write(line.encode())
             stream.flush()
             os.fsync(stream.fileno())

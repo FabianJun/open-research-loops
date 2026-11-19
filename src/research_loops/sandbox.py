@@ -15,11 +15,11 @@ from research_loops.paths import atomic_write, long_path, plain_io_errors, plain
 from research_loops.transports.launch import Launch, local_launch, tool_environment
 
 
-def _refuse_mount_link(path: Path) -> None:
+def _refuse_mount_link(path: Path, label: str) -> None:
     try:
         refuse_link(path)
     except IntegrityError as exc:
-        raise IntegrityError("sandbox mount links forbidden") from exc
+        raise IntegrityError(f"sandbox mount links forbidden: {label} folder {Path(path).name}") from exc
 
 
 class NoneSandbox:
@@ -87,8 +87,8 @@ class ContainerSandbox:
     def command(self, name, workspace, public, *, holdout=None):
         # Check the folders as given: resolve() returns the link target, so a later check sees no link.
         workspace, public = Path(workspace), Path(public)
-        _refuse_mount_link(workspace)
-        _refuse_mount_link(public)
+        _refuse_mount_link(workspace, "workspace")
+        _refuse_mount_link(public, "public")
         workspace = plain_path(long_path(workspace).resolve())
         public = plain_path(long_path(public).resolve())
         if not long_path(workspace).is_dir() or not long_path(public).is_dir() or workspace == public or public.is_relative_to(workspace) or workspace.is_relative_to(public):
@@ -185,12 +185,13 @@ print(json.dumps({"private_paths":True,"write_boundary":True,"network":True}))
 
     @plain_io_errors()
     def tool_launch(self, contract, workspace, *, adapter=True):
-        # Check both mount folders before they are created or written; command() checks again.
+        # Check the run folder before resolve() because launch records are written there.
         workspace = Path(workspace)
-        _refuse_mount_link(workspace)
+        _refuse_mount_link(workspace, "workspace")
+        _refuse_mount_link(workspace.parent, "run")
         workspace = plain_path(long_path(workspace).resolve())
         public = workspace.parent / "public"
-        _refuse_mount_link(public)
+        _refuse_mount_link(public, "public")
         long_path(workspace).mkdir(parents=True, exist_ok=True)
         long_path(public).mkdir(exist_ok=True)
         # Root verification drivers must allow the required non-root container user.

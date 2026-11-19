@@ -7,6 +7,7 @@ import sqlite3
 import time
 import sys
 import os
+import stat
 import struct
 from datetime import datetime, timezone
 from pathlib import Path
@@ -261,7 +262,15 @@ class Repository:
             path = confined(outbox.root, artifact.path)
             if not long_path(path).is_file() or long_path(path).stat().st_size > 1_000_000:
                 raise IntegrityError("missing/oversized artifact")
-            data = long_path(path).read_bytes()
+            with long_path(path).open("rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    raise IntegrityError("artifact must be a regular file with one link")
+                if info.st_size > 1_000_000:
+                    raise IntegrityError("missing/oversized artifact")
+                data = stream.read(1_000_001)
+            if len(data) > 1_000_000:
+                raise IntegrityError("missing/oversized artifact")
             if digest(data) != artifact.sha256 or len(data) != artifact.size:
                 raise IntegrityError("evidence hash mismatch")
             if kind == "candidate":

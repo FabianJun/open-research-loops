@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import ast
 import hashlib
+import os
 from pathlib import Path
 import re
 import shutil
@@ -16,7 +17,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from research_loops.domain import IntegrityError, canonical, digest
-from research_loops.paths import atomic_write, confined
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, refuse_link
 
 
 Status = Literal["queued", "running", "complete", "failed", "cancelled", "unknown"]
@@ -89,13 +90,16 @@ class JobSpec(StrictModel):
         return value
 
 
+@plain_io_errors()
 def no_links(path):
     path = Path(path).absolute()
     for part in (path, *path.parents):
-        if part.is_symlink() or part.is_junction():
-            raise IntegrityError("compute paths must not contain symlinks or junctions")
-        if part.exists() and getattr(part.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
-            raise IntegrityError("compute reparse points forbidden")
+        try:
+            refuse_link(part)
+        except IntegrityError as exc:
+            if str(exc) == "reparse points are forbidden":
+                raise IntegrityError("compute reparse points forbidden") from exc
+            raise IntegrityError("compute paths must not contain symlinks or junctions") from exc
     return path
 
 
@@ -259,6 +263,7 @@ def raw_output(result):
     return (result.stdout or "") + (result.stderr or "")
 
 
+@plain_io_errors()
 def fetch_outputs(receipt, source, out_dir):
     source = no_links(source)
     destination = no_links(out_dir)
@@ -268,13 +273,21 @@ def fetch_outputs(receipt, source, out_dir):
         path = confined(source, name)
         if not path.is_file():
             raise IntegrityError("expected compute output missing: " + name)
+        if path.stat().st_nlink > 1:
+            raise IntegrityError("compute outputs must have one link; this file has a second hard link: " + name)
         selected[name] = path
     destination.mkdir(parents=True, exist_ok=True)
     facts = {}
     for name, path in selected.items():
         target = confined(destination, name)
         if path.resolve() != target.resolve():
-            shutil.copyfile(path, target)
+            # A fresh name keeps the default file mode; replacing it never writes into an existing target.
+            pending = target.with_name(".pending-" + uuid.uuid4().hex)
+            try:
+                shutil.copyfile(long_path(path), long_path(pending))
+                os.replace(long_path(pending), long_path(target))
+            finally:
+                long_path(pending).unlink(missing_ok=True)
         with target.open("rb") as stream:
             sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
         facts[name] = dict(sha256=sha256, size=target.stat().st_size)

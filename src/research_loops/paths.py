@@ -62,6 +62,21 @@ def refuse_link(path: Path) -> None:
         raise IntegrityError("reparse points are forbidden")
 
 
+def refuse_links_below(root: Path, path: Path) -> None:
+    # Check the trusted root and every component down to path, as given (before resolve()).
+    root, path = plain_path(Path(root)), plain_path(Path(path))
+    if not path.is_relative_to(root) or ".." in path.relative_to(root).parts:
+        raise IntegrityError("path outside its trusted root")
+    target, name = root, Path(root.name)
+    for part in ("", *path.relative_to(root).parts):
+        target, name = target / part, name / part
+        try:
+            refuse_link(target)
+        except IntegrityError as exc:
+            # Name the folder relative to the root, so the owner can find it without a host path.
+            raise IntegrityError(f"{exc}: {name.as_posix()}") from exc
+
+
 @plain_io_errors()
 def confined(root: Path, relative: str) -> Path:
     if not relative or "\\" in relative or ":" in relative or relative.startswith("/"):

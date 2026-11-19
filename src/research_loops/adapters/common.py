@@ -7,7 +7,7 @@ import asyncio
 
 from research_loops.authorization import authorize
 from research_loops.domain import Artifact, IntegrityError, WorkerContract, Workspace, canonical, digest
-from research_loops.paths import atomic_write, long_path, plain_io_errors
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors
 from research_loops.reports import WorkerReport
 from research_loops.candidate_schema import CANDIDATE_GRAMMAR
 from research_loops.transports.launch import local_launch
@@ -80,7 +80,7 @@ class SDKBackend:
     @plain_io_errors()
     def finish(self, contract, workspace, launch, *, sdk_version, cost, usage, trace) -> WorkerReport:
         self.save_trace(workspace, trace)
-        submitted = workspace.root / "submission.json"
+        submitted = confined(workspace.root, "submission.json")
         if not long_path(submitted).exists():
             raise IntegrityError("SDK finished without a sealed tool submission")
         report = WorkerReport.model_validate_json(long_path(submitted).read_bytes())

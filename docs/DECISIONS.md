@@ -141,3 +141,22 @@ be committed before the protected change; this grants no live-run permission.
 The owner approved read-only JSON status and report commands and a cancel
 command so that a local module gateway can run `rloop` as a background job.
 This offline interface grants no live-provider, pilot or holdout authorisation.
+
+## Path checks — 2026-11-19
+
+The coordinator now checks run, public and data folders for links and reparse
+points from the project's `.rloop` folder down, before it records a run, creates
+a folder, writes into it, resolves it or uses the single final attempt. Recovery,
+the submission read, the host-mode journal and the public training copy use the
+same per-component check as worker paths. Imported artifacts and fetched compute
+outputs must not have a second hard link, and a fetch replaces an existing file
+instead of writing into it. A refused folder is named. This change needs no new
+authorization: it changes no evaluator, anchor, data split or run permission.
+
+Two related points are recorded for later owner decisions rather than built now:
+
+- Further hardening of how files are opened during import and recovery is
+  deferred to a later owner decision.
+- Candidate code execution has no production caller yet, and the owner decides
+  when it gets one. Its prerequisites are recorded before a production caller is
+  added.

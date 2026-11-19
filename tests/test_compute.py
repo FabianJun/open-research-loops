@@ -20,6 +20,7 @@ from research_loops.compute.kaggle import KaggleBackend, parse_status
 from research_loops.compute.local import LocalBackend
 from research_loops.compute.manual import ManualBackend
 from research_loops.domain import IntegrityError, canonical, digest
+from research_loops.paths import plain_path
 
 
 def result(stdout="", returncode=0, stderr=""):
@@ -97,7 +98,7 @@ def test_compute_packaging_refuses_links(job_dir, monkeypatch, kind):
     target = job_dir / "linked.py"
     target.write_text("pass\n", encoding="utf-8")
     original = getattr(Path, kind)
-    monkeypatch.setattr(Path, kind, lambda self: self == target or original(self))
+    monkeypatch.setattr(Path, kind, lambda self: plain_path(self) == target or original(self))
     with pytest.raises(IntegrityError, match="symlinks or junctions"):
         package(job_dir)
 
