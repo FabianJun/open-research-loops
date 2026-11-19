@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from pydantic import Field
 
 from research_loops.domain import IntegrityError, Message, digest
-from research_loops.paths import confined
+from research_loops.paths import confined, long_path, plain_io_errors
 
 
 class GrainVerdict(Message):
@@ -145,8 +145,9 @@ def score(truths, predictions, exclude_edge):
         n_images=len(rows), n_images_size=len(sizes), per_image=rows)
 
 
+@plain_io_errors()
 def verified_bytes(root, entry, kind):
-    """Manifest paths are relative to one split, with no links or aliases."""
+    """Read a manifest file relative to its split and refuse links within the split."""
     if not isinstance(entry, dict) or set(entry) != {"path", "sha256"}:
         raise IntegrityError("invalid grain file manifest entry")
     name = entry["path"]
@@ -156,13 +157,10 @@ def verified_bytes(root, entry, kind):
     if (path.is_absolute() or len(path.parts) != 2 or path.parts[0] != kind
             or path.parts[1] in {".", ".."} or path.suffix.lower() not in ({".png"} if kind == "masks" else {".png", ".jpg"})):
         raise IntegrityError("grain manifest path outside selected split")
-    root = Path(root)
-    if any(p.is_symlink() or p.is_junction() for p in (root, *root.parents)):
-        raise IntegrityError("grain data links forbidden")
-    target = confined(root, name)
-    if not target.is_file():
+    target = confined(Path(root), name)
+    if not long_path(target).is_file():
         raise IntegrityError("grain manifest file missing")
-    data = target.read_bytes()
+    data = long_path(target).read_bytes()
     if digest(data) != entry["sha256"]:
         raise IntegrityError("grain manifest sha256 mismatch")
     return data

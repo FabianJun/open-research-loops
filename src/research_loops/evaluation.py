@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, Verdict, canonical, digest
+from research_loops.paths import long_path, plain_io_errors, plain_path, refuse_links_below
 from research_loops.processes import supervised
 from research_loops.protection import verify_anchor
 
@@ -23,6 +24,7 @@ def evaluator_hash(domain: str = "planted-signal") -> str:
 
 
 class SubprocessEvaluator:
+    @plain_io_errors()
     def evaluate(self, candidate: bytes, dataset: bytes, seconds: float, *, started=None, data_root: Path | None = None) -> Verdict:
         verify_anchor()
         request = json.loads(dataset)
@@ -30,7 +32,10 @@ class SubprocessEvaluator:
         if grain:
             if data_root is None:
                 raise IntegrityError("grain evaluator requires a separate host data root")
-            request = {"domain": "grain-316l", "manifest": request, "data_root": str(data_root.resolve())}
+            # The caller supplies .rloop/data/Grain/<split>; host folders above .rloop are allowed.
+            refuse_links_below(data_root.parents[2], data_root)
+            request = {"domain": "grain-316l", "manifest": request,
+                "data_root": str(plain_path(long_path(data_root).resolve()))}
         request["candidate"] = json.loads(candidate)
         output = supervised([sys.executable, "-I", "-m", "research_loops.evaluator_worker"],
             canonical(request).encode(), seconds, cwd=Path(sys.executable).parent, started=started)

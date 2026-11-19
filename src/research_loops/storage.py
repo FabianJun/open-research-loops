@@ -14,7 +14,7 @@ from pathlib import Path
 
 from research_loops.domain import IntegrityError, Verdict, WorkerContract, Workspace, canonical, content_hash, digest, validate_candidate
 from research_loops.reports import WorkerReport
-from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path, sqlite_uri
 from research_loops.locking import ProjectLock
 
 
@@ -98,7 +98,7 @@ class ReadOnlyRepository:
             raise IntegrityError("database changed during snapshot; poll again")
         # immutable prevents SQLite from touching journal/-shm files at open.
         # WAL is applied above, rather than silently ignored by immutable mode.
-        self.db = sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True)
+        self.db = sqlite3.connect(sqlite_uri(path) + "?mode=ro&immutable=1", uri=True)
         try:
             image = bytearray(_wal_image(*first))
             # An in-memory database has no WAL VFS; its committed pages are

@@ -12,7 +12,7 @@ import zipfile
 
 from research_loops.contracts import ARCHIVE_SHA256, is_grain, parse_contract
 from research_loops.domain import IntegrityError, canonical, digest
-from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path, refuse_links_below
 from research_loops.processes import supervised
 
 ARCHIVE_SIZE = 100439005
@@ -100,6 +100,7 @@ def _fetch_verified_archive(project, archive, expected, counts):
         # All paths and pairing are validated before extraction. No decoding or
         # statistics on test; raw member hashing only anchors its future use.
         for split in counts:
+            refuse_links_below(project / ".rloop", root / split)
             for name in sorted(grouped[split, "images"]):
                 row = {"name": name}
                 for kind, key in (("images", "image"), ("masks", "mask")):
@@ -107,8 +108,6 @@ def _fetch_verified_archive(project, archive, expected, counts):
                     data = z.read(info)
                     relative = kind + "/" + PurePosixPath(info.filename).name
                     target = confined(root, split + "/" + relative)
-                    if any(long_path(p).is_symlink() or long_path(p).is_junction() for p in (target, *target.parents)):
-                        raise IntegrityError("grain extraction links forbidden")
                     unchanged_write(target, data)
                     row[key] = {"path": relative, "sha256": digest(data)}
                 manifests[split]["images"].append(row)

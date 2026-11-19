@@ -7,7 +7,7 @@ import pytest
 
 from research_loops import coordinator
 from research_loops.domain import IntegrityError
-from research_loops.paths import atomic_write, confined, long_path, plain_path
+from research_loops.paths import atomic_write, confined, long_path, plain_path, sqlite_uri
 
 
 def test_prepare_and_resume_deep_project(tmp_path):
@@ -47,9 +47,21 @@ def test_prepare_and_resume_deep_project(tmp_path):
 def deep_folder(base, length):
     """A plain path of exactly `length` characters below `base`."""
     folder = base / "p"
+    while length - len(str(folder)) > 100:
+        folder /= "x" * 99  # Keep every component below the 255-character name limit.
     folder = Path(str(folder) + "x" * (length - len(str(folder))))
     assert len(str(folder)) == length
     return folder
+
+
+def directory_link(target, link):
+    if os.name == "nt":
+        import _winapi
+        # CreateJunction adds its own prefix to the target.
+        _winapi.CreateJunction(str(target), str(long_path(link)))
+        assert long_path(link).is_junction()
+    else:
+        link.symlink_to(target, target_is_directory=True)
 
 
 def test_run_report_and_export_deep_project(tmp_path):
@@ -79,12 +91,7 @@ def test_confinement_under_deep_root(tmp_path):
     long_path(root).mkdir(parents=True)
     outside.mkdir()
     link = root / "linked"
-    if os.name == "nt":
-        import _winapi
-        _winapi.CreateJunction(str(long_path(outside)), str(long_path(link)))
-        assert long_path(link).is_junction()
-    else:
-        link.symlink_to(outside, target_is_directory=True)
+    directory_link(outside, link)
     for relative in ("../x", "inner/../../x", "linked/x", "linked/inner/x", "linked/../x"):
         with pytest.raises(IntegrityError):
             confined(root, relative)
@@ -109,41 +116,8 @@ def test_long_path():
         assert long_path(unc) is unc
 
 
-def windows_long_paths_enabled():
-    """Read the host's LongPathsEnabled setting (read-only); a missing value counts as off."""
-    import winreg
-    try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
-                            r"SYSTEM\CurrentControlSet\Control\FileSystem") as key:
-            value, _ = winreg.QueryValueEx(key, "LongPathsEnabled")
-    except OSError:
-        return False
-    return value == 1
-
-
-@pytest.mark.parametrize("value, expected", [(0, False), (1, True), (None, False)])
-def test_windows_long_paths_enabled_reads_registry(monkeypatch, value, expected):
-    import sys
-    import types
-    from contextlib import nullcontext
-
-    def query(key, name):
-        assert name == "LongPathsEnabled"
-        if value is None:
-            raise FileNotFoundError(name)
-        return value, 4
-
-    fake = types.SimpleNamespace(
-        HKEY_LOCAL_MACHINE="HKLM",
-        OpenKey=lambda root, path: nullcontext((root, path)),
-        QueryValueEx=query,
-    )
-    monkeypatch.setitem(sys.modules, "winreg", fake)
-    assert windows_long_paths_enabled() is expected
-
-
-@pytest.mark.parametrize("length", [199, 230])
-def test_grain_data_under_deep_root(tmp_path, length):
+@pytest.mark.parametrize("length, linked_host", [(199, False), (230, False), (300, False), (199, True)])
+def test_grain_data_under_deep_root(tmp_path, length, linked_host):
     pytest.importorskip("skimage")
     from test_grain import fixture_zip
     from research_loops.contracts import GrainContract
@@ -151,21 +125,118 @@ def test_grain_data_under_deep_root(tmp_path, length):
     from research_loops.evaluation import SubprocessEvaluator
     from research_loops.grain_data import _fetch_verified_archive
 
-    project = deep_folder(tmp_path, length)
+    base = tmp_path
+    if linked_host:
+        target = tmp_path / "host-target"
+        target.mkdir()
+        base = tmp_path / "host-folder"
+        directory_link(target, base)
+    project = deep_folder(base, length)
     long_path(project).mkdir(parents=True)
     long_path(project / "contract.json").write_text(canonical(GrainContract()), encoding="utf-8")
     archive = tmp_path / "fixture.zip"
     expected = fixture_zip(archive)
     data_root = project / ".rloop/data/Grain/val"
-    if os.name != "nt" or length < 200 or windows_long_paths_enabled():
-        _fetch_verified_archive(project, archive, expected, dict(train=3, val=3, test=3))
-        manifest = long_path(project / ".rloop/data/val.json").read_bytes()
-        assert SubprocessEvaluator().evaluate(b"{}", manifest, 300, data_root=data_root)
-        return
-    # Windows with long paths off: the protected evaluator keeps plain paths,
-    # so deeper grain data stops with an error.
-    with pytest.raises(IntegrityError, match="evaluator process failed"):
-        _fetch_verified_archive(project, archive, expected, dict(train=3, val=3, test=3))
+    _fetch_verified_archive(project, archive, expected, dict(train=3, val=3, test=3))
     manifest = long_path(project / ".rloop/data/val.json").read_bytes()
-    with pytest.raises(IntegrityError, match="evaluator process failed"):
-        SubprocessEvaluator().evaluate(b"{}", manifest, 300, data_root=data_root)
+    assert SubprocessEvaluator().evaluate(b"{}", manifest, 300, data_root=data_root).n_images == 3
+
+
+def test_fake_grain_campaign_under_deep_root(tmp_path, monkeypatch):
+    pytest.importorskip("skimage")
+    import json
+    from typer.testing import CliRunner
+    from test_grain import fixture_zip
+    from research_loops import grain_worker
+    from research_loops.assessment import assess
+    from research_loops.cli import app
+    from research_loops.contracts import GrainContract
+    from research_loops.domain import canonical
+    from research_loops.grain_data import _fetch_verified_archive
+    from research_loops.grain_evaluator import TEAM_FINAL, evaluate
+    from research_loops.storage import ReadOnlyRepository
+
+    project = deep_folder(tmp_path, 250)  # The training data root is beyond 260 characters.
+    long_path(project).mkdir(parents=True)
+    long_path(project / "contract.json").write_text(canonical(GrainContract()), encoding="utf-8")
+    archive = tmp_path / "fixture.zip"
+    _fetch_verified_archive(project, archive, fixture_zip(archive), dict(train=3, val=3, test=3))
+    manifest = json.loads(long_path(project / ".rloop/data/val.json").read_bytes())
+    expected = tuple(evaluate(dict(domain="grain-316l", candidate=params, manifest=manifest,
+        data_root=str(project / ".rloop/data/Grain/val"))).max_rel_error for params in ({}, TEAM_FINAL))
+    monkeypatch.setattr(grain_worker, "control_expectations", lambda: expected)
+    runner = CliRunner()
+    for args in (["init", str(project), "--owner", "Fixture Owner"], ["plan", str(project)],
+            ["run", str(project)], ["report", str(project), "--check"], ["run", str(project), "--final"],
+            ["report", str(project), "--check"]):
+        result = runner.invoke(app, args)
+        assert result.exit_code == 0, (args, result.output, result.exception)
+    assert "FAIL" not in assess(project)
+    snapshot = ReadOnlyRepository(project / ".rloop")
+    try:
+        assert snapshot.runs()
+    finally:
+        snapshot.close()
+    tools = list(long_path(project / ".rloop").rglob("training-tool.json"))
+    assert tools
+    for path in tools:
+        root = json.loads(path.read_bytes())["data_root"]
+        assert len(root) > 260 and root == str(plain_path(Path(root)))
+    assert "Final holdout max_rel_error" in long_path(project / ".rloop/report.md").read_text(encoding="utf-8")
+    # The assessment re-check refuses a linked data folder.
+    moved = tmp_path / "moved-grain"
+    os.replace(long_path(project / ".rloop/data/Grain"), long_path(moved))
+    directory_link(moved, project / ".rloop/data/Grain")
+    assessment = assess(project)
+    assert "FAIL" in assessment and "links/reparse points are forbidden: .rloop/data/Grain" in assessment, assessment
+
+
+@pytest.mark.parametrize("component", ["Grain", "train"])
+@pytest.mark.parametrize("consumer", ["evaluation", "training"])
+def test_grain_data_root_refuses_links(tmp_path, monkeypatch, component, consumer):
+    from types import SimpleNamespace
+
+    from research_loops.evaluation import SubprocessEvaluator
+    from research_loops.grain_worker import prepare_training_tool
+
+    root = tmp_path / ".rloop"
+    data_root = root / "data/Grain/train"
+    link = data_root.parent if component == "Grain" else data_root
+    link.parent.mkdir(parents=True)
+    target = tmp_path / "data-target"
+    (target / "train").mkdir(parents=True)
+    directory_link(target, link)
+    manifest = b'{"domain":"grain-316l","split":"train","images":[]}'
+    run_root = tmp_path / "run"
+    if consumer == "training":
+        monkeypatch.setattr(coordinator, "private", lambda *_: manifest)
+        # Exercise the training check independently of the coordinator's check.
+        monkeypatch.setattr(coordinator, "data_root", lambda *_: data_root)
+    else:
+        monkeypatch.setattr("research_loops.evaluation.supervised",
+            lambda *args, **kwargs: pytest.fail("evaluator process started"))
+    with pytest.raises(IntegrityError, match=rf"links.*{component}"):
+        if consumer == "training":
+            prepare_training_tool(SimpleNamespace(root=root), None, None, run_root)
+        else:
+            SubprocessEvaluator().evaluate(b"{}", manifest, 300, data_root=data_root)
+    assert not run_root.exists()
+
+
+def test_sqlite_uri_escapes_names(tmp_path):
+    import sqlite3
+
+    folder = tmp_path / ("a b#%ü" + ("" if os.name == "nt" else "?x"))
+    folder.mkdir()
+    database = folder / "state.sqlite"
+    writer = sqlite3.connect(database)
+    writer.execute("CREATE TABLE t (x)")
+    writer.commit()
+    writer.close()
+    reader = sqlite3.connect(sqlite_uri(database) + "?mode=ro", uri=True)
+    try:
+        assert reader.execute("SELECT count(*) FROM t").fetchone()[0] == 0
+        with pytest.raises(sqlite3.OperationalError, match="readonly"):
+            reader.execute("INSERT INTO t VALUES (1)")
+    finally:
+        reader.close()

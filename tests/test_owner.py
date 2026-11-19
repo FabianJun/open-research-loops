@@ -10,7 +10,9 @@ from research_loops.authorization import authorize
 from research_loops.cli import app
 from research_loops.domain import IntegrityError
 from research_loops.owner import initialize_owner, resolve_owner
+from research_loops.paths import long_path
 from test_authorization import approval
+from test_long_paths import deep_folder
 
 
 def test_init_records_explicit_owner_and_preserves_other_host_settings(example):
@@ -38,6 +40,21 @@ def test_owner_resolution_uses_project_git_configuration(tmp_path, monkeypatch):
     monkeypatch.setattr("research_loops.owner.getpass.getuser", lambda: pytest.fail("OS lookup must not override Git"))
     assert initialize_owner(tmp_path / "new" / "pilot", None) == {"name": "Git Owner", "source": "git"}
     assert resolve_owner(" Explicit Owner ", tmp_path) == {"name": "Explicit Owner", "source": "argument"}
+
+
+def test_initialize_owner_under_deep_root(tmp_path, monkeypatch):
+    # Real Git: the project's repository configuration must still name the owner.
+    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "Git Owner"], check=True)
+    monkeypatch.setattr("research_loops.owner.getpass.getuser", lambda: pytest.fail("OS lookup must not override Git"))
+    directory = deep_folder(tmp_path, 285)
+    long_path(directory).mkdir(parents=True)
+    project = directory / "new" / "project"
+    owner = {"name": "Git Owner", "source": "git"}
+    assert initialize_owner(project, None) == owner
+    assert json.loads(long_path(project / "project.json").read_bytes()) == {"owner": owner}
+    monkeypatch.setattr("research_loops.owner.subprocess.run", lambda *_, **__: pytest.fail("owner already recorded"))
+    assert initialize_owner(project, None) == owner
 
 
 @pytest.mark.parametrize("git_result", ["missing", "error", "empty"])

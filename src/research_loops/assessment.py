@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import sqlite3
 
-from research_loops.paths import long_path, plain_io_errors, plain_path
+from research_loops.paths import long_path, plain_io_errors, plain_path, refuse_links_below, sqlite_uri
 from research_loops.domain import Contract, IntegrityError, Verdict, canonical, content_hash, digest
 from research_loops.evaluation import evaluator_hash
 from research_loops.licensing import license_issues
@@ -54,7 +54,7 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
     try:
         with plain_io_errors():
             database = plain_path(long_path(root / "state.sqlite").resolve())
-        repo.db = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
+        repo.db = sqlite3.connect(sqlite_uri(database) + "?mode=ro", uri=True)
         repo.db.row_factory = sqlite3.Row
         repo.db.execute("PRAGMA query_only=ON")
         repo.db.execute("BEGIN")
@@ -164,7 +164,9 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                 require(repo.artifact(run["id"], "evaluation") == canonical(verdict).encode(), "verdict lacks matching evidence object")
                 request = json.loads(long_path(root / "private" / run["registration_hash"] / "development.json").read_bytes())
                 if request.get("domain") == "grain-316l":
-                    request = {"domain": "grain-316l", "manifest": request, "data_root": str(root / "data" / "Grain" / "val")}
+                    grain_root = root / "data" / "Grain" / "val"
+                    refuse_links_below(root, grain_root)
+                    request = {"domain": "grain-316l", "manifest": request, "data_root": str(grain_root)}
                 request["candidate"] = json.loads(repo.artifact(run["id"], "candidate"))
                 check(request, verdict)
                 require(run["scientific_outcome"] == ("supported" if verdict.supported else "negative"), "outcome differs from verdict")

@@ -5,7 +5,7 @@ import json
 
 from research_loops.domain import IntegrityError, canonical
 from research_loops.grain_evaluator import CONTROL_VALUES, TEAM_FINAL
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path, refuse_links_below
 
 
 def control_expectations():
@@ -32,6 +32,7 @@ def controls(repo, contract, key):
     repo.pilot(dict(positive_control=True, negative_control=True, nonconstant=True, baseline=True))
 
 
+@plain_io_errors()
 def prepare_training_tool(repo, contract, key, run_root):
     from research_loops.coordinator import data_root, private
     manifest = json.loads(private(repo, key, "training"))
@@ -39,7 +40,9 @@ def prepare_training_tool(repo, contract, key, run_root):
     # Host-private capability file; never included in worker instructions/context.
     # It carries one split only. The service never receives project configuration,
     # the DB path, or development/final roots or manifests.
-    value = {"manifest": manifest, "data_root": str(data_root(repo, contract, "training").resolve())}
+    root = data_root(repo, contract, "training")
+    refuse_links_below(repo.root, root)
+    value = {"manifest": manifest, "data_root": str(plain_path(long_path(root).resolve()))}
     atomic_write(run_root / "training-tool.json", canonical(value).encode(), exclusive=True)
 
 

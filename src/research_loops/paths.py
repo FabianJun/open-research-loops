@@ -2,8 +2,9 @@
 
 Windows long paths: wrap a path with long_path() only inside the file-system call itself
 (long_path(p).read_bytes()). Never store, return, show or pass on the wrapped value: subprocess
-arguments, working folders, container mounts and URIs get the plain path. Turn a resolve() result
-back with plain_path(), and run the I/O scope under plain_io_errors() so error file names stay plain.
+arguments, working folders, container mounts and URIs passed to other programs get the plain path;
+a SQLite open URI (sqlite_uri) is the file-system call itself. Turn a resolve() result back with
+plain_path(), and run the I/O scope under plain_io_errors() so error file names stay plain.
 """
 
 import os
@@ -12,6 +13,7 @@ import stat
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import quote
 
 from research_loops.domain import IntegrityError
 
@@ -39,6 +41,11 @@ def plain_path(path: Path) -> Path:
         if value.startswith(_EXTENDED) and value[len(_EXTENDED) + 1:len(_EXTENDED) + 2] == ":":
             return Path(value[len(_EXTENDED):])
     return path
+
+
+def sqlite_uri(path: Path) -> str:
+    # A file: URI for sqlite3.connect(..., uri=True); this open is the file-system call itself.
+    return "file:" + quote(os.fsencode(long_path(path)))
 
 
 @contextmanager

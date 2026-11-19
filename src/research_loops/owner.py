@@ -2,11 +2,12 @@
 
 import getpass
 import json
+import os
 import subprocess
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path
 
 
 def owner_name(record: dict) -> str:
@@ -35,16 +36,18 @@ def resolve_owner(name: str | None, directory: Path) -> dict:
     return {"name": name.strip(), "source": source}
 
 
+@plain_io_errors()
 def initialize_owner(project: Path, name: str | None) -> dict:
     """Preserve a recorded owner on repeated init unless explicitly replaced."""
     path = project / "project.json"
-    config = json.loads(path.read_bytes()) if path.exists() else {}
+    config = json.loads(long_path(path).read_bytes()) if long_path(path).exists() else {}
     if name is None and "owner" in config:
         owner_name(config)
         return config["owner"]
     # Use the nearest existing directory so new project paths inherit Git config.
-    directory = project.resolve()
-    while not directory.exists():
+    # Git cannot enter a folder of 248 or more characters on Windows without long-path support.
+    directory = plain_path(long_path(project).resolve())
+    while not long_path(directory).exists() or (os.name == "nt" and len(str(directory)) >= 248):
         directory = directory.parent
     config["owner"] = resolve_owner(name, directory)
     atomic_write(path, canonical(config).encode())
