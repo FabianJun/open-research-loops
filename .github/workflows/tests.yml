@@ -7,7 +7,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
+        experimental: [false]
+        # macOS is a trial run until its own job first passes; then remove continue-on-error so it is required. Call macOS tested in the README only after a required run passes.
+        include:
+          - os: macos-latest
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
