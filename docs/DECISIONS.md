@@ -186,3 +186,26 @@ import, which are not anchored, use the same check from `.rloop` down. A
 project below a linked host folder is therefore no longer refused at import.
 The read-only database opens of the assessment and of status snapshots use the
 long-path form as well, so a deep project can also be assessed.
+
+## Temporary folders and macOS CI — 2026-11-19
+
+Provisional; the owner reviews it.
+
+The hosted macOS trial failed because Kaggle fetch's `no_links()` refused the temp
+path through `/var` to `/private/var`. The runner lacked a Linux OCI runtime for
+the container tests. The link guard is unchanged. It protects against links that
+come with a workspace or downloaded data, while the temp root is the process
+owner's own configuration, like `PATH`. Only temporary folders created by the
+code use `system_temp_root()`. Owner, job and workspace paths stay as supplied.
+Tests cover refusal of links in download and job folders on every OS.
+The process owner configures the temp root through settings including `TMPDIR`,
+`TEMP` and `TMP`. Kaggle fetch accepts a linked temp root with the same access as
+a plain temp folder there. This offers no defence against a hostile temp root.
+The fetch check runs after the download, so it misses any link placed and
+removed before the check, and a file can still be swapped between the check and
+the copy, with both gaps unchanged from before this update.
+On macOS, job, output and project paths through `/tmp` or `/var` still fail the
+link check. Use the real path below `/private`. GitHub macOS and Windows runners
+skip the container contract with a reason. Linux CI fails without a runtime and
+ignores the local offline opt-in `RLOOP_TEST_NO_CONTAINER_BUILD`. macOS stays a
+trial CI leg until a hosted run passes.

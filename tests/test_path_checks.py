@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import tempfile
 from contextlib import closing
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,15 +9,16 @@ from types import SimpleNamespace
 import pytest
 
 from research_loops.adapters.common import SDKBackend
-from research_loops.compute.core import fetch_outputs, new_receipt, no_links, package
+from research_loops.compute.core import fetch_outputs, new_receipt, no_links, package, read_receipt
+from research_loops.compute.kaggle import KaggleBackend
 from research_loops.contracts import GrainContract
 from research_loops.coordinator import data_root, prepare, reconcile, run
 from research_loops.domain import IntegrityError, Limits, WorkerContract, Workspace, digest
 from research_loops.fake import FakeBackend
-from research_loops.paths import long_path, plain_path
+from research_loops.paths import long_path, plain_path, system_temp_root
 from research_loops.sandbox import ContainerSandbox
 from research_loops.tools import ToolService
-from test_compute import job_dir, outputs
+from test_compute import job_dir, outputs, result
 from test_long_paths import deep_folder
 
 
@@ -28,6 +30,14 @@ def linked_folder(path, target):
     else:
         path.symlink_to(target, target_is_directory=True)
     return path
+
+
+@pytest.fixture
+def linked_temp_root(tmp_path, monkeypatch):
+    target = tmp_path / "temp-target"
+    link = linked_folder(tmp_path / "temp-link", target)
+    monkeypatch.setattr(tempfile, "tempdir", str(link))
+    return link, target
 
 
 def assignment(key="a" * 64):
@@ -134,6 +144,96 @@ def test_compute_refuses_deep_link(tmp_path):
     assert len(str(link)) > 260
     with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
         no_links(link / "missing")
+
+
+def test_system_temp_root_canonicalizes_only_the_temp_root(linked_temp_root):
+    link, target = linked_temp_root
+    root = system_temp_root()
+    assert os.path.normcase(root) == os.path.normcase(os.path.realpath(target))
+    with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
+        no_links(link / "missing")
+    assert no_links(root / "missing") == root / "missing"
+
+
+def test_kaggle_fetch_with_linked_system_temp_root(job_dir, linked_temp_root):
+    _, target = linked_temp_root
+    receipt = new_receipt(package(job_dir), "kaggle", False)
+    out_dir = job_dir / "out" / "fetched"
+
+    def download(argv, **kwargs):
+        assert argv[-2] == "-p"
+        destination = Path(argv[-1])
+        assert os.path.normcase(destination.parent) == os.path.normcase(os.path.realpath(target))
+        outputs(destination)
+        return result()
+
+    fetched = KaggleBackend(run=download).fetch(receipt, out_dir)
+    assert fetched.status == "complete"
+    assert set(fetched.outputs) == set(receipt.job.outputs)
+    for name, fact in fetched.outputs.items():
+        data = (out_dir / name).read_bytes()
+        assert fact.sha256 == digest(data) and fact.size == len(data)
+    assert read_receipt(receipt.path) == fetched
+
+
+def test_kaggle_fetch_refuses_links_below_system_temp_root(job_dir, linked_temp_root, tmp_path):
+    receipt = new_receipt(package(job_dir), "kaggle", False)
+    out_dir = job_dir / "out" / "fetched"
+    outside = tmp_path / "outside"
+    outputs(outside)
+
+    def download(argv, **kwargs):
+        destination = Path(argv[-1])
+        (destination / "result.json").write_bytes((outside / "result.json").read_bytes())
+        linked_folder(destination / "labels.npz", outside)
+        return result()
+
+    with pytest.raises(IntegrityError, match="^links/reparse points are forbidden$"):
+        KaggleBackend(run=download).fetch(receipt, out_dir)
+    assert not out_dir.exists()
+    assert not read_receipt(receipt.path).outputs
+
+    linked_folder(job_dir / "linked", outside)
+    with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
+        no_links(job_dir / "linked" / "x")
+
+
+def test_package_refuses_folder_linked_outside_job(job_dir, tmp_path):
+    outside = tmp_path / "outside"
+    linked_folder(job_dir / "linked", outside)
+    (outside / "helper.py").write_text("pass\n", encoding="utf-8")
+
+    with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
+        package(job_dir)
+
+
+@pytest.mark.parametrize("kind,message", [
+    ("hard-link", r"^compute outputs must have one link; this file has a second hard link: labels\.npz$"),
+    ("directory", r"^expected compute output missing: labels\.npz$"),
+])
+def test_kaggle_fetch_refuses_invalid_output(job_dir, linked_temp_root, tmp_path, kind, message):
+    receipt = new_receipt(package(job_dir), "kaggle", False)
+    out_dir = job_dir / "out" / "fetched"
+    outside = tmp_path / "outside"
+    outputs(outside)
+
+    def download(argv, **kwargs):
+        destination = Path(argv[-1])
+        (destination / "result.json").write_bytes((outside / "result.json").read_bytes())
+        output = destination / "labels.npz"
+        if kind == "hard-link":
+            try:
+                os.link(outside / "labels.npz", output)
+            except OSError as exc:
+                pytest.skip(f"cannot create a hard link on the test filesystem ({exc.strerror})")
+        else:
+            output.mkdir()
+        return result()
+
+    with pytest.raises(IntegrityError, match=message):
+        KaggleBackend(run=download).fetch(receipt, out_dir)
+    assert not out_dir.exists()
+    assert not read_receipt(receipt.path).outputs
 
 
 def test_compute_names_other_reparse_points(tmp_path, monkeypatch):

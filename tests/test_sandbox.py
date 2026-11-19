@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,16 +91,16 @@ def test_missing_runtime_blocks(monkeypatch):
 
 @pytest.fixture(scope="session")
 def sandbox_image(tmp_path_factory):
-    if os.name == "nt" and os.environ.get("GITHUB_ACTIONS"):
-        pytest.skip("GitHub Windows runners cannot run Linux containers; Linux CI runs the container contract")
+    if os.environ.get("GITHUB_ACTIONS") and not sys.platform.startswith("linux"):
+        pytest.skip("GitHub macOS and Windows runners provide no Linux OCI runtime; Linux CI runs the container contract")
     runtime = os.environ.get("RLOOP_TEST_RUNTIME", "docker")
     if not shutil.which(runtime):
         if os.environ.get("GITHUB_ACTIONS"):
             pytest.fail("Linux CI must provide its required OCI runtime")
         pytest.skip("Linux container integration requires docker/podman CLI; use Linux CI or Docker Desktop locally")
     image = os.environ.get("RLOOP_SANDBOX_IMAGE")
-    # Opt-in for offline local runs; never set by fixtures, so CI keeps building and running the contract.
-    if os.environ.get("RLOOP_TEST_NO_CONTAINER_BUILD") == "1":
+    # Opt-in for offline local runs only. CI ignores it and keeps building and running the contract.
+    if os.environ.get("RLOOP_TEST_NO_CONTAINER_BUILD") == "1" and "GITHUB_ACTIONS" not in os.environ:
         if not image:
             pytest.skip("offline container tests require an already-local RLOOP_SANDBOX_IMAGE; no build or pull")
         local = subprocess.run([runtime, "image", "inspect", image], capture_output=True)
@@ -111,6 +112,19 @@ def sandbox_image(tmp_path_factory):
         assert built.returncode == 0, built.stderr.decode(errors="replace")
         image = output.read_text().strip()
     return image
+
+
+@pytest.mark.parametrize("platform,exception,message", [
+    ("darwin", pytest.skip.Exception, "no Linux OCI runtime"),
+    ("win32", pytest.skip.Exception, "no Linux OCI runtime"),
+    ("linux", pytest.fail.Exception, "Linux CI must provide its required OCI runtime"),
+])
+def test_ci_container_fixture_without_runtime(monkeypatch, tmp_path_factory, platform, exception, message):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setattr(sys, "platform", platform)
+    monkeypatch.setattr(shutil, "which", lambda runtime: None)
+    with pytest.raises(exception, match=message):
+        sandbox_image.__wrapped__(tmp_path_factory)
 
 
 @pytest.mark.parametrize("image,local", [(None, False), ("sha256:local-test", False), ("sha256:local-test", True)])
@@ -135,6 +149,35 @@ def test_offline_container_fixture_never_builds_or_pulls(monkeypatch, tmp_path_f
         with pytest.raises(pytest.skip.Exception, match="no build or pull"):
             sandbox_image.__wrapped__(tmp_path_factory)
     assert len(calls) == (1 if image else 0)
+
+
+@pytest.mark.parametrize("image", ["sha256:local-test", None], ids=["given-image", "build"])
+def test_ci_container_fixture_ignores_offline_opt_in(monkeypatch, tmp_path_factory, image):
+    from types import SimpleNamespace
+
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(shutil, "which", lambda runtime: "/local/docker")
+    monkeypatch.setenv("RLOOP_TEST_NO_CONTAINER_BUILD", "1")
+    if image:
+        monkeypatch.setenv("RLOOP_SANDBOX_IMAGE", image)
+    else:
+        monkeypatch.delenv("RLOOP_SANDBOX_IMAGE", raising=False)
+
+    calls = []
+
+    def failed_build(argv, **kwargs):
+        calls.append(argv)
+        return SimpleNamespace(returncode=1, stderr=b"fake")
+
+    monkeypatch.setattr(subprocess, "run", failed_build)
+    if image:
+        assert sandbox_image.__wrapped__(tmp_path_factory) == image
+        assert not calls
+    else:
+        with pytest.raises(AssertionError, match="fake"):
+            sandbox_image.__wrapped__(tmp_path_factory)
+        assert [argv[1] for argv in calls] == ["build"]
 
 
 @pytest.fixture

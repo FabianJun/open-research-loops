@@ -10,6 +10,7 @@ import tempfile
 
 from research_loops.compute.core import fetch_outputs, launch_source, new_receipt, raw_output, record, runner
 from research_loops.domain import IntegrityError
+from research_loops.paths import system_temp_root
 
 
 STATUSES = {"queued": "queued", "new_script": "queued", "running": "running",
@@ -52,7 +53,8 @@ class KaggleBackend:
         receipt = new_receipt(job, self.name, smoke)
         remote_id = owner + "/" + name
         receipt = record(receipt, "queued", remote_id=remote_id)
-        with tempfile.TemporaryDirectory(prefix="rloop-kaggle-") as folder:
+        # Both Kaggle temporary folders use the same canonical root for consistent paths across platforms.
+        with tempfile.TemporaryDirectory(prefix="rloop-kaggle-", dir=system_temp_root()) as folder:
             staging = Path(folder)
             (staging / job.spec.entry).write_text(launch_source(job.files[job.spec.entry],
                 job.spec.entry, job.arguments(smoke), "/kaggle/working"), encoding="utf-8", newline="\n")
@@ -76,7 +78,7 @@ class KaggleBackend:
         return record(receipt, parse_status(raw) if result.returncode == 0 else "unknown", raw)
 
     def fetch(self, receipt, out_dir):
-        with tempfile.TemporaryDirectory(prefix="rloop-kaggle-output-") as folder:
+        with tempfile.TemporaryDirectory(prefix="rloop-kaggle-output-", dir=system_temp_root()) as folder:
             try:
                 result = self.run(["kaggle", "kernels", "output", receipt.remote_id, "-p", folder], timeout=300)
             except (OSError, subprocess.TimeoutExpired):
