@@ -2,6 +2,7 @@
 
 from pydantic import Field
 
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.domain import IntegrityError, Message, digest
 from research_loops.grounding import quote
 from research_loops.storage import Repository
@@ -24,6 +25,7 @@ def ideation(repo: Repository, proposals: list[Idea], keep: int) -> list[Idea]:
     return ranked[:keep]
 
 
+@plain_io_errors()
 def literature(repo: Repository, source_id: str, *, url: str, license: str,
                source: bytes | None = None, quotation: str | None = None, error: str | None = None) -> None:
     if not url or not license:
@@ -34,9 +36,8 @@ def literature(repo: Repository, source_id: str, *, url: str, license: str,
         raise IntegrityError("literature retrieval failed; model memory is not a source")
     quote(source, quotation or "")
     checksum = digest(source)
-    from research_loops.paths import atomic_write
     path = repo.root / "objects" / checksum
-    if not path.exists():
+    if not long_path(path).exists():
         atomic_write(path, source, exclusive=True)
     with repo.db:
         repo.event("literature", source_id, {"url": url, "license": license, "hash": checksum, "quote": quotation, "tag": "cited"})

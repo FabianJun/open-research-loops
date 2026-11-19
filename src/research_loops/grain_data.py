@@ -12,7 +12,7 @@ import zipfile
 
 from research_loops.contracts import ARCHIVE_SHA256, is_grain, parse_contract
 from research_loops.domain import IntegrityError, canonical, digest
-from research_loops.paths import atomic_write, confined
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path
 from research_loops.processes import supervised
 
 ARCHIVE_SIZE = 100439005
@@ -23,16 +23,18 @@ LICENSE_CAVEAT = "Metadata license CC BY 4.0; the deposit README says a final pa
 TEAM_SOURCE = "VanishJr/micrograph-impact-lab@91758551f37d54d94130ab69cd00a8ee68ac0d40 (Apache-2.0)"
 
 
+@plain_io_errors()
 def unchanged_write(path, data):
-    if path.exists():
-        if path.read_bytes() != data:
+    if long_path(path).exists():
+        if long_path(path).read_bytes() != data:
             raise IntegrityError("existing grain data or manifest differs; refusing overwrite")
     else:
         atomic_write(path, data, exclusive=True)
 
 
+@plain_io_errors()
 def fetch(project: Path, archive: Path | None = None):
-    if not is_grain(parse_contract((project / "contract.json").read_bytes())):
+    if not is_grain(parse_contract(long_path(project / "contract.json").read_bytes())):
         raise IntegrityError("data fetch requires a grain-316l contract")
     if archive is not None:
         return _fetch_verified_archive(project, archive, (ARCHIVE_SIZE, ARCHIVE_MD5, ARCHIVE_SHA256), COUNTS)
@@ -49,10 +51,11 @@ def fetch(project: Path, archive: Path | None = None):
         return _fetch_verified_archive(project, path, (ARCHIVE_SIZE, ARCHIVE_MD5, ARCHIVE_SHA256), COUNTS)
 
 
+@plain_io_errors()
 def _fetch_verified_archive(project, archive, expected, counts):
     """Tests inject fixture facts directly here; no contract/CLI test seam."""
     size, md5, sha256 = expected
-    raw = Path(archive).read_bytes()
+    raw = long_path(Path(archive)).read_bytes()
     if len(raw) != size or hashlib.md5(raw).hexdigest() != md5 or digest(raw) != sha256:
         raise IntegrityError("grain archive size/md5/sha256 verification failed; nothing extracted")
     root = project / ".rloop" / "data" / "Grain"
@@ -104,14 +107,14 @@ def _fetch_verified_archive(project, archive, expected, counts):
                     data = z.read(info)
                     relative = kind + "/" + PurePosixPath(info.filename).name
                     target = confined(root, split + "/" + relative)
-                    if any(p.is_symlink() or p.is_junction() for p in (target, *target.parents)):
+                    if any(long_path(p).is_symlink() or long_path(p).is_junction() for p in (target, *target.parents)):
                         raise IntegrityError("grain extraction links forbidden")
                     unchanged_write(target, data)
                     row[key] = {"path": relative, "sha256": digest(data)}
                 manifests[split]["images"].append(row)
     for split, manifest in manifests.items():
         unchanged_write(project / ".rloop" / "data" / f"{split}.json", canonical(manifest).encode())
-    request = {"manifest": manifests["train"], "data_root": str((root / "train").resolve())}
+    request = {"manifest": manifests["train"], "data_root": str(plain_path(long_path(root / "train").resolve()))}
     public = supervised([sys.executable, "-I", "-m", "research_loops.grain_data"], canonical(request).encode(), 300)
     unchanged_write(project / ".rloop" / "inputs" / "training.json", public)
     return {split: digest(canonical(m).encode()) for split, m in manifests.items()}

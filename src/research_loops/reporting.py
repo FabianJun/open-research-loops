@@ -6,7 +6,7 @@ from pathlib import Path
 
 from research_loops.domain import IntegrityError, canonical, content_hash
 from research_loops.grounding import number
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.storage import Repository
 
 
@@ -92,11 +92,12 @@ def render(repo: Repository) -> str:
     return "\n".join(lines)
 
 
+@plain_io_errors()
 def report(repo: Repository, *, check: bool = False) -> str:
     value = render(repo)
     target = repo.root / "report.md"
     if check:
-        if not target.exists() or target.read_text(encoding="utf-8") != value:
+        if not long_path(target).exists() or long_path(target).read_text(encoding="utf-8") != value:
             raise IntegrityError("saved report differs from database regeneration")
     else:
         atomic_write(target, value.encode())
@@ -118,23 +119,25 @@ def export_bytes(repo: Repository) -> bytes:
     return b"".join(expected)
 
 
+@plain_io_errors()
 def verify_export(repo: Repository) -> tuple[int, int]:
     path = repo.root / "events.jsonl"
-    existing = path.read_bytes()
+    existing = long_path(path).read_bytes()
     full = export_bytes(repo)
     if existing and (not existing.endswith(b"\n") or not full.startswith(existing)):
         raise IntegrityError("divergent or torn export; preserve file and diagnose before recovery")
     return len(existing.splitlines()), len(full.splitlines())
 
 
+@plain_io_errors()
 def export(repo: Repository) -> Path:
     path = repo.root / "events.jsonl"
-    existing = path.read_bytes() if path.exists() else b""
+    existing = long_path(path).read_bytes() if long_path(path).exists() else b""
     full = export_bytes(repo)
     if existing and (not existing.endswith(b"\n") or not full.startswith(existing)):
         raise IntegrityError("divergent or torn export; preserve file and diagnose before recovery")
     if existing != full:
-        with path.open("ab") as stream:
+        with long_path(path).open("ab") as stream:
             stream.write(full[len(existing):])
             stream.flush()
             import os

@@ -3,11 +3,13 @@
 import json
 import math
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.domain import IntegrityError
 from research_loops.settings import working_mode
 from research_loops.storage import Repository
 
 
+@plain_io_errors()
 def record(repo: Repository, value: float, note: str | None = None) -> None:
     if not math.isfinite(value):
         raise IntegrityError("prediction must be a finite number")
@@ -21,7 +23,7 @@ def record(repo: Repository, value: float, note: str | None = None) -> None:
         # see a score and then backfill a prediction before reconciliation.
         if (state["control_attempts"] or state["final_ticket"]
                 or repo.db.execute("SELECT 1 FROM runs WHERE verdict IS NOT NULL").fetchone()
-                or any((repo.root / "evaluation_receipts").glob("*.json"))):
+                or any(long_path(repo.root / "evaluation_receipts").glob("*.json"))):
             raise IntegrityError("prediction refused: scoring has already started")
         contract = json.loads(repo.db.execute("SELECT payload FROM registrations WHERE hash=?",
             (state["current_registration"],)).fetchone()[0])

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from research_loops.domain import WorkerContract, canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path
 
 
 def tool_environment() -> dict[str, str]:
@@ -24,12 +24,13 @@ class Launch:
     image: str | None = None
 
 
+@plain_io_errors()
 def local_launch(contract: WorkerContract, root: Path, *, adapter: bool = False) -> Launch:
-    root = root.resolve()
+    root = plain_path(long_path(root).resolve())
     context = root.parent / "worker-context.json"
     value = canonical(contract).encode()
-    if context.exists():
-        if context.read_bytes() != value:
+    if long_path(context).exists():
+        if long_path(context).read_bytes() != value:
             raise ValueError("worker context cannot be replaced")
     else:
         atomic_write(context, value, exclusive=True)

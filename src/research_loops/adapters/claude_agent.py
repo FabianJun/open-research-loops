@@ -5,6 +5,7 @@ from importlib.metadata import version
 import json
 from typing import get_args
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.adapters.common import SDKBackend, instructions, micro_usd, cleanup_worker
 from research_loops.domain import IntegrityError
 from research_loops.transports.protocol import tool_names
@@ -89,7 +90,9 @@ class ClaudeBackend(SDKBackend):
                 trace={"instructions": instructions(contract), "input": "Execute the assigned public contract.",
                     "messages": messages, "effective_tools": sorted(allowed), "offline_seam": self.offline})
         except BaseException:
-            if not (workspace.root / "adapter-trace.json").exists():
+            with plain_io_errors():
+                has_trace = long_path(workspace.root / "adapter-trace.json").exists()
+            if not has_trace:
                 self.save_trace(workspace, trace)
             raise
 

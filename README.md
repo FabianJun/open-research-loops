@@ -54,6 +54,7 @@ starts are separate sessions on one of the [backends](#backends).
 
 Pick a mode and paste its starter into your coding agent.
 You need uv and Python 3.12 or newer, on Windows or Linux.
+On Windows, keep the project folder path under 200 characters, so that the grain example also works.
 
 - **Cost:** the module is free. The AI runs on your own subscription or your own API access. In
   coached mode, the agent states the cost first; usage is recorded and the cost estimated, and an

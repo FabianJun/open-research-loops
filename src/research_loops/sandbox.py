@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path
 from research_loops.transports.launch import Launch, local_launch, tool_environment
 
 
@@ -66,20 +66,23 @@ class ContainerSandbox:
         if result.returncode or info.get("OSType", info.get("host", {}).get("os")) != "linux":
             raise IntegrityError("a working Linux OCI runtime is required")
 
+    @plain_io_errors()
     def host_path(self, path):
         # Only the disposable verification driver needs daemon/driver path translation.
-        path = Path(path).resolve()
+        path = plain_path(long_path(Path(path)).resolve())
         driver = os.environ.get("RLOOP_DRIVER_ROOT")
         host = os.environ.get("RLOOP_DAEMON_ROOT")
         if driver and host and path.is_relative_to(Path(driver)):
             return host.rstrip("/") + "/" + path.relative_to(driver).as_posix()
         return str(path)
 
+    @plain_io_errors()
     def command(self, name, workspace, public, *, holdout=None):
-        workspace, public = Path(workspace).resolve(), Path(public).resolve()
-        if not workspace.is_dir() or not public.is_dir() or workspace == public or public.is_relative_to(workspace) or workspace.is_relative_to(public):
+        workspace = plain_path(long_path(Path(workspace)).resolve())
+        public = plain_path(long_path(Path(public)).resolve())
+        if not long_path(workspace).is_dir() or not long_path(public).is_dir() or workspace == public or public.is_relative_to(workspace) or workspace.is_relative_to(public):
             raise IntegrityError("separate workspace/public directories required")
-        if workspace.is_symlink() or public.is_symlink():
+        if long_path(workspace).is_symlink() or long_path(public).is_symlink():
             raise IntegrityError("sandbox mount links forbidden")
         uid = os.getuid() if hasattr(os, "getuid") and os.getuid() != 0 else 1000
         gid = os.getgid() if hasattr(os, "getgid") and os.getuid() != 0 else 1000
@@ -133,6 +136,7 @@ class ContainerSandbox:
                 process.wait(timeout=10)
             self.remove(name)
 
+    @plain_io_errors()
     def preflight(self, workspace, public, *, forbidden=()):
         self.available()
         probe = '''import json,os,pathlib,socket
@@ -164,23 +168,24 @@ print(json.dumps({"private_paths":True,"write_boundary":True,"network":True}))
         else:
             raise IntegrityError("process cleanup probe did not time out")
         marker = Path(workspace) / "preflight-child"
-        if not marker.exists():
+        if not long_path(marker).exists():
             raise IntegrityError("cleanup probe never started a child")
-        marker.unlink()
-        (Path(workspace) / "preflight-write").unlink()
+        long_path(marker).unlink()
+        long_path(Path(workspace) / "preflight-write").unlink()
         return {**result, "process_cleanup": True, "image": self.image}
 
+    @plain_io_errors()
     def tool_launch(self, contract, workspace, *, adapter=True):
-        workspace = Path(workspace).resolve()
-        workspace.mkdir(parents=True, exist_ok=True)
+        workspace = plain_path(long_path(Path(workspace)).resolve())
+        long_path(workspace).mkdir(parents=True, exist_ok=True)
         public = workspace.parent / "public"
-        public.mkdir(exist_ok=True)
+        long_path(public).mkdir(exist_ok=True)
         # Root verification drivers must allow the required non-root container user.
         if hasattr(os, "getuid") and os.getuid() == 0:
-            workspace.chmod(0o777)
-        public.chmod(0o755)
+            long_path(workspace).chmod(0o777)
+        long_path(public).chmod(0o755)
         atomic_write(public / "worker-context.json", canonical(contract).encode())
-        (public / "worker-context.json").chmod(0o644)
+        long_path(public / "worker-context.json").chmod(0o644)
         probes = self.preflight(workspace, public)
         atomic_write(workspace.parent / "sandbox-preflight.json", canonical(probes).encode())
         name = "rloop-" + uuid.uuid4().hex
@@ -193,8 +198,9 @@ print(json.dumps({"private_paths":True,"write_boundary":True,"network":True}))
         atomic_write(config, canonical({"command": args, "seconds": self.resources.wall_seconds}).encode())
         return Launch(sys.executable, ["-I", "-m", "research_loops.container_stdio", str(config)], tool_environment(), image=self.image)
 
+    @plain_io_errors()
     def cleanup(self, workspace):
-        name = self.active.pop(str(Path(workspace).resolve()), None)
+        name = self.active.pop(str(plain_path(long_path(Path(workspace)).resolve())), None)
         if name:
             self.remove(name)
 
@@ -224,10 +230,11 @@ print(json.dumps(files))
             path = confined(workspace, relative)
             atomic_write(path, base64.b64decode(encoded, validate=True))
 
+    @plain_io_errors()
     def execute_candidate(self, workspace, public, holdout, *, relative="candidate.py"):
         from research_loops.paths import confined
         path = confined(Path(workspace), relative)
-        if not path.is_file():
+        if not long_path(path).is_file():
             raise IntegrityError("candidate file missing")
         self.preflight(workspace, public)
         # This is a different container from the worker. Host evaluator only parses output.

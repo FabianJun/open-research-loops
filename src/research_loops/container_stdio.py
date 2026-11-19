@@ -4,12 +4,15 @@ import signal
 import subprocess
 import sys
 import threading
+from pathlib import Path
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.transports.launch import tool_environment
 
 
 def main():
-    config = json.loads(open(sys.argv[1], encoding="utf-8").read())
+    with plain_io_errors():
+        config = json.loads(long_path(Path(sys.argv[1])).read_text(encoding="utf-8"))
     command = config["command"]
     runtime, name = command[0], command[command.index("--name") + 1]
     def remove():

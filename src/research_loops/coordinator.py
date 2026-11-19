@@ -14,7 +14,7 @@ from research_loops.reports import WorkerReport
 from research_loops.evaluation import SubprocessEvaluator, evaluator_hash
 from research_loops.fake import FakeBackend, oracle
 from research_loops.grounding import public_context
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.processes import process_identity
 from research_loops.reporting import export, report
 from research_loops.scheduler import fanout
@@ -25,8 +25,9 @@ from research_loops.grain_evaluator import parse_verdict
 from research_loops.cancellation import Cancellation, RunCancelled
 
 
+@plain_io_errors()
 def load_contract(example: Path) -> Contract:
-    return parse_contract((example / "contract.json").read_bytes())
+    return parse_contract(long_path(example / "contract.json").read_bytes())
 
 
 def proposal_method(contract):
@@ -39,24 +40,27 @@ def data_root(repo, contract, split):
     return repo.root / "data" / "Grain" / {"training": "train", "development": "val", "final": "test"}[split]
 
 
+@plain_io_errors()
 def training_projection(repo, contract, key):
     if not is_grain(contract):
         return private(repo, key, "training")
-    data = (repo.root / "inputs" / "training.json").read_bytes()
+    data = long_path(repo.root / "inputs" / "training.json").read_bytes()
     inputs = json.loads(repo.db.execute("SELECT inputs FROM registrations WHERE hash=?", (key,)).fetchone()[0])
     if digest(data) != inputs["public_training"]:
         raise IntegrityError("public grain statistics modified")
     return data
 
 
+@plain_io_errors()
 def private(repo: Repository, key: str, split: str) -> bytes:
     inputs = json.loads(repo.db.execute("SELECT inputs FROM registrations WHERE hash=?", (key,)).fetchone()[0])
-    data = (repo.root / "private" / key / f"{split}.json").read_bytes()
+    data = long_path(repo.root / "private" / key / f"{split}.json").read_bytes()
     if digest(data) != inputs[split]:
         raise IntegrityError("registered input modified")
     return data
 
 
+@plain_io_errors()
 def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repository, Contract, str]:
     from research_loops.settings import working_mode
     working_mode(example)
@@ -81,7 +85,7 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
                 raise IntegrityError("sealed campaign cannot amend registration")
         if is_grain(contract):
             try:
-                data = {name: (repo.root / "data" / f"{split}.json").read_bytes()
+                data = {name: long_path(repo.root / "data" / f"{split}.json").read_bytes()
                     for name, split in (("training", "train"), ("development", "val"), ("final", "test"))}
             except FileNotFoundError:
                 raise IntegrityError("grain data missing; run rloop data fetch PROJECT --archive PATH") from None
@@ -89,14 +93,14 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
             data = datasets(contract)
         inputs = {name: digest(value) for name, value in data.items()}
         if is_grain(contract):
-            inputs["public_training"] = digest((repo.root / "inputs" / "training.json").read_bytes())
+            inputs["public_training"] = digest(long_path(repo.root / "inputs" / "training.json").read_bytes())
         inputs["proposal_method"] = method_hash
         key = repo.register(contract.model_dump(mode="json"), evaluator_hash(contract.name), inputs, supersedes=current, reason=amendment_reason)
         for name, value in data.items():
             path = repo.root / "private" / key / f"{name}.json"
-            if not path.exists():
+            if not long_path(path).exists():
                 atomic_write(path, value, exclusive=True)
-            elif digest(path.read_bytes()) != inputs[name]:
+            elif digest(long_path(path).read_bytes()) != inputs[name]:
                 raise IntegrityError("registered input modified")
         return repo, contract, key
     except BaseException:
@@ -104,11 +108,12 @@ def prepare(example: Path, *, amendment_reason: str | None = None) -> tuple[Repo
         raise
 
 
+@plain_io_errors()
 def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, seconds: float, *, data_root=None) -> Verdict:
     # All inputs are captured by the coordinator: evaluator threads get no DB handle.
     receipt = root / "evaluation_receipts" / f"{run_id}.json"
-    if receipt.exists():
-        value = json.loads(receipt.read_bytes())
+    if long_path(receipt).exists():
+        value = json.loads(long_path(receipt).read_bytes())
         if value["state"] == "completed":
             return parse_verdict(value["verdict"])
         if value["state"] == "intent":
@@ -124,15 +129,16 @@ def evaluate_saved(root: Path, run_id: str, candidate: bytes, dataset: bytes, se
     return verdict
 
 
+@plain_io_errors()
 def reconcile(repo: Repository, contract: Contract, key: str, cancellation=None) -> None:
     # The project lock proves the previous in-process fake workers are gone.
     # An evaluator can outlive its parent on Linux; check creation identity first.
     ticket_text = repo.db.execute("SELECT final_ticket FROM project").fetchone()[0]
     final_receipt = repo.root / "private" / "final-receipt.json"
-    if ticket_text and final_receipt.exists():
+    if ticket_text and long_path(final_receipt).exists():
         ticket = json.loads(ticket_text)
         if ticket["state"] == "started":
-            saved = json.loads(final_receipt.read_bytes())
+            saved = json.loads(long_path(final_receipt).read_bytes())
             if saved["ticket"] != ticket:
                 raise IntegrityError("final recovery receipt differs from consumed ticket")
             repo.final_result(ticket, parse_verdict(saved["verdict"]))
@@ -146,18 +152,18 @@ def reconcile(repo: Repository, contract: Contract, key: str, cancellation=None)
             continue
         root = repo.root / "runs" / row["id"] / "outbox"
         sealed = root / "report.json"
-        if not row["report_hash"] and sealed.exists():
-            repo.import_report(WorkerReport.model_validate_json(sealed.read_bytes()), Workspace(root=root))
+        if not row["report_hash"] and long_path(sealed).exists():
+            repo.import_report(WorkerReport.model_validate_json(long_path(sealed).read_bytes()), Workspace(root=root))
         elif not row["report_hash"]:
             journal = root / "journal.jsonl"
-            if journal.exists():
+            if long_path(journal).exists():
                 with repo.db:
-                    repo.event("partial_outbox", row["id"], {"journal_hash": digest(journal.read_bytes()), "text": journal.read_text(encoding="utf-8")})
+                    repo.event("partial_outbox", row["id"], {"journal_hash": digest(long_path(journal).read_bytes()), "text": long_path(journal).read_text(encoding="utf-8")})
             repo.fail(row["id"], "interrupted", "worker died before sealing a report")
             continue
         receipt = repo.root / "evaluation_receipts" / f"{row['id']}.json"
-        if receipt.exists():
-            value = json.loads(receipt.read_bytes())
+        if long_path(receipt).exists():
+            value = json.loads(long_path(receipt).read_bytes())
             if value["state"] == "intent":
                 raise IntegrityError("unresolved launch intent; recovery blocked")
             if value["state"] == "running":
@@ -293,15 +299,17 @@ async def campaign(repo: Repository, contract: Contract, key: str, backend, *, p
         root = repo.root / "runs" / assignment.run_id / "outbox"
         try:
             public = root.parent / "public"
-            public.mkdir(mode=0o755, parents=True, exist_ok=True)
+            with plain_io_errors():
+                long_path(public).mkdir(mode=0o755, parents=True, exist_ok=True)
             data = training_projection(repo, contract, key)
             training = public / "training.json"
-            if training.exists():
-                if training.read_bytes() != data:
-                    raise IntegrityError("public training projection changed")
-            else:
-                atomic_write(training, data, exclusive=True)
-            training.chmod(0o644)
+            with plain_io_errors():
+                if long_path(training).exists():
+                    if long_path(training).read_bytes() != data:
+                        raise IntegrityError("public training projection changed")
+                else:
+                    atomic_write(training, data, exclusive=True)
+                long_path(training).chmod(0o644)
             if is_grain(contract):
                 from research_loops.grain_worker import prepare_training_tool
                 prepare_training_tool(repo, contract, key, root.parent)

@@ -3,6 +3,7 @@
 from importlib.metadata import version
 from pathlib import Path
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.domain import IntegrityError
 
 
@@ -23,10 +24,11 @@ def backend_record(backend) -> tuple[dict, int]:
     return record, reserve or 0
 
 
+@plain_io_errors()
 def load_backend(name: str, project: Path):
     import json
     path = project / "project.json"
-    config = json.loads(path.read_bytes()) if path.is_file() else {}
+    config = json.loads(long_path(path).read_bytes()) if long_path(path).is_file() else {}
     settings = config.get("sandbox", {"name": "none"})
     from research_loops.sandbox import NoneSandbox, ContainerSandbox
     if settings.get("name") == "container":

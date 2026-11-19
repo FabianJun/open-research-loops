@@ -23,6 +23,7 @@ from urllib.request import Request
 from urllib.error import HTTPError, URLError
 import uuid
 
+from research_loops.paths import long_path, plain_io_errors, plain_path
 from research_loops.domain import IntegrityError
 from research_loops.locking import ProjectLock
 from research_loops.authorization import LimitReached
@@ -111,14 +112,15 @@ _threads = threading.Lock()
 
 
 class TokenStore:
+    @plain_io_errors()
     def __init__(self, root=None, *, project=None):
         self.root = Path(root) if root is not None else default_root()
         self.root = self.root.absolute()
         # Never keep tokens in this source checkout or the scientist's project.
         forbidden = [Path(__file__).resolve().parents[2]]
         if project is not None:
-            forbidden.append(Path(project).resolve())
-        if any(self.root.resolve().is_relative_to(path) for path in forbidden):
+            forbidden.append(plain_path(long_path(Path(project)).resolve()))
+        if any(plain_path(long_path(self.root).resolve()).is_relative_to(path) for path in forbidden):
             raise AuthError("token storage must be outside the repository/project")
         self.path = self.root / "openai.json"
 

@@ -7,7 +7,7 @@ import asyncio
 
 from research_loops.authorization import authorize
 from research_loops.domain import Artifact, IntegrityError, WorkerContract, Workspace, canonical, digest
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.reports import WorkerReport
 from research_loops.candidate_schema import CANDIDATE_GRAMMAR
 from research_loops.transports.launch import local_launch
@@ -71,20 +71,22 @@ class SDKBackend:
         return approval
 
     async def launch(self, contract: WorkerContract, workspace: Workspace):
-        workspace.root.mkdir(parents=True, exist_ok=True)
+        with plain_io_errors():
+            long_path(workspace.root).mkdir(parents=True, exist_ok=True)
         if self.sandbox:
             return await asyncio.to_thread(self.sandbox.tool_launch, contract, workspace.root, adapter=True)
         return local_launch(contract, workspace.root, adapter=True)
 
+    @plain_io_errors()
     def finish(self, contract, workspace, launch, *, sdk_version, cost, usage, trace) -> WorkerReport:
         self.save_trace(workspace, trace)
         submitted = workspace.root / "submission.json"
-        if not submitted.exists():
+        if not long_path(submitted).exists():
             raise IntegrityError("SDK finished without a sealed tool submission")
-        report = WorkerReport.model_validate_json(submitted.read_bytes())
+        report = WorkerReport.model_validate_json(long_path(submitted).read_bytes())
         if report.run_id != contract.run_id or report.contract_hash != contract.registration_hash:
             raise IntegrityError("SDK submission scope mismatch")
-        data = (workspace.root / "adapter-trace.json").read_bytes()
+        data = long_path(workspace.root / "adapter-trace.json").read_bytes()
         result = report.model_copy(update={"backend": self.name, "provider": self.provider, "model": self.model,
             "sdk_version": sdk_version, "cost_micro_usd": cost, "usage": usage,
             "sdk_trace": Artifact(path="adapter-trace.json", sha256=digest(data), size=len(data)),

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 from research_loops.domain import IntegrityError, canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 
 Mode = Literal["autonomous", "coached"]
 
@@ -16,16 +16,18 @@ def validate_mode(value: object) -> Mode:
     return value
 
 
+@plain_io_errors()
 def working_mode(project: Path) -> Mode:
     path = project / "project.json"
-    config = json.loads(path.read_bytes()) if path.exists() else {}
+    config = json.loads(long_path(path).read_bytes()) if long_path(path).exists() else {}
     return validate_mode(config.get("mode", "autonomous"))
 
 
+@plain_io_errors()
 def initialize_mode(project: Path, mode: Mode | None) -> Mode:
     """Keep an existing mode unless explicitly changed, like the owner setting."""
     path = project / "project.json"
-    config = json.loads(path.read_bytes()) if path.exists() else {}
+    config = json.loads(long_path(path).read_bytes()) if long_path(path).exists() else {}
     value = validate_mode(mode if mode is not None else config.get("mode", "autonomous"))
     config["mode"] = value
     atomic_write(path, canonical(config).encode())

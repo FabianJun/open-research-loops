@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from research_loops.domain import canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 
 
 class RunCancelled(Exception):
@@ -23,9 +23,10 @@ class Cancellation:
         self.path = root / "cancel.json"
         self.job_id = job_id
 
+    @plain_io_errors()
     def requested(self) -> bool:
         try:
-            value = json.loads(self.path.read_bytes())
+            value = json.loads(long_path(self.path).read_bytes())
             return isinstance(value, dict) and value.get("job_id") == self.job_id
         except (FileNotFoundError, ValueError):
             return False
@@ -35,13 +36,14 @@ class Cancellation:
             raise RunCancelled()
 
 
+@plain_io_errors()
 def request(repo) -> dict:
     job_id = active_job(repo)
     value = {"job_id": job_id}
     path = repo.root / "cancel.json"
     # Identical repeats leave the request file unchanged.
     try:
-        same = json.loads(path.read_bytes()) == value
+        same = json.loads(long_path(path).read_bytes()) == value
     except (FileNotFoundError, ValueError):
         same = False
     if not same:

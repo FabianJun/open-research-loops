@@ -76,7 +76,7 @@ def init(example: Path, question: str = "Can we recover a planted nonlinear sign
          mode: Literal["autonomous", "coached"] | None = None) -> None:
     """Create a scaffold; autonomous (default) also runs the first fake pilot."""
     from research_loops.domain import Contract, canonical
-    from research_loops.paths import atomic_write
+    from research_loops.paths import atomic_write, long_path, plain_io_errors
     from research_loops.coordinator import run as execute
     from research_loops.domain import IntegrityError
     from research_loops.owner import initialize_owner
@@ -87,7 +87,9 @@ def init(example: Path, question: str = "Can we recover a planted nonlinear sign
         selected_mode = initialize_mode(example, mode)
     except IntegrityError as exc:
         raise typer.BadParameter(str(exc), param_hint="--owner") from exc
-    if not (example / "contract.json").exists():
+    with plain_io_errors():
+        has_contract = long_path(example / "contract.json").exists()
+    if not has_contract:
         contract = Contract(goal=question, falsifier="The candidate fails the locked planted-signal criteria.",
             prediction="Uncertain; the negative control should fail and the planted oracle should pass.")
         atomic_write(example / "contract.json", canonical(contract).encode(), exclusive=True)

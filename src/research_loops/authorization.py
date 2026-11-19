@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.domain import IntegrityError
 from research_loops.owner import owner_name
 
@@ -44,12 +45,13 @@ class Authorization(BaseModel):
             raise IntegrityError("invalid checkpoint B USD cap") from exc
 
 
+@plain_io_errors()
 def authorize(project: Path | None, provider: str, model: str) -> Authorization:
     path = project / "project.json" if project else None
-    if path is None or not path.is_file():
+    if path is None or not long_path(path).is_file():
         raise IntegrityError("provider calls are not authorized: checkpoint B project configuration required")
     try:
-        config = json.loads(path.read_bytes())
+        config = json.loads(long_path(path).read_bytes())
         owner = owner_name(config)
         value = config["checkpoint_b"]
         if "backends" in value:

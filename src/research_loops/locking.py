@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from research_loops.domain import IntegrityError
+from research_loops.paths import long_path, plain_io_errors
 
 
 class ProjectLock:
@@ -11,9 +12,16 @@ class ProjectLock:
         self.path = root / "coordinator.lock"
         self.stream = None
 
+    @plain_io_errors()
     def __enter__(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.stream = self.path.open("a+b")
+        path = long_path(self.path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        def opener(_, flags):
+            return os.open(path, flags, 0o666)
+
+        # Keep the stream's name plain while its opener uses the I/O path.
+        self.stream = open(self.path, "a+b", opener=opener)
         if os.fstat(self.stream.fileno()).st_size == 0:
             self.stream.write(b"0")
             self.stream.flush()

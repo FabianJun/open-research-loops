@@ -8,7 +8,7 @@ from pathlib import Path
 from mcp.server import MCPServer
 
 from research_loops.domain import WorkerContract, canonical
-from research_loops.paths import atomic_write
+from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.tools import ToolService
 from research_loops.transports.protocol import Dispatcher
 
@@ -51,6 +51,7 @@ def create_server(dispatch: Dispatcher) -> MCPServer:
     return server
 
 
+@plain_io_errors()
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--context", type=Path, required=True)
@@ -63,11 +64,11 @@ def main() -> None:
     # Store names only; never dump environment values.
     atomic_write(args.audit, canonical({"environment_keys": sorted(os.environ)}).encode())
     if args.shared_files:
-        args.audit.chmod(0o644)
+        long_path(args.audit).chmod(0o644)
     if any("API_KEY" in name.upper() or "TOKEN" in name.upper() or "SECRET" in name.upper() for name in os.environ):
         raise RuntimeError("tool server received a credential environment variable")
     from research_loops.contracts import parse_worker
-    contract = parse_worker(args.context.read_bytes())
+    contract = parse_worker(long_path(args.context).read_bytes())
     service = ToolService(contract, args.outbox, submission_name="submission.json" if args.adapter else "report.json", shared_files=args.shared_files, public_root=args.public)
     create_server(Dispatcher(service)).run(transport="stdio")
 

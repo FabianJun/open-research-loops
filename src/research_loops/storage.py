@@ -13,7 +13,7 @@ from pathlib import Path
 
 from research_loops.domain import IntegrityError, Verdict, WorkerContract, Workspace, canonical, content_hash, digest, validate_candidate
 from research_loops.reports import WorkerReport
-from research_loops.paths import atomic_write, confined
+from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path
 from research_loops.locking import ProjectLock
 
 
@@ -73,17 +73,18 @@ class ReadOnlyRepository:
     reads the resulting committed image, with query_only enforcing SELECTs.
     """
 
+    @plain_io_errors()
     def __init__(self, root: Path):
         self.root = root
-        path = (root / "state.sqlite").resolve()
-        if not path.is_file():
+        path = plain_path(long_path(root / "state.sqlite").resolve())
+        if not long_path(path).is_file():
             raise FileNotFoundError("project has no database")
         wal_path = path.with_name(path.name + "-wal")
 
         def capture():
-            database = path.read_bytes()
+            database = long_path(path).read_bytes()
             try:
-                wal = wal_path.read_bytes()
+                wal = long_path(wal_path).read_bytes()
             except FileNotFoundError:
                 wal = b""
             return database, wal
@@ -140,10 +141,11 @@ class Repository:
             self.lock.__exit__()
             raise
 
+    @plain_io_errors()
     def _open(self, root: Path) -> None:
         self.root = root
-        root.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(root / "state.sqlite")
+        long_path(root).mkdir(parents=True, exist_ok=True)
+        self.db = sqlite3.connect(long_path(root / "state.sqlite"))
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA foreign_keys=ON")
@@ -222,6 +224,7 @@ class Repository:
             self.event("runtime", assignment.run_id, {"framework": "0.2.0", "python": sys.version.split()[0],
                 "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
 
+    @plain_io_errors()
     def import_report(self, report: WorkerReport, outbox: Workspace) -> bool:
         report = WorkerReport.model_validate(report.model_dump(mode="json"))
         row = self.db.execute("SELECT * FROM runs WHERE id=?", (report.run_id,)).fetchone()
@@ -256,9 +259,9 @@ class Repository:
             if artifact is None:
                 continue
             path = confined(outbox.root, artifact.path)
-            if not path.is_file() or path.stat().st_size > 1_000_000:
+            if not long_path(path).is_file() or long_path(path).stat().st_size > 1_000_000:
                 raise IntegrityError("missing/oversized artifact")
-            data = path.read_bytes()
+            data = long_path(path).read_bytes()
             if digest(data) != artifact.sha256 or len(data) != artifact.size:
                 raise IntegrityError("evidence hash mismatch")
             if kind == "candidate":
@@ -276,9 +279,9 @@ class Repository:
                     or transcript["response"] != candidate_value):
                     raise IntegrityError("prompt/transcript differs from assigned public context or candidate")
             target = self.root / "objects" / artifact.sha256
-            if not target.exists():
+            if not long_path(target).exists():
                 atomic_write(target, data, exclusive=True)
-            if digest(target.read_bytes()) != artifact.sha256:
+            if digest(long_path(target).read_bytes()) != artifact.sha256:
                 raise IntegrityError("content-addressed object corrupt")
             staged.append((f"{report.run_id}:{kind}", report.run_id, kind, artifact.sha256, artifact.size))
         with self.db:
@@ -290,22 +293,24 @@ class Repository:
             self.event("import", report.run_id, {"report": report.model_dump(mode="json"), "artifacts": staged})
         return True
 
+    @plain_io_errors()
     def artifact(self, run_id: str, kind: str) -> bytes:
         row = self.db.execute("SELECT hash FROM artifacts WHERE run_id=? AND kind=?", (run_id, kind)).fetchone()
         if not row:
             raise IntegrityError("artifact missing")
-        data = (self.root / "objects" / row[0]).read_bytes()
+        data = long_path(self.root / "objects" / row[0]).read_bytes()
         if digest(data) != row[0]:
             raise IntegrityError("sealed artifact modified")
         return data
 
+    @plain_io_errors()
     def verdict(self, run_id: str, value: Verdict) -> None:
         raw = canonical(value).encode()
         checksum = digest(raw)
         target = self.root / "objects" / checksum
-        if not target.exists():
+        if not long_path(target).exists():
             atomic_write(target, raw, exclusive=True)
-        elif digest(target.read_bytes()) != checksum:
+        elif digest(long_path(target).read_bytes()) != checksum:
             raise IntegrityError("raw evaluation object corrupt")
         with self.db:
             row = self.db.execute("SELECT report_hash,verdict FROM runs WHERE id=?", (run_id,)).fetchone()

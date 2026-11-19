@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import sqlite3
 
+from research_loops.paths import long_path, plain_io_errors, plain_path
 from research_loops.domain import Contract, IntegrityError, Verdict, canonical, content_hash, digest
 from research_loops.evaluation import evaluator_hash
 from research_loops.licensing import license_issues
@@ -36,7 +37,8 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
 
     def checked(dimension, label, source, action):
         try:
-            detail = action()
+            with plain_io_errors():
+                detail = action()
             facts[dimension].append(f"{label}: {detail}. Source: `{source}`.")
         except (IntegrityError, OSError, ValueError, KeyError, TypeError, sqlite3.Error) as exc:
             failures.append(label)
@@ -50,7 +52,9 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
     repo = Repository.__new__(Repository)
     repo.root = root
     try:
-        repo.db = sqlite3.connect((root / "state.sqlite").resolve().as_uri() + "?mode=ro", uri=True)
+        with plain_io_errors():
+            database = plain_path(long_path(root / "state.sqlite").resolve())
+        repo.db = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
         repo.db.row_factory = sqlite3.Row
         repo.db.execute("PRAGMA query_only=ON")
         repo.db.execute("BEGIN")
@@ -84,7 +88,7 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                     for e in events), "registration event anchor missing or different")
                 require(registration["evaluator_hash"] == evaluator_hash(parsed.name), "evaluator package anchor differs")
                 for split in ("training", "development", "final"):
-                    data = (root / "private" / key / f"{split}.json").read_bytes()
+                    data = long_path(root / "private" / key / f"{split}.json").read_bytes()
                     require(digest(data) == inputs[split], f"{split} input hash differs")
                 from research_loops.coordinator import proposal_method
                 require(inputs["proposal_method"] == digest(proposal_method(parsed).read_bytes()), "proposal method hash differs")
@@ -94,7 +98,7 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
         def current_contract():
             key = state["current_registration"]
             require(key in contracts, "current registration missing")
-            require(canonical(parse_contract((project / "contract.json").read_bytes())) == canonical(contracts[key]),
+            require(canonical(parse_contract(long_path(project / "contract.json").read_bytes())) == canonical(contracts[key]),
                 "working contract differs from current registration")
             return "matches current saved registration"
         checked("Problem", "Working contract", "contract.json; .rloop/state.sqlite:project.current_registration", current_contract)
@@ -158,7 +162,7 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
                     continue
                 verdict = parse_verdict(run["verdict"])
                 require(repo.artifact(run["id"], "evaluation") == canonical(verdict).encode(), "verdict lacks matching evidence object")
-                request = json.loads((root / "private" / run["registration_hash"] / "development.json").read_bytes())
+                request = json.loads(long_path(root / "private" / run["registration_hash"] / "development.json").read_bytes())
                 if request.get("domain") == "grain-316l":
                     request = {"domain": "grain-316l", "manifest": request, "data_root": str(root / "data" / "Grain" / "val")}
                 request["candidate"] = json.loads(repo.artifact(run["id"], "candidate"))
@@ -177,9 +181,9 @@ def assess(project: Path, *, repository_root: Path | None = None) -> str:
             run = next((row for row in runs if row["id"] == ticket["run_id"]), None)
             require(run is not None and run["registration_hash"] in inputs_by_key, "final run registration missing")
             require(ticket["split_hash"] == inputs_by_key[run["registration_hash"]]["final"], "final split hash differs")
-            receipt = json.loads((root / "private" / "final-receipt.json").read_bytes())
+            receipt = json.loads(long_path(root / "private" / "final-receipt.json").read_bytes())
             require(receipt["verdict"] == ticket["verdict"] and receipt["ticket"] == {k: v for k, v in ticket.items() if k != "verdict"} | {"state": "started"}, "final receipt differs")
-            request = json.loads((root / "private" / run["registration_hash"] / "final.json").read_bytes())
+            request = json.loads(long_path(root / "private" / run["registration_hash"] / "final.json").read_bytes())
             if request.get("domain") == "grain-316l":
                 # Rechecking saved final truth would spend holdout information
                 # again. Verify the sealed receipt/ticket only after final use.

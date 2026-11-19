@@ -2,10 +2,12 @@
 
 import json
 
+from research_loops.paths import long_path, plain_io_errors
 from research_loops.cancellation import Cancellation, active_job
 from research_loops.reporting import run_summaries
 
 
+@plain_io_errors()
 def status(repo) -> dict:
     runs = run_summaries(repo)
     job = active_job(repo)
@@ -15,7 +17,7 @@ def status(repo) -> dict:
         else "sealed" if state["final_ticket"] else json.loads(last[0])["execution_status"] if last
         else "completed" if runs else "ready" if state["current_registration"] else "unregistered")
     paths = {kind: f".rloop/report.{suffix}" for kind, suffix in (("markdown", "md"), ("html", "html"))
-        if (repo.root / f"report.{suffix}").is_file()}
+        if long_path(repo.root / f"report.{suffix}").is_file()}
     return {"schema": "rloop.status/1", "project_state": project_state,
         "cancel_requested": bool(job and Cancellation(repo.root, job).requested()),
         "runs": [{key: row[key] for key in ("id", "execution_status", "scientific_outcome", "started_at", "finished_at", "prediction_registered")}
