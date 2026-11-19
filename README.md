@@ -24,6 +24,9 @@ on. You get back a report whose result lines carry a tag such as measured or sim
 table rows link their evidence; in coached mode you also get a research brief and your own method
 card.
 
+**To start,** open your coding agent, paste one of the two [starters below](#two-ways-to-work) (one
+where your agent works on its own, one where it also coaches you) and add your question.
+
 **A real example, negative result included**
 ([what happened](experiments/grain-cnn/README.md#interpretation-added-after-the-result)):
 
