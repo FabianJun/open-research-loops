@@ -11,8 +11,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from research_loops.domain import IntegrityError, canonical
-from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path
+from research_loops.paths import atomic_write, long_path, plain_io_errors, plain_path, refuse_link
 from research_loops.transports.launch import Launch, local_launch, tool_environment
+
+
+def _refuse_mount_link(path: Path) -> None:
+    try:
+        refuse_link(path)
+    except IntegrityError as exc:
+        raise IntegrityError("sandbox mount links forbidden") from exc
 
 
 class NoneSandbox:
@@ -78,12 +85,14 @@ class ContainerSandbox:
 
     @plain_io_errors()
     def command(self, name, workspace, public, *, holdout=None):
-        workspace = plain_path(long_path(Path(workspace)).resolve())
-        public = plain_path(long_path(Path(public)).resolve())
+        # Check the folders as given: resolve() returns the link target, so a later check sees no link.
+        workspace, public = Path(workspace), Path(public)
+        _refuse_mount_link(workspace)
+        _refuse_mount_link(public)
+        workspace = plain_path(long_path(workspace).resolve())
+        public = plain_path(long_path(public).resolve())
         if not long_path(workspace).is_dir() or not long_path(public).is_dir() or workspace == public or public.is_relative_to(workspace) or workspace.is_relative_to(public):
             raise IntegrityError("separate workspace/public directories required")
-        if long_path(workspace).is_symlink() or long_path(public).is_symlink():
-            raise IntegrityError("sandbox mount links forbidden")
         uid = os.getuid() if hasattr(os, "getuid") and os.getuid() != 0 else 1000
         gid = os.getgid() if hasattr(os, "getgid") and os.getuid() != 0 else 1000
         args = [self.runtime, "run", "--rm", "-i", "--name", name,
@@ -176,9 +185,13 @@ print(json.dumps({"private_paths":True,"write_boundary":True,"network":True}))
 
     @plain_io_errors()
     def tool_launch(self, contract, workspace, *, adapter=True):
-        workspace = plain_path(long_path(Path(workspace)).resolve())
-        long_path(workspace).mkdir(parents=True, exist_ok=True)
+        # Check both mount folders before they are created or written; command() checks again.
+        workspace = Path(workspace)
+        _refuse_mount_link(workspace)
+        workspace = plain_path(long_path(workspace).resolve())
         public = workspace.parent / "public"
+        _refuse_mount_link(public)
+        long_path(workspace).mkdir(parents=True, exist_ok=True)
         long_path(public).mkdir(exist_ok=True)
         # Root verification drivers must allow the required non-root container user.
         if hasattr(os, "getuid") and os.getuid() == 0:

@@ -41,6 +41,44 @@ def test_shared_oci_flags(runtime, tmp_path):
     assert any(arg.endswith("dst=/public,readonly") for arg in command)
 
 
+def test_sandbox_refuses_linked_folders(monkeypatch, tmp_path):
+    def linked(path):
+        if os.name == "nt":
+            import _winapi
+            _winapi.CreateJunction(str(target), str(path))
+        else:
+            path.symlink_to(target, target_is_directory=True)
+        return path
+
+    target, workspace, public = tmp_path / "target", tmp_path / "workspace", tmp_path / "inputs"
+    for folder in (target, workspace, public):
+        folder.mkdir()
+    link = linked(tmp_path / "linked")
+
+    sandbox = ContainerSandbox("sha256:" + "a" * 64)
+    with pytest.raises(IntegrityError, match="links forbidden"):
+        sandbox.command("test", link, public)
+    with pytest.raises(IntegrityError, match="links forbidden"):
+        sandbox.command("test", workspace, link)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("launch preparation ran for a linked folder")
+
+    monkeypatch.setattr(sandbox, "preflight", unexpected)
+    monkeypatch.setattr(Path, "chmod", unexpected)
+    siblings = set(tmp_path.iterdir())
+    with pytest.raises(IntegrityError, match="links forbidden"):
+        sandbox.tool_launch(task(), link)
+    assert not list(target.iterdir())
+    assert set(tmp_path.iterdir()) == siblings
+    (tmp_path / "launch").mkdir()
+    linked(tmp_path / "launch" / "public")
+    with pytest.raises(IntegrityError, match="links forbidden"):
+        sandbox.tool_launch(task(), tmp_path / "launch" / "outbox")
+    assert not list(target.iterdir())
+    assert not (tmp_path / "launch" / "outbox").exists()
+
+
 def test_missing_runtime_blocks(monkeypatch):
     sandbox = ContainerSandbox("sha256:" + "a" * 64)
     def unavailable(*args, **kwargs):

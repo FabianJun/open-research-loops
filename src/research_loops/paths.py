@@ -54,6 +54,14 @@ def plain_io_errors():
         raise
 
 
+def refuse_link(path: Path) -> None:
+    probe = long_path(path)
+    if probe.is_symlink() or probe.is_junction():
+        raise IntegrityError("links/reparse points are forbidden")
+    if probe.exists() and getattr(probe.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+        raise IntegrityError("reparse points are forbidden")
+
+
 @plain_io_errors()
 def confined(root: Path, relative: str) -> Path:
     if not relative or "\\" in relative or ":" in relative or relative.startswith("/"):
@@ -66,11 +74,7 @@ def confined(root: Path, relative: str) -> Path:
     target = plain_path(root)
     for part in parts:
         target = target / part
-        probe = long_path(target)
-        if probe.is_symlink() or probe.is_junction():
-            raise IntegrityError("links/reparse points are forbidden")
-        if probe.exists() and getattr(probe.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
-            raise IntegrityError("reparse points are forbidden")
+        refuse_link(target)
     if not long_path(target).resolve().is_relative_to(long_path(root).resolve()):
         raise IntegrityError("path escapes workspace")
     return target
