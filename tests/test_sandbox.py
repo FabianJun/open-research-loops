@@ -91,16 +91,29 @@ def test_missing_runtime_blocks(monkeypatch):
 
 @pytest.fixture(scope="session")
 def sandbox_image(tmp_path_factory):
-    if os.environ.get("GITHUB_ACTIONS") and not sys.platform.startswith("linux"):
+    in_ci = "GITHUB_ACTIONS" in os.environ
+    if in_ci and not sys.platform.startswith("linux"):
         pytest.skip("GitHub macOS and Windows runners provide no Linux OCI runtime; Linux CI runs the container contract")
     runtime = os.environ.get("RLOOP_TEST_RUNTIME", "docker")
     if not shutil.which(runtime):
-        if os.environ.get("GITHUB_ACTIONS"):
+        if in_ci:
             pytest.fail("Linux CI must provide its required OCI runtime")
         pytest.skip("Linux container integration requires docker/podman CLI; use Linux CI or Docker Desktop locally")
+    # Probe only locally so an unreachable daemon still fails the container contract in CI.
+    # With host-configured socket activation, any client call (probe or build) can start the engine. The tests start nothing themselves.
+    if not in_ci:
+        try:
+            daemon_reachable = subprocess.run([runtime, "info"], capture_output=True, timeout=15).returncode == 0
+        except (subprocess.TimeoutExpired, OSError):
+            daemon_reachable = False
+        if not daemon_reachable:
+            pytest.skip(
+                f"{runtime} CLI found but its daemon is not reachable; "
+                "start it to run the container tests locally (the tests do not start it)"
+            )
     image = os.environ.get("RLOOP_SANDBOX_IMAGE")
     # Opt-in for offline local runs only. CI ignores it and keeps building and running the contract.
-    if os.environ.get("RLOOP_TEST_NO_CONTAINER_BUILD") == "1" and "GITHUB_ACTIONS" not in os.environ:
+    if os.environ.get("RLOOP_TEST_NO_CONTAINER_BUILD") == "1" and not in_ci:
         if not image:
             pytest.skip("offline container tests require an already-local RLOOP_SANDBOX_IMAGE; no build or pull")
         local = subprocess.run([runtime, "image", "inspect", image], capture_output=True)
@@ -114,17 +127,63 @@ def sandbox_image(tmp_path_factory):
     return image
 
 
+@pytest.mark.parametrize("github_actions", ["true", ""], ids=["ci", "empty-ci-value"])
 @pytest.mark.parametrize("platform,exception,message", [
     ("darwin", pytest.skip.Exception, "no Linux OCI runtime"),
     ("win32", pytest.skip.Exception, "no Linux OCI runtime"),
     ("linux", pytest.fail.Exception, "Linux CI must provide its required OCI runtime"),
 ])
-def test_ci_container_fixture_without_runtime(monkeypatch, tmp_path_factory, platform, exception, message):
-    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+def test_ci_container_fixture_without_runtime(monkeypatch, tmp_path_factory, platform, exception, message, github_actions):
+    monkeypatch.setenv("GITHUB_ACTIONS", github_actions)
     monkeypatch.setattr(sys, "platform", platform)
     monkeypatch.setattr(shutil, "which", lambda runtime: None)
     with pytest.raises(exception, match=message):
         sandbox_image.__wrapped__(tmp_path_factory)
+
+
+@pytest.mark.parametrize("error", [
+    None,
+    subprocess.TimeoutExpired(["podman", "info"], 15),
+    OSError("runtime unavailable"),
+], ids=["nonzero-exit", "timeout", "os-error"])
+def test_local_container_fixture_skips_unreachable_daemon(monkeypatch, tmp_path_factory, error):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setenv("RLOOP_TEST_RUNTIME", "podman")
+    monkeypatch.setenv("RLOOP_TEST_NO_CONTAINER_BUILD", "1")
+    monkeypatch.setenv("RLOOP_SANDBOX_IMAGE", "sha256:local-test")
+    monkeypatch.setattr(shutil, "which", lambda runtime: runtime)
+    calls = []
+
+    def failed_info(argv, **kwargs):
+        calls.append(argv)
+        assert kwargs == {"capture_output": True, "timeout": 15}
+        if error is not None:
+            raise error
+        return subprocess.CompletedProcess(argv, 1)
+
+    monkeypatch.setattr(subprocess, "run", failed_info)
+    with pytest.raises(pytest.skip.Exception, match="podman CLI found but its daemon is not reachable"):
+        sandbox_image.__wrapped__(tmp_path_factory)
+    assert calls == [["podman", "info"]]
+
+
+def test_local_container_fixture_fails_build_after_daemon_probe(monkeypatch, tmp_path_factory):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("RLOOP_TEST_NO_CONTAINER_BUILD", raising=False)
+    monkeypatch.delenv("RLOOP_SANDBOX_IMAGE", raising=False)
+    monkeypatch.setattr(shutil, "which", lambda runtime: runtime)
+    calls = []
+
+    def failed_build(argv, **kwargs):
+        calls.append(argv[1])
+        if argv[1] == "info":
+            return subprocess.CompletedProcess(argv, 0)
+        return subprocess.CompletedProcess(argv, 1, stderr=b"build failed")
+
+    monkeypatch.setattr(subprocess, "run", failed_build)
+    with pytest.raises(AssertionError, match="build failed"):
+        sandbox_image.__wrapped__(tmp_path_factory)
+    assert calls == ["info", "build"]
 
 
 @pytest.mark.parametrize("image,local", [(None, False), ("sha256:local-test", False), ("sha256:local-test", True)])
@@ -138,24 +197,28 @@ def test_offline_container_fixture_never_builds_or_pulls(monkeypatch, tmp_path_f
         monkeypatch.delenv("RLOOP_SANDBOX_IMAGE", raising=False)
     monkeypatch.setattr(shutil, "which", lambda runtime: "/local/docker")
     calls = []
-    def inspect(argv, **kwargs):
-        calls.append(argv)
-        assert argv[1:] == ["image", "inspect", image]
+    def run(argv, **kwargs):
+        args = argv[1:]
+        calls.append(args)
+        if args == ["info"]:
+            return SimpleNamespace(returncode=0)
+        assert args == ["image", "inspect", image]
         return SimpleNamespace(returncode=0 if local else 1)
-    monkeypatch.setattr(subprocess, "run", inspect)
+    monkeypatch.setattr(subprocess, "run", run)
     if local:
         assert sandbox_image.__wrapped__(tmp_path_factory) == image
     else:
         with pytest.raises(pytest.skip.Exception, match="no build or pull"):
             sandbox_image.__wrapped__(tmp_path_factory)
-    assert len(calls) == (1 if image else 0)
+    assert calls == ([["info"], ["image", "inspect", image]] if image else [["info"]])
 
 
+@pytest.mark.parametrize("github_actions", ["true", ""], ids=["ci", "empty-ci-value"])
 @pytest.mark.parametrize("image", ["sha256:local-test", None], ids=["given-image", "build"])
-def test_ci_container_fixture_ignores_offline_opt_in(monkeypatch, tmp_path_factory, image):
+def test_ci_container_fixture_ignores_offline_opt_in(monkeypatch, tmp_path_factory, image, github_actions):
     from types import SimpleNamespace
 
-    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_ACTIONS", github_actions)
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setattr(shutil, "which", lambda runtime: "/local/docker")
     monkeypatch.setenv("RLOOP_TEST_NO_CONTAINER_BUILD", "1")

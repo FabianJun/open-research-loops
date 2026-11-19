@@ -25,13 +25,22 @@ _EXTENDED_UNC = _EXTENDED + "UNC\\"
 def system_temp_root() -> Path:
     # Only temporary folders created by this code go below this root. The process
     # owner configures it, including TMPDIR, TEMP and TMP, and it is trusted like PATH.
-    # Resolve every link so OS aliases such as macOS /var -> /private/var pass the
-    # link guard. This offers no defence against a hostile temp root.
+    # Outside the current working folder, resolve every link so OS aliases such
+    # as macOS /var -> /private/var pass the link guard. This offers no defence
+    # against a hostile temp root.
     # Never use this to canonicalize paths supplied by the owner, a job, a workspace
     # or an output. After the CLI writes, Kaggle fetch still checks the download
     # folder and every ancestor with no_links(). Submit staging has no link check.
+    # Keep the root unresolved if it is the current working folder or lies below it.
+    # tempfile.gettempdir() caches its first result, so this rule assumes the
+    # process keeps its working folder. No code in this package changes it.
     # Provisional decision; see docs/DECISIONS.md, "Temporary folders and macOS CI".
-    return plain_path(Path(os.path.realpath(tempfile.gettempdir())))
+    root = tempfile.gettempdir()
+    absolute_root = plain_path(Path(os.path.abspath(root)))
+    cwd = plain_path(Path(os.path.abspath(os.getcwd())))
+    if Path(os.path.normcase(absolute_root)).is_relative_to(os.path.normcase(cwd)):
+        return absolute_root
+    return plain_path(Path(os.path.realpath(root)))
 
 
 def long_path(path: Path) -> Path:

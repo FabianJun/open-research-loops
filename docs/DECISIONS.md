@@ -195,12 +195,23 @@ The hosted macOS trial failed because Kaggle fetch's `no_links()` refused the te
 path through `/var` to `/private/var`. The runner lacked a Linux OCI runtime for
 the container tests. The link guard is unchanged. It protects against links that
 come with a workspace or downloaded data, while the temp root is the process
-owner's own configuration, like `PATH`. Only temporary folders created by the
-code use `system_temp_root()`. Owner, job and workspace paths stay as supplied.
-Tests cover refusal of links in download and job folders on every OS.
+owner's own configuration, like `PATH`. Only temporary folders created for Kaggle
+submit staging and fetch use `system_temp_root()`. Paths from the owner, jobs and
+workspaces stay as supplied. Tests cover refusal of links in download and job
+folders on every OS.
 The process owner configures the temp root through settings including `TMPDIR`,
-`TEMP` and `TMP`. Kaggle fetch accepts a linked temp root with the same access as
-a plain temp folder there. This offers no defence against a hostile temp root.
+`TEMP` and `TMP`. Any temp root at or below the current working folder stays
+unresolved because it may be a user or workspace path, such as the fallback or a
+relative `TMPDIR`, `TEMP` or `TMP`. This also covers the system temp folder when
+the current working folder is one of its parents, including the filesystem root.
+On macOS, Kaggle fetch then refuses the `/var` path as it did before this
+update, so run from the project folder. The check compares the spellings of the
+absolute paths, so a temp root given under another name for the same folder (such
+as a short 8.3 name, a substituted or mapped drive, or a path through a link when
+the working folder is reported by its target) goes unrecognised and is resolved
+as before. Outside the current working folder, Kaggle fetch accepts a linked
+temp root with the same access as a plain temp folder.
+This offers no defence against a hostile temp root.
 The fetch check runs after the download, so it misses any link placed and
 removed before the check, and a file can still be swapped between the check and
 the copy, with both gaps unchanged from before this update.

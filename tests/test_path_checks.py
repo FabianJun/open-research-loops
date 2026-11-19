@@ -146,13 +146,50 @@ def test_compute_refuses_deep_link(tmp_path):
         no_links(link / "missing")
 
 
-def test_system_temp_root_canonicalizes_only_the_temp_root(linked_temp_root):
+def test_system_temp_root_canonicalizes_only_the_temp_root(linked_temp_root, tmp_path, monkeypatch):
     link, target = linked_temp_root
+    cwd = tmp_path / "temp"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
     root = system_temp_root()
     assert os.path.normcase(root) == os.path.normcase(os.path.realpath(target))
     with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
         no_links(link / "missing")
     assert no_links(root / "missing") == root / "missing"
+
+
+@pytest.mark.parametrize("below_cwd", [False, True], ids=["cwd", "child"])
+def test_system_temp_root_keeps_linked_cwd_unresolved(tmp_path, monkeypatch, below_cwd):
+    work = linked_folder(tmp_path / "work-link", tmp_path / "work-target")
+    monkeypatch.chdir(work)
+    if Path.cwd() != work:
+        # POSIX reports the target after chdir. Exercise the linked cwd spelling.
+        monkeypatch.setattr(os, "getcwd", lambda: str(work))
+    temp = work / "tmp" if below_cwd else work
+    temp.mkdir(exist_ok=True)
+    monkeypatch.setattr(tempfile, "tempdir", str(temp))
+
+    root = system_temp_root()
+    assert root == temp
+    with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
+        no_links(root / "missing")
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows extended path prefixes")
+@pytest.mark.parametrize("extended_cwd", [False, True], ids=["extended-temp", "extended-cwd"])
+def test_system_temp_root_keeps_linked_cwd_with_mixed_prefixes(tmp_path, monkeypatch, extended_cwd):
+    work = linked_folder(tmp_path / "work-link", tmp_path / "work-target")
+    monkeypatch.chdir(work)
+    cwd = long_path(work) if extended_cwd else work
+    monkeypatch.setattr(os, "getcwd", lambda: str(cwd))
+    temp = work / "tmp"
+    temp.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(temp if extended_cwd else long_path(temp)))
+
+    root = system_temp_root()
+    assert root == temp
+    with pytest.raises(IntegrityError, match="compute paths must not contain symlinks or junctions"):
+        no_links(root / "missing")
 
 
 def test_kaggle_fetch_with_linked_system_temp_root(job_dir, linked_temp_root):
