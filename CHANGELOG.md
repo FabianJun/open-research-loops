@@ -12,6 +12,7 @@ Upgrade note: grain projects created with 0.2.0 no longer run or pass the assess
 - The README's first screen says how to start and links to the two starters.
 - `docs/CARD.md` summarises what the tool does, who it suits and how to install it.
 - The README opens with a new tagline and shows its header image at full width.
+- Runtime dependencies use bounded version ranges instead of exact pins.
 
 ## 0.2.0 - 2026-11-18
 

@@ -262,6 +262,9 @@ def test_cancel_awaits_an_evaluator_already_in_flight(example, monkeypatch):
 
 
 def test_cancel_in_flight_cleans_process_trees_and_resume_does_not_rerun(example):
+    import importlib.util
+    if importlib.util.find_spec("claude_agent_sdk") is None:
+        pytest.skip("install research-loops[claude] for the Claude transport cleanup test")
     small(example)
     class ProcessFake(FakeBackend):
         calls = []

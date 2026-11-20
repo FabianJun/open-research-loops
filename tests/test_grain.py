@@ -115,6 +115,9 @@ def test_fetch_idempotency_and_public_statistics(grain):
 
 
 def test_original_jpeg_images_remain_byte_identical(tmp_path):
+    import importlib.util
+    if importlib.util.find_spec("numpy") is None or importlib.util.find_spec("PIL") is None:
+        pytest.skip("install research-loops[grain] for grain fixture tests")
     import numpy as np
     from PIL import Image
     archive = tmp_path / "fixture.zip"
@@ -151,6 +154,9 @@ def test_fetch_cli_hash_refusal(grain):
 
 @pytest.mark.parametrize("index", [0, 1, 2])
 def test_fetch_each_hash_checked_before_extraction(tmp_path, index):
+    import importlib.util
+    if importlib.util.find_spec("numpy") is None or importlib.util.find_spec("PIL") is None:
+        pytest.skip("install research-loops[grain] for grain fixture tests")
     archive = tmp_path / "fixture.zip"
     expected = list(fixture_zip(archive))
     expected[index] = 1 if index == 0 else "0" * (32 if index == 1 else 64)

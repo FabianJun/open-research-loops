@@ -9,13 +9,13 @@ description = "Bounded research work with saved evidence and protected evaluatio
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
-dependencies = ["pydantic==2.14.3", "typer==0.29.1"]
+dependencies = ["pydantic>=2.14,<3", "typer~=0.29.1"]
 
 [project.optional-dependencies]
-mcp = ["mcp==2.3.0"]
-openai = ["openai-agents==0.24.0", "PyJWT[crypto]==2.15.1"]
-claude = ["claude-agent-sdk==0.2.182"]
-grain = ["scikit-image==0.26.0", "scipy==1.18.1", "numpy==2.5.4", "pillow==13.0.0", "imageio==2.38.1"]
+mcp = ["mcp>=2.3,<3"]
+openai = ["openai-agents~=0.24.0", "PyJWT[crypto]>=2.15,<3"]
+claude = ["claude-agent-sdk~=0.2.182"]
+grain = ["scikit-image~=0.26.0", "scipy>=1.18,<2", "numpy>=2.5,<3", "pillow>=13.0,<14", "imageio>=2.38,<3"]
 
 [dependency-groups]
 dev = ["pytest==9.2.0"]

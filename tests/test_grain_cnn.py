@@ -10,9 +10,13 @@ import random
 import subprocess
 import sys
 
+import pytest
+
+if importlib.util.find_spec("numpy") is None or importlib.util.find_spec("PIL") is None:
+    pytest.skip("install research-loops[grain] for grain CNN tests", allow_module_level=True)
+
 import numpy as np
 from PIL import Image
-import pytest
 
 from research_loops.domain import IntegrityError
 from research_loops import grain_evaluator
