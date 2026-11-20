@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - 2026-11-20
+
+Upgrade note: grain projects created with 0.2.0 no longer run or pass the assessment's evaluator check, because the protected grain evaluator changed. Start a new grain run in a fresh project folder and keep the old folder as evidence. Planted-signal projects are not affected.
+
+- On Windows, `rloop` works in deep project folders: owner set-up, `rloop data fetch`, grain evaluation and the assessment.
+- In a very deep new project folder on Windows, `rloop init` can take the owner name from the Git settings of a parent folder. Set it with `rloop init --owner NAME` when you need a specific name.
+- Grain data import checks for links from the project's `.rloop` folder down, so a project inside a linked host folder can now import grain data. Links inside the data stay refused.
+- Run folders and the sandbox's workspace and public folders are refused when they are links (symbolic links or Windows junctions).
+- Evidence import and `rloop compute fetch` refuse hard-linked source files, and fetch replaces a destination file without changing other files linked to it.
+- The README's first screen says how to start and links to the two starters.
+- `docs/CARD.md` summarises what the tool does, who it suits and how to install it.
+- The README opens with a new tagline and shows its header image at full width.
+
 ## 0.2.0 - 2026-11-18
 
 - `rloop status --json` and `rloop report --json` print the status and the finished report as JSON for a local job runner, and `rloop cancel` asks the active job to stop.

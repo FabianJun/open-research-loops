@@ -12,6 +12,7 @@ import struct
 from datetime import datetime, timezone
 from pathlib import Path
 
+from research_loops import __version__
 from research_loops.domain import IntegrityError, Verdict, WorkerContract, Workspace, canonical, content_hash, digest, validate_candidate
 from research_loops.reports import WorkerReport
 from research_loops.paths import atomic_write, confined, long_path, plain_io_errors, plain_path, sqlite_uri
@@ -222,7 +223,7 @@ class Repository:
             self.event("dispatch", assignment.run_id, assignment.model_dump(mode="json"))
             self.event("execution", assignment.run_id, execution_metadata or {"backend": "fake", "provider": "offline", "model": "deterministic-v1", "sdk_version": None, "cost_micro_usd": 0})
             folder = Path(__file__).parent
-            self.event("runtime", assignment.run_id, {"framework": "0.2.0", "python": sys.version.split()[0],
+            self.event("runtime", assignment.run_id, {"framework": __version__, "python": sys.version.split()[0],
                 "source_hash": digest(b"".join(path.read_bytes() for path in sorted(folder.rglob("*.py"))))})
 
     @plain_io_errors()

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from mcp.server import MCPServer
 
+from research_loops import __version__
 from research_loops.domain import WorkerContract, canonical
 from research_loops.paths import atomic_write, long_path, plain_io_errors
 from research_loops.tools import ToolService
@@ -14,7 +15,7 @@ from research_loops.transports.protocol import Dispatcher
 
 
 def create_server(dispatch: Dispatcher) -> MCPServer:
-    server = MCPServer("rloop", version="0.2.0")
+    server = MCPServer("rloop", version=__version__)
 
     @server.tool()
     def read_contract() -> dict:
